@@ -13,7 +13,7 @@ const MEMBERS = [
   { name: "Maddie", photo: "/photos/Maddie.jpg" },
 ];
 
-const LABELS = ["Chillin'", "Low-key", "Mid", "Slammed", "Cooked"];
+const LABELS = ["Chillin'", "Low-key", "Mid", "Bro...", "Cooked"];
 const EMOJIS = ["😎", "🙂", "😐", "😰", "🔥"];
 const CARD_BGS = [
   "var(--card-chillin)",
