@@ -15,11 +15,11 @@ const MEMBERS = [
 
 const LABELS = ["Chillin'", "Low-key", "Mid", "Slammed", "Cooked"];
 const COLORS = [
-  { bg: "#e8f5e9", text: "#2e7d32", track: "#66bb6a" },
-  { bg: "#e3f2fd", text: "#1565c0", track: "#42a5f5" },
-  { bg: "#fff8e1", text: "#f57f17", track: "#ffca28" },
-  { bg: "#fff3e0", text: "#e65100", track: "#ffa726" },
-  { bg: "#fce4ec", text: "#c62828", track: "#ef5350" },
+  { bg: "rgba(184,255,87,0.15)", text: "#b8ff57", track: "#b8ff57" },
+  { bg: "rgba(96,165,250,0.15)", text: "#60a5fa", track: "#60a5fa" },
+  { bg: "rgba(192,132,252,0.15)", text: "#c084fc", track: "#c084fc" },
+  { bg: "rgba(251,146,60,0.15)", text: "#fb923c", track: "#fb923c" },
+  { bg: "rgba(255,87,87,0.15)", text: "#ff5757", track: "#ff5757" },
 ];
 
 function getLevel(val: number) {
@@ -34,7 +34,7 @@ function getTrackStyle(value: number) {
   const level = getLevel(value);
   const c = COLORS[level];
   return {
-    background: `linear-gradient(to right, ${c.track} ${value}%, #e0e0e0 ${value}%)`,
+    background: `linear-gradient(to right, ${c.track} ${value}%, #2a2a3a ${value}%)`,
   };
 }
 
@@ -120,19 +120,22 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen px-5 py-10">
+    <div className="min-h-screen px-5 py-12">
       <div className="max-w-[600px] mx-auto">
-        <h1 className="text-[28px] font-bold text-center mb-1">
+        <h1 className="text-4xl font-bold text-center mb-2 tracking-tight">
           How Cooked Am I?
+          <span className="inline-block ml-2 text-3xl">🔥</span>
         </h1>
-        <p className="text-[15px] text-gray-400 text-center mb-8">{today}</p>
+        <p className="text-sm text-[#555570] text-center mb-10 tracking-wide uppercase">
+          {today}
+        </p>
 
         {currentUser && (
-          <p className="text-center text-sm text-gray-500 mb-6">
-            Signed in as{" "}
+          <p className="text-center text-sm text-[#555570] mb-8">
+            vibing as{" "}
             <button
               onClick={() => setShowPicker(true)}
-              className="font-semibold text-blue-500 hover:underline cursor-pointer"
+              className="font-bold text-[#b8ff57] hover:underline cursor-pointer"
             >
               {currentUser}
             </button>
@@ -140,9 +143,11 @@ export default function Home() {
         )}
 
         {!loaded ? (
-          <p className="text-center text-gray-400">Loading...</p>
+          <div className="text-center text-[#555570]">
+            <span className="inline-block animate-pulse">loading the vibes...</span>
+          </div>
         ) : (
-          MEMBERS.map((member) => {
+          MEMBERS.map((member, i) => {
             const value = statuses[member.name] ?? 50;
             const level = getLevel(value);
             const color = COLORS[level];
@@ -152,38 +157,44 @@ export default function Home() {
             return (
               <div
                 key={member.name}
-                className={`bg-white rounded-2xl px-7 py-6 mb-4 shadow-sm ${
-                  isMe && !isOOO ? "ring-2 ring-blue-400 shadow-blue-100" : ""
-                } ${isOOO ? "opacity-75" : ""}`}
+                className={`animate-float-in rounded-2xl px-6 py-5 mb-4 border transition-all ${
+                  isOOO
+                    ? "border-[#2a2a3a] bg-[#12121a] opacity-60"
+                    : isMe
+                    ? "border-[#b8ff57]/30 bg-[#16161f] card-glow"
+                    : "border-[#2a2a3a] bg-[#16161f] hover:border-[#3a3a4a]"
+                }`}
+                style={{ animationDelay: `${i * 60}ms` }}
               >
-                <div className="flex justify-between items-center mb-3.5">
+                <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="relative">
+                    <div className={`relative rounded-full ${isMe && !isOOO ? "ring-2 ring-[#b8ff57]/50" : ""}`}>
                       <Image
                         src={member.photo}
                         alt={member.name}
-                        width={40}
-                        height={40}
-                        className={`rounded-full object-cover w-10 h-10 ${isOOO ? "grayscale" : ""}`}
+                        width={44}
+                        height={44}
+                        className={`rounded-full object-cover w-11 h-11 ${isOOO ? "grayscale" : ""}`}
                       />
                     </div>
-                    <span className="text-[17px] font-semibold">
-                      {member.name}
+                    <div>
+                      <span className="text-[17px] font-bold tracking-tight">
+                        {member.name}
+                      </span>
                       {isMe && (
-                        <span className="text-gray-400 font-normal">
-                          {" "}
-                          (you)
+                        <span className="text-[#b8ff57] text-xs font-medium ml-2">
+                          you
                         </span>
                       )}
-                    </span>
+                    </div>
                   </div>
                   {isOOO ? (
-                    <span className="text-[13px] font-semibold px-3 py-1 rounded-full bg-gray-200 text-gray-500">
-                      Ghost Mode
+                    <span className="text-[13px] font-bold px-3 py-1.5 rounded-full bg-[#2a2a3a] text-[#555570] uppercase tracking-wider text-[11px]">
+                      Ghost Mode 👻
                     </span>
                   ) : (
                     <span
-                      className="text-[13px] font-semibold px-3 py-1 rounded-full"
+                      className="text-[13px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider text-[11px]"
                       style={{ background: color.bg, color: color.text }}
                     >
                       {LABELS[level]}
@@ -192,15 +203,13 @@ export default function Home() {
                 </div>
 
                 {isOOO ? (
-                  <div
-                    className="w-full h-8 rounded bg-gray-100 flex items-center justify-center"
-                  >
+                  <div className="w-full h-10 rounded-xl bg-[#1a1a25] flex items-center justify-center border border-[#2a2a3a]">
                     {isMe && (
                       <button
                         onClick={() => toggleOOO(member.name)}
-                        className="text-xs text-blue-500 font-semibold hover:underline cursor-pointer"
+                        className="text-xs text-[#b8ff57] font-bold hover:underline cursor-pointer uppercase tracking-wide"
                       >
-                        I'm back fr
+                        I&apos;m back fr
                       </button>
                     )}
                   </div>
@@ -220,9 +229,9 @@ export default function Home() {
                     {isMe && (
                       <button
                         onClick={() => toggleOOO(member.name)}
-                        className="mt-3 text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+                        className="mt-3 text-xs text-[#555570] hover:text-[#888] cursor-pointer transition-colors"
                       >
-                        I'm ghost
+                        I&apos;m ghost 👻
                       </button>
                     )}
                   </>
@@ -233,16 +242,20 @@ export default function Home() {
         )}
       </div>
 
+      {/* Identity Picker */}
       {showPicker && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-[360px] w-[90%] text-center">
-            <h2 className="text-xl font-bold mb-5">Who are you?</h2>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#16161f] border border-[#2a2a3a] rounded-3xl p-8 max-w-[380px] w-[90%] text-center">
+            <h2 className="text-2xl font-bold mb-2 tracking-tight">
+              Who dis? 👀
+            </h2>
+            <p className="text-sm text-[#555570] mb-6">pick yourself bestie</p>
             <div className="grid grid-cols-2 gap-3">
               {MEMBERS.map((member) => (
                 <button
                   key={member.name}
                   onClick={() => pickUser(member.name)}
-                  className="flex items-center gap-2.5 px-3.5 py-2.5 border-2 border-gray-200 rounded-xl bg-white hover:border-blue-400 hover:bg-blue-50 transition-all cursor-pointer text-[15px] font-semibold"
+                  className="flex items-center gap-3 px-4 py-3 border-2 border-[#2a2a3a] rounded-2xl bg-[#1a1a25] hover:border-[#b8ff57]/50 hover:bg-[#1e1e2a] transition-all cursor-pointer text-[15px] font-bold"
                 >
                   <Image
                     src={member.photo}

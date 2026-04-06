@@ -15,11 +15,11 @@ const MEMBERS = [
 
 const LABELS = ["Chillin'", "Low-key", "Mid", "Slammed", "Cooked"];
 const COLORS = [
-  { bg: "#e8f5e9", text: "#2e7d32", track: "#66bb6a" },
-  { bg: "#e3f2fd", text: "#1565c0", track: "#42a5f5" },
-  { bg: "#fff8e1", text: "#f57f17", track: "#ffca28" },
-  { bg: "#fff3e0", text: "#e65100", track: "#ffa726" },
-  { bg: "#fce4ec", text: "#c62828", track: "#ef5350" },
+  { bg: "rgba(184,255,87,0.15)", text: "#b8ff57", track: "#b8ff57" },
+  { bg: "rgba(96,165,250,0.15)", text: "#60a5fa", track: "#60a5fa" },
+  { bg: "rgba(192,132,252,0.15)", text: "#c084fc", track: "#c084fc" },
+  { bg: "rgba(251,146,60,0.15)", text: "#fb923c", track: "#fb923c" },
+  { bg: "rgba(255,87,87,0.15)", text: "#ff5757", track: "#ff5757" },
 ];
 
 function getLevel(val: number) {
@@ -34,7 +34,7 @@ function getTrackStyle(value: number) {
   const level = getLevel(value);
   const c = COLORS[level];
   return {
-    background: `linear-gradient(to right, ${c.track} ${value}%, #e0e0e0 ${value}%)`,
+    background: `linear-gradient(to right, ${c.track} ${value}%, #2a2a3a ${value}%)`,
   };
 }
 
@@ -94,23 +94,17 @@ export default function AdminPage() {
     setStatuses(reset);
   };
 
-  // Summary stats (exclude OOO members)
-  const activeMemberValues = MEMBERS.filter(
-    (m) => !oooStatuses[m.name]
-  ).map((m) => statuses[m.name] ?? 50);
+  // Summary stats (exclude OOO)
+  const activeMembers = MEMBERS.filter((m) => !oooStatuses[m.name]);
+  const activeValues = activeMembers.map((m) => statuses[m.name] ?? 50);
   const oooCount = MEMBERS.filter((m) => !!oooStatuses[m.name]).length;
   const avg =
-    activeMemberValues.length > 0
-      ? Math.round(
-          activeMemberValues.reduce((a, b) => a + b, 0) /
-            activeMemberValues.length
-        )
+    activeValues.length > 0
+      ? Math.round(activeValues.reduce((a, b) => a + b, 0) / activeValues.length)
       : 0;
   const avgLevel = getLevel(avg);
   const avgColor = COLORS[avgLevel];
 
-  const activeMembers = MEMBERS.filter((m) => !oooStatuses[m.name]);
-  const activeValues = activeMembers.map((m) => statuses[m.name] ?? 50);
   const busiestActive =
     activeMembers.length > 0
       ? activeMembers[activeValues.indexOf(Math.max(...activeValues))]
@@ -128,33 +122,36 @@ export default function AdminPage() {
   });
 
   return (
-    <div className="min-h-screen px-5 py-10">
+    <div className="min-h-screen px-5 py-12">
       <div className="max-w-[600px] mx-auto">
-        <h1 className="text-[28px] font-bold text-center mb-1">
-          Admin Dashboard
+        <h1 className="text-4xl font-bold text-center mb-2 tracking-tight">
+          Admin Mode
+          <span className="inline-block ml-2 text-3xl">⚡</span>
         </h1>
-        <p className="text-[15px] text-gray-400 text-center mb-8">{today}</p>
+        <p className="text-sm text-[#555570] text-center mb-10 tracking-wide uppercase">
+          {today}
+        </p>
 
         {loaded && (
           <>
             {/* Summary Card */}
-            <div className="bg-white rounded-2xl px-7 py-6 mb-6 shadow-sm">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
-                Team Summary
+            <div className="bg-[#16161f] border border-[#2a2a3a] rounded-2xl px-6 py-6 mb-6 animate-float-in">
+              <h2 className="text-[11px] font-bold text-[#555570] uppercase tracking-widest mb-5">
+                Team Vibe Check
               </h2>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Team Average</p>
+                  <p className="text-[11px] text-[#555570] mb-2 uppercase tracking-wider">Average</p>
                   <span
-                    className="inline-block text-sm font-semibold px-3 py-1 rounded-full"
+                    className="inline-block text-sm font-bold px-3 py-1.5 rounded-full uppercase tracking-wider text-[11px]"
                     style={{ background: avgColor.bg, color: avgColor.text }}
                   >
                     {LABELS[avgLevel]}
                   </span>
-                  <p className="text-xs text-gray-400 mt-1">{avg}%</p>
+                  <p className="text-[11px] text-[#555570] mt-2">{avg}%</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Most Cooked</p>
+                  <p className="text-[11px] text-[#555570] mb-2 uppercase tracking-wider">Most Cooked</p>
                   {busiestActive ? (
                     <>
                       <div className="flex items-center justify-center gap-1.5">
@@ -165,20 +162,20 @@ export default function AdminPage() {
                           height={24}
                           className="rounded-full object-cover w-6 h-6"
                         />
-                        <span className="text-sm font-semibold">
+                        <span className="text-sm font-bold">
                           {busiestActive.name}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-[11px] text-[#555570] mt-2">
                         {statuses[busiestActive.name] ?? 50}%
                       </p>
                     </>
                   ) : (
-                    <span className="text-sm text-gray-400">All OOO</span>
+                    <span className="text-sm text-[#555570]">All ghost</span>
                   )}
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Most Chill</p>
+                  <p className="text-[11px] text-[#555570] mb-2 uppercase tracking-wider">Most Chill</p>
                   {freestActive ? (
                     <>
                       <div className="flex items-center justify-center gap-1.5">
@@ -189,22 +186,22 @@ export default function AdminPage() {
                           height={24}
                           className="rounded-full object-cover w-6 h-6"
                         />
-                        <span className="text-sm font-semibold">
+                        <span className="text-sm font-bold">
                           {freestActive.name}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-[11px] text-[#555570] mt-2">
                         {statuses[freestActive.name] ?? 50}%
                       </p>
                     </>
                   ) : (
-                    <span className="text-sm text-gray-400">All OOO</span>
+                    <span className="text-sm text-[#555570]">All ghost</span>
                   )}
                 </div>
               </div>
               {oooCount > 0 && (
-                <p className="text-xs text-gray-400 text-center mt-3">
-                  {oooCount} team member{oooCount > 1 ? "s" : ""} out of office
+                <p className="text-[11px] text-[#555570] text-center mt-4 uppercase tracking-wider">
+                  👻 {oooCount} team member{oooCount > 1 ? "s" : ""} in ghost mode
                 </p>
               )}
             </div>
@@ -212,13 +209,13 @@ export default function AdminPage() {
             {/* Reset Button */}
             <button
               onClick={resetAll}
-              className="w-full mb-6 py-3 rounded-xl bg-red-50 text-red-600 font-semibold text-sm hover:bg-red-100 transition-colors cursor-pointer"
+              className="w-full mb-6 py-3.5 rounded-2xl bg-[#ff5757]/10 border border-[#ff5757]/20 text-[#ff5757] font-bold text-sm hover:bg-[#ff5757]/20 transition-all cursor-pointer uppercase tracking-wider text-[12px]"
             >
               Reset Everyone to Mid
             </button>
 
             {/* All Members */}
-            {MEMBERS.map((member) => {
+            {MEMBERS.map((member, i) => {
               const value = statuses[member.name] ?? 50;
               const level = getLevel(value);
               const color = COLORS[level];
@@ -227,28 +224,33 @@ export default function AdminPage() {
               return (
                 <div
                   key={member.name}
-                  className={`bg-white rounded-2xl px-7 py-6 mb-4 shadow-sm ${isOOO ? "opacity-75" : ""}`}
+                  className={`animate-float-in rounded-2xl px-6 py-5 mb-4 border transition-all ${
+                    isOOO
+                      ? "border-[#2a2a3a] bg-[#12121a] opacity-60"
+                      : "border-[#2a2a3a] bg-[#16161f] hover:border-[#3a3a4a]"
+                  }`}
+                  style={{ animationDelay: `${i * 60}ms` }}
                 >
-                  <div className="flex justify-between items-center mb-3.5">
+                  <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-3">
                       <Image
                         src={member.photo}
                         alt={member.name}
-                        width={40}
-                        height={40}
-                        className={`rounded-full object-cover w-10 h-10 ${isOOO ? "grayscale" : ""}`}
+                        width={44}
+                        height={44}
+                        className={`rounded-full object-cover w-11 h-11 ${isOOO ? "grayscale" : ""}`}
                       />
-                      <span className="text-[17px] font-semibold">
+                      <span className="text-[17px] font-bold tracking-tight">
                         {member.name}
                       </span>
                     </div>
                     {isOOO ? (
-                      <span className="text-[13px] font-semibold px-3 py-1 rounded-full bg-gray-200 text-gray-500">
-                        Ghost Mode
+                      <span className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-[#2a2a3a] text-[#555570] uppercase tracking-wider">
+                        Ghost Mode 👻
                       </span>
                     ) : (
                       <span
-                        className="text-[13px] font-semibold px-3 py-1 rounded-full"
+                        className="text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider"
                         style={{ background: color.bg, color: color.text }}
                       >
                         {LABELS[level]}
@@ -257,12 +259,12 @@ export default function AdminPage() {
                   </div>
 
                   {isOOO ? (
-                    <div className="w-full h-8 rounded bg-gray-100 flex items-center justify-center">
+                    <div className="w-full h-10 rounded-xl bg-[#1a1a25] flex items-center justify-center border border-[#2a2a3a]">
                       <button
                         onClick={() => toggleOOO(member.name)}
-                        className="text-xs text-blue-500 font-semibold hover:underline cursor-pointer"
+                        className="text-xs text-[#b8ff57] font-bold hover:underline cursor-pointer uppercase tracking-wide"
                       >
-                        They're back fr
+                        They&apos;re back fr
                       </button>
                     </div>
                   ) : (
@@ -279,9 +281,9 @@ export default function AdminPage() {
                       />
                       <button
                         onClick={() => toggleOOO(member.name)}
-                        className="mt-3 text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+                        className="mt-3 text-xs text-[#555570] hover:text-[#888] cursor-pointer transition-colors"
                       >
-                        They're ghost
+                        They&apos;re ghost 👻
                       </button>
                     </>
                   )}
@@ -292,7 +294,9 @@ export default function AdminPage() {
         )}
 
         {!loaded && (
-          <p className="text-center text-gray-400">Loading...</p>
+          <div className="text-center text-[#555570]">
+            <span className="inline-block animate-pulse">loading the vibes...</span>
+          </div>
         )}
       </div>
     </div>
