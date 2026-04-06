@@ -6,8 +6,10 @@ export const redis = new Redis({
 });
 
 const REDIS_KEY = "team-busy-status";
+const OOO_KEY = "team-busy-ooo";
 
 export type TeamStatus = Record<string, number>;
+export type OOOStatus = Record<string, boolean>;
 
 export async function getAllStatus(): Promise<TeamStatus> {
   const data = await redis.hgetall(REDIS_KEY);
@@ -24,4 +26,21 @@ export async function setMemberStatus(
   value: number
 ): Promise<void> {
   await redis.hset(REDIS_KEY, { [name]: value });
+}
+
+export async function getAllOOO(): Promise<OOOStatus> {
+  const data = await redis.hgetall(OOO_KEY);
+  if (!data) return {};
+  const result: OOOStatus = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = value === "true" || value === true;
+  }
+  return result;
+}
+
+export async function setMemberOOO(
+  name: string,
+  ooo: boolean
+): Promise<void> {
+  await redis.hset(OOO_KEY, { [name]: String(ooo) });
 }

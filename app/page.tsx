@@ -42,6 +42,7 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [statuses, setStatuses] = useState<Record<string, number>>({});
+  const [oooStatuses, setOooStatuses] = useState<Record<string, boolean>>({});
   const [loaded, setLoaded] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -54,23 +55,30 @@ export default function Home() {
     }
   }, []);
 
-  const fetchStatuses = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await fetch("/api/status");
-      const data = await res.json();
-      setStatuses(data);
+      const [statusRes, oooRes] = await Promise.all([
+        fetch("/api/status"),
+        fetch("/api/status/ooo"),
+      ]);
+      const [statusData, oooData] = await Promise.all([
+        statusRes.json(),
+        oooRes.json(),
+      ]);
+      setStatuses(statusData);
+      setOooStatuses(oooData);
     } catch {
-      // silently retry next poll
+      // retry next poll
     } finally {
       setLoaded(true);
     }
   }, []);
 
   useEffect(() => {
-    fetchStatuses();
-    const interval = setInterval(fetchStatuses, 5000);
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
-  }, [fetchStatuses]);
+  }, [fetchData]);
 
   const saveStatus = useCallback((name: string, value: number) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -86,6 +94,16 @@ export default function Home() {
   const handleSliderChange = (name: string, value: number) => {
     setStatuses((prev) => ({ ...prev, [name]: value }));
     saveStatus(name, value);
+  };
+
+  const toggleOOO = async (name: string) => {
+    const newVal = !oooStatuses[name];
+    setOooStatuses((prev) => ({ ...prev, [name]: newVal }));
+    await fetch("/api/status/ooo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, ooo: newVal }),
+    });
   };
 
   const pickUser = (name: string) => {
@@ -129,23 +147,26 @@ export default function Home() {
             const level = getLevel(value);
             const color = COLORS[level];
             const isMe = currentUser === member.name;
+            const isOOO = !!oooStatuses[member.name];
 
             return (
               <div
                 key={member.name}
                 className={`bg-white rounded-2xl px-7 py-6 mb-4 shadow-sm ${
-                  isMe ? "ring-2 ring-blue-400 shadow-blue-100" : ""
-                }`}
+                  isMe && !isOOO ? "ring-2 ring-blue-400 shadow-blue-100" : ""
+                } ${isOOO ? "opacity-75" : ""}`}
               >
                 <div className="flex justify-between items-center mb-3.5">
                   <div className="flex items-center gap-3">
-                    <Image
-                      src={member.photo}
-                      alt={member.name}
-                      width={40}
-                      height={40}
-                      className="rounded-full object-cover w-10 h-10"
-                    />
+                    <div className="relative">
+                      <Image
+                        src={member.photo}
+                        alt={member.name}
+                        width={40}
+                        height={40}
+                        className={`rounded-full object-cover w-10 h-10 ${isOOO ? "grayscale" : ""}`}
+                      />
+                    </div>
                     <span className="text-[17px] font-semibold">
                       {member.name}
                       {isMe && (
@@ -156,27 +177,56 @@ export default function Home() {
                       )}
                     </span>
                   </div>
-                  <span
-                    className="text-[13px] font-semibold px-3 py-1 rounded-full"
-                    style={{
-                      background: color.bg,
-                      color: color.text,
-                    }}
-                  >
-                    {LABELS[level]}
-                  </span>
+                  {isOOO ? (
+                    <span className="text-[13px] font-semibold px-3 py-1 rounded-full bg-gray-200 text-gray-500">
+                      Out of Office
+                    </span>
+                  ) : (
+                    <span
+                      className="text-[13px] font-semibold px-3 py-1 rounded-full"
+                      style={{ background: color.bg, color: color.text }}
+                    >
+                      {LABELS[level]}
+                    </span>
+                  )}
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  value={value}
-                  disabled={!isMe}
-                  onChange={(e) =>
-                    handleSliderChange(member.name, Number(e.target.value))
-                  }
-                  style={getTrackStyle(value)}
-                />
+
+                {isOOO ? (
+                  <div
+                    className="w-full h-8 rounded bg-gray-100 flex items-center justify-center"
+                  >
+                    {isMe && (
+                      <button
+                        onClick={() => toggleOOO(member.name)}
+                        className="text-xs text-blue-500 font-semibold hover:underline cursor-pointer"
+                      >
+                        Mark as back
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={value}
+                      disabled={!isMe}
+                      onChange={(e) =>
+                        handleSliderChange(member.name, Number(e.target.value))
+                      }
+                      style={getTrackStyle(value)}
+                    />
+                    {isMe && (
+                      <button
+                        onClick={() => toggleOOO(member.name)}
+                        className="mt-3 text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+                      >
+                        Set as Out of Office
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
             );
           })
