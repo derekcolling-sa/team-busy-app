@@ -13,7 +13,7 @@ const MEMBERS = [
   { name: "Maddie", photo: "/photos/Maddie.jpg" },
 ];
 
-const LABELS = ["Free", "Light", "Moderate", "Busy", "Swamped"];
+const LABELS = ["Chillin'", "Low-key", "Mid", "Slammed", "Cooked"];
 const COLORS = [
   { bg: "#e8f5e9", text: "#2e7d32", track: "#66bb6a" },
   { bg: "#e3f2fd", text: "#1565c0", track: "#42a5f5" },
@@ -123,7 +123,7 @@ export default function Home() {
     <div className="min-h-screen px-5 py-10">
       <div className="max-w-[600px] mx-auto">
         <h1 className="text-[28px] font-bold text-center mb-1">
-          How Busy Am I?
+          How Cooked Am I?
         </h1>
         <p className="text-[15px] text-gray-400 text-center mb-8">{today}</p>
 
@@ -179,7 +179,7 @@ export default function Home() {
                   </div>
                   {isOOO ? (
                     <span className="text-[13px] font-semibold px-3 py-1 rounded-full bg-gray-200 text-gray-500">
-                      Out of Office
+                      Ghost Mode
                     </span>
                   ) : (
                     <span
@@ -200,7 +200,7 @@ export default function Home() {
                         onClick={() => toggleOOO(member.name)}
                         className="text-xs text-blue-500 font-semibold hover:underline cursor-pointer"
                       >
-                        Mark as back
+                        I'm back fr
                       </button>
                     )}
                   </div>
@@ -222,7 +222,7 @@ export default function Home() {
                         onClick={() => toggleOOO(member.name)}
                         className="mt-3 text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
                       >
-                        Set as Out of Office
+                        I'm ghost
                       </button>
                     )}
                   </>

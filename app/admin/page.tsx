@@ -13,7 +13,7 @@ const MEMBERS = [
   { name: "Maddie", photo: "/photos/Maddie.jpg" },
 ];
 
-const LABELS = ["Free", "Light", "Moderate", "Busy", "Swamped"];
+const LABELS = ["Chillin'", "Low-key", "Mid", "Slammed", "Cooked"];
 const COLORS = [
   { bg: "#e8f5e9", text: "#2e7d32", track: "#66bb6a" },
   { bg: "#e3f2fd", text: "#1565c0", track: "#42a5f5" },
@@ -154,7 +154,7 @@ export default function AdminPage() {
                   <p className="text-xs text-gray-400 mt-1">{avg}%</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Busiest</p>
+                  <p className="text-xs text-gray-400 mb-1">Most Cooked</p>
                   {busiestActive ? (
                     <>
                       <div className="flex items-center justify-center gap-1.5">
@@ -178,7 +178,7 @@ export default function AdminPage() {
                   )}
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-1">Most Free</p>
+                  <p className="text-xs text-gray-400 mb-1">Most Chill</p>
                   {freestActive ? (
                     <>
                       <div className="flex items-center justify-center gap-1.5">
@@ -214,7 +214,7 @@ export default function AdminPage() {
               onClick={resetAll}
               className="w-full mb-6 py-3 rounded-xl bg-red-50 text-red-600 font-semibold text-sm hover:bg-red-100 transition-colors cursor-pointer"
             >
-              Reset All to Moderate
+              Reset Everyone to Mid
             </button>
 
             {/* All Members */}
@@ -244,7 +244,7 @@ export default function AdminPage() {
                     </div>
                     {isOOO ? (
                       <span className="text-[13px] font-semibold px-3 py-1 rounded-full bg-gray-200 text-gray-500">
-                        Out of Office
+                        Ghost Mode
                       </span>
                     ) : (
                       <span
@@ -262,7 +262,7 @@ export default function AdminPage() {
                         onClick={() => toggleOOO(member.name)}
                         className="text-xs text-blue-500 font-semibold hover:underline cursor-pointer"
                       >
-                        Mark as back
+                        They're back fr
                       </button>
                     </div>
                   ) : (
@@ -281,7 +281,7 @@ export default function AdminPage() {
                         onClick={() => toggleOOO(member.name)}
                         className="mt-3 text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
                       >
-                        Set as Out of Office
+                        They're ghost
                       </button>
                     </>
                   )}

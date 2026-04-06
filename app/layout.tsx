@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "How Busy Am I? — Team Availability",
-  description: "See how busy your team is in real time.",
+  title: "How Cooked Am I?",
+  description: "See how cooked your team is in real time. No cap.",
 };
 
 export default function RootLayout({
