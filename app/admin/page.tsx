@@ -14,13 +14,15 @@ const MEMBERS = [
 ];
 
 const LABELS = ["Chillin'", "Low-key", "Mid", "Slammed", "Cooked"];
-const COLORS = [
-  { bg: "rgba(184,255,87,0.15)", text: "#b8ff57", track: "#b8ff57" },
-  { bg: "rgba(96,165,250,0.15)", text: "#60a5fa", track: "#60a5fa" },
-  { bg: "rgba(192,132,252,0.15)", text: "#c084fc", track: "#c084fc" },
-  { bg: "rgba(251,146,60,0.15)", text: "#fb923c", track: "#fb923c" },
-  { bg: "rgba(255,87,87,0.15)", text: "#ff5757", track: "#ff5757" },
+const EMOJIS = ["😎", "🙂", "😐", "😰", "🔥"];
+const CARD_BGS = [
+  "var(--card-chillin)",
+  "var(--card-lowkey)",
+  "var(--card-mid)",
+  "var(--card-slammed)",
+  "var(--card-cooked)",
 ];
+const TRACK_COLORS = ["#5cb85c", "#4a9eff", "#f5a623", "#e8742d", "#e74c3c"];
 
 function getLevel(val: number) {
   if (val <= 20) return 0;
@@ -30,11 +32,9 @@ function getLevel(val: number) {
   return 4;
 }
 
-function getTrackStyle(value: number) {
-  const level = getLevel(value);
-  const c = COLORS[level];
+function getTrackStyle(value: number, level: number) {
   return {
-    background: `linear-gradient(to right, ${c.track} ${value}%, #2a2a3a ${value}%)`,
+    background: `linear-gradient(to right, ${TRACK_COLORS[level]} ${value}%, #d9d4cc ${value}%)`,
   };
 }
 
@@ -94,7 +94,7 @@ export default function AdminPage() {
     setStatuses(reset);
   };
 
-  // Summary stats (exclude OOO)
+  // Summary
   const activeMembers = MEMBERS.filter((m) => !oooStatuses[m.name]);
   const activeValues = activeMembers.map((m) => statuses[m.name] ?? 50);
   const oooCount = MEMBERS.filter((m) => !!oooStatuses[m.name]).length;
@@ -103,7 +103,6 @@ export default function AdminPage() {
       ? Math.round(activeValues.reduce((a, b) => a + b, 0) / activeValues.length)
       : 0;
   const avgLevel = getLevel(avg);
-  const avgColor = COLORS[avgLevel];
 
   const busiestActive =
     activeMembers.length > 0
@@ -118,185 +117,206 @@ export default function AdminPage() {
     weekday: "long",
     month: "long",
     day: "numeric",
-    year: "numeric",
   });
 
   return (
-    <div className="min-h-screen px-5 py-12">
-      <div className="max-w-[600px] mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-2 tracking-tight">
-          Admin Mode
-          <span className="inline-block ml-2 text-3xl">⚡</span>
-        </h1>
-        <p className="text-sm text-[#555570] text-center mb-10 tracking-wide uppercase">
-          {today}
-        </p>
+    <div className="min-h-screen px-5 py-14">
+      <div className="max-w-[520px] mx-auto">
+        {/* Header */}
+        <div className="text-center mb-14">
+          <h1
+            className="text-[clamp(2.2rem,7vw,3.5rem)] leading-[1.1] tracking-tight mb-3"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            <span className="font-extrabold">Admin Mode</span>
+            <span className="inline-block ml-2 animate-bounce-in" style={{ animationDelay: "0.3s" }}>
+              ⚡
+            </span>
+          </h1>
+          <p className="text-[15px] text-[#8a857d] font-medium tracking-wide">
+            {today}
+          </p>
+        </div>
 
         {loaded && (
           <>
-            {/* Summary Card */}
-            <div className="bg-[#16161f] border border-[#2a2a3a] rounded-2xl px-6 py-6 mb-6 animate-float-in">
-              <h2 className="text-[11px] font-bold text-[#555570] uppercase tracking-widest mb-5">
+            {/* Summary */}
+            <div
+              className="animate-pop-in rounded-[1.4rem] px-6 py-6 mb-6 border-[3px] border-[#2d2a26] shadow-[4px_4px_0_#2d2a26] bg-white"
+            >
+              <h2
+                className="text-xs font-bold text-[#b5b0a8] uppercase tracking-[0.15em] mb-5"
+              >
                 Team Vibe Check
               </h2>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <p className="text-[11px] text-[#555570] mb-2 uppercase tracking-wider">Average</p>
-                  <span
-                    className="inline-block text-sm font-bold px-3 py-1.5 rounded-full uppercase tracking-wider text-[11px]"
-                    style={{ background: avgColor.bg, color: avgColor.text }}
-                  >
-                    {LABELS[avgLevel]}
-                  </span>
-                  <p className="text-[11px] text-[#555570] mt-2">{avg}%</p>
+                  <p className="text-[11px] text-[#b5b0a8] uppercase tracking-wider mb-2 font-semibold">
+                    Average
+                  </p>
+                  <span className="text-2xl">{EMOJIS[avgLevel]}</span>
+                  <p className="text-xs font-bold mt-1">{LABELS[avgLevel]}</p>
+                  <p className="text-[11px] text-[#b5b0a8] mt-0.5">{avg}%</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-[#555570] mb-2 uppercase tracking-wider">Most Cooked</p>
+                  <p className="text-[11px] text-[#b5b0a8] uppercase tracking-wider mb-2 font-semibold">
+                    Most Cooked
+                  </p>
                   {busiestActive ? (
                     <>
-                      <div className="flex items-center justify-center gap-1.5">
-                        <Image
-                          src={busiestActive.photo}
-                          alt={busiestActive.name}
-                          width={24}
-                          height={24}
-                          className="rounded-full object-cover w-6 h-6"
-                        />
-                        <span className="text-sm font-bold">
-                          {busiestActive.name}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-[#555570] mt-2">
+                      <Image
+                        src={busiestActive.photo}
+                        alt={busiestActive.name}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover w-8 h-8 border-2 border-[#2d2a26] mx-auto"
+                      />
+                      <p className="text-xs font-bold mt-1">{busiestActive.name}</p>
+                      <p className="text-[11px] text-[#b5b0a8]">
                         {statuses[busiestActive.name] ?? 50}%
                       </p>
                     </>
                   ) : (
-                    <span className="text-sm text-[#555570]">All ghost</span>
+                    <span className="text-sm text-[#b5b0a8]">All ghost</span>
                   )}
                 </div>
                 <div>
-                  <p className="text-[11px] text-[#555570] mb-2 uppercase tracking-wider">Most Chill</p>
+                  <p className="text-[11px] text-[#b5b0a8] uppercase tracking-wider mb-2 font-semibold">
+                    Most Chill
+                  </p>
                   {freestActive ? (
                     <>
-                      <div className="flex items-center justify-center gap-1.5">
-                        <Image
-                          src={freestActive.photo}
-                          alt={freestActive.name}
-                          width={24}
-                          height={24}
-                          className="rounded-full object-cover w-6 h-6"
-                        />
-                        <span className="text-sm font-bold">
-                          {freestActive.name}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-[#555570] mt-2">
+                      <Image
+                        src={freestActive.photo}
+                        alt={freestActive.name}
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover w-8 h-8 border-2 border-[#2d2a26] mx-auto"
+                      />
+                      <p className="text-xs font-bold mt-1">{freestActive.name}</p>
+                      <p className="text-[11px] text-[#b5b0a8]">
                         {statuses[freestActive.name] ?? 50}%
                       </p>
                     </>
                   ) : (
-                    <span className="text-sm text-[#555570]">All ghost</span>
+                    <span className="text-sm text-[#b5b0a8]">All ghost</span>
                   )}
                 </div>
               </div>
               {oooCount > 0 && (
-                <p className="text-[11px] text-[#555570] text-center mt-4 uppercase tracking-wider">
-                  👻 {oooCount} team member{oooCount > 1 ? "s" : ""} in ghost mode
+                <p className="text-[11px] text-[#b5b0a8] text-center mt-4 font-semibold">
+                  👻 {oooCount} in ghost mode
                 </p>
               )}
             </div>
 
-            {/* Reset Button */}
+            {/* Reset */}
             <button
               onClick={resetAll}
-              className="w-full mb-6 py-3.5 rounded-2xl bg-[#ff5757]/10 border border-[#ff5757]/20 text-[#ff5757] font-bold text-sm hover:bg-[#ff5757]/20 transition-all cursor-pointer uppercase tracking-wider text-[12px]"
+              className="hover-wiggle w-full mb-8 py-3.5 rounded-2xl bg-[#ffe0e0] border-[3px] border-[#e74c3c] text-[#c0392b] font-bold text-sm cursor-pointer transition-all hover:shadow-[3px_3px_0_#c0392b] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
             >
-              Reset Everyone to Mid
+              Reset Everyone to Mid 🔄
             </button>
 
-            {/* All Members */}
-            {MEMBERS.map((member, i) => {
-              const value = statuses[member.name] ?? 50;
-              const level = getLevel(value);
-              const color = COLORS[level];
-              const isOOO = !!oooStatuses[member.name];
+            {/* Members */}
+            <div className="flex flex-col gap-5">
+              {MEMBERS.map((member, i) => {
+                const value = statuses[member.name] ?? 50;
+                const level = getLevel(value);
+                const isOOO = !!oooStatuses[member.name];
 
-              return (
-                <div
-                  key={member.name}
-                  className={`animate-float-in rounded-2xl px-6 py-5 mb-4 border transition-all ${
-                    isOOO
-                      ? "border-[#2a2a3a] bg-[#12121a] opacity-60"
-                      : "border-[#2a2a3a] bg-[#16161f] hover:border-[#3a3a4a]"
-                  }`}
-                  style={{ animationDelay: `${i * 60}ms` }}
-                >
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-3">
-                      <Image
-                        src={member.photo}
-                        alt={member.name}
-                        width={44}
-                        height={44}
-                        className={`rounded-full object-cover w-11 h-11 ${isOOO ? "grayscale" : ""}`}
-                      />
-                      <span className="text-[17px] font-bold tracking-tight">
-                        {member.name}
-                      </span>
+                return (
+                  <div
+                    key={member.name}
+                    className="animate-pop-in"
+                    style={{ animationDelay: `${(i + 2) * 60}ms` }}
+                  >
+                    <div
+                      className={`rounded-[1.4rem] px-6 py-5 border-[3px] transition-all ${
+                        isOOO
+                          ? "border-[#d9d4cc] opacity-65"
+                          : "border-[#2d2a26] shadow-[3px_3px_0_#2d2a26]"
+                      }`}
+                      style={{
+                        background: isOOO ? "var(--card-ghost)" : CARD_BGS[level],
+                      }}
+                    >
+                      <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-3">
+                          <Image
+                            src={member.photo}
+                            alt={member.name}
+                            width={50}
+                            height={50}
+                            className={`rounded-full object-cover w-[50px] h-[50px] border-[3px] border-[#2d2a26] ${
+                              isOOO ? "grayscale opacity-50" : ""
+                            }`}
+                          />
+                          <span
+                            className="text-lg font-bold"
+                            style={{ fontFamily: "var(--font-display)" }}
+                          >
+                            {member.name}
+                          </span>
+                        </div>
+                        {isOOO ? (
+                          <span className="text-sm font-bold px-3 py-1.5 rounded-full bg-[#e5e1dc] text-[#8a857d] border-2 border-[#d9d4cc]">
+                            👻 Ghost Mode
+                          </span>
+                        ) : (
+                          <span className="text-2xl hover-wiggle cursor-default" title={LABELS[level]}>
+                            {EMOJIS[level]}
+                          </span>
+                        )}
+                      </div>
+
+                      {isOOO ? (
+                        <div className="w-full h-11 rounded-xl bg-[#e5e1dc] border-2 border-[#d9d4cc] flex items-center justify-center">
+                          <button
+                            onClick={() => toggleOOO(member.name)}
+                            className="text-sm text-[#2d2a26] font-bold hover:underline cursor-pointer"
+                          >
+                            They&apos;re back fr ✌️
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="range"
+                              min={0}
+                              max={100}
+                              value={value}
+                              onChange={(e) =>
+                                saveStatus(member.name, Number(e.target.value))
+                              }
+                              style={getTrackStyle(value, level)}
+                              className="flex-1"
+                            />
+                            <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white/60 border-2 border-[#2d2a26]/10 whitespace-nowrap min-w-[80px] text-center">
+                              {LABELS[level]}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => toggleOOO(member.name)}
+                            className="mt-3 text-xs text-[#b5b0a8] hover:text-[#8a857d] cursor-pointer transition-colors font-semibold"
+                          >
+                            They&apos;re ghost 👻
+                          </button>
+                        </>
+                      )}
                     </div>
-                    {isOOO ? (
-                      <span className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-[#2a2a3a] text-[#555570] uppercase tracking-wider">
-                        Ghost Mode 👻
-                      </span>
-                    ) : (
-                      <span
-                        className="text-[11px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider"
-                        style={{ background: color.bg, color: color.text }}
-                      >
-                        {LABELS[level]}
-                      </span>
-                    )}
                   </div>
-
-                  {isOOO ? (
-                    <div className="w-full h-10 rounded-xl bg-[#1a1a25] flex items-center justify-center border border-[#2a2a3a]">
-                      <button
-                        onClick={() => toggleOOO(member.name)}
-                        className="text-xs text-[#b8ff57] font-bold hover:underline cursor-pointer uppercase tracking-wide"
-                      >
-                        They&apos;re back fr
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={value}
-                        onChange={(e) =>
-                          saveStatus(member.name, Number(e.target.value))
-                        }
-                        style={getTrackStyle(value)}
-                      />
-                      <button
-                        onClick={() => toggleOOO(member.name)}
-                        className="mt-3 text-xs text-[#555570] hover:text-[#888] cursor-pointer transition-colors"
-                      >
-                        They&apos;re ghost 👻
-                      </button>
-                    </>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </>
         )}
 
         {!loaded && (
-          <div className="text-center text-[#555570]">
-            <span className="inline-block animate-pulse">loading the vibes...</span>
-          </div>
+          <p className="text-center text-[#b5b0a8] text-lg animate-pulse">
+            loading the vibes...
+          </p>
         )}
       </div>
     </div>
