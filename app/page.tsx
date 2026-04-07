@@ -304,7 +304,7 @@ export default function Home() {
                         {isMe && (
                           <button
                             onClick={() => toggleOOO(member.name)}
-                            className="mt-3 text-xs text-[#b5b0a8] hover:text-[#8a857d] cursor-pointer transition-colors font-semibold"
+                            className="mt-3 text-sm text-[#b5b0a8] hover:text-[#8a857d] cursor-pointer transition-colors font-semibold"
                           >
                             I&apos;m ghost 👻
                           </button>
