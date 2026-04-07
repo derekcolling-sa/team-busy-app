@@ -1,4 +1,4 @@
-import { getAllStatus, getAllUpdated, setMemberStatus } from "@/lib/redis";
+import { getAllStatus, getAllUpdated, setMemberStatus, logDailySnapshot } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -16,5 +16,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid input" }, { status: 400 });
   }
   await setMemberStatus(name, value);
+  // Fire-and-forget daily snapshot — doesn't block response
+  logDailySnapshot().catch(() => {});
   return Response.json({ ok: true });
 }
