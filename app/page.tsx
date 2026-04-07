@@ -160,14 +160,14 @@ export default function Home() {
             className="text-[clamp(2.2rem,7vw,3.5rem)] leading-[1.1] tracking-tight mb-3"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            <span className="font-extrabold">How Cooked</span>
+            <span className="font-extrabold">Team Temp</span>
             <br />
-            <span className="font-extrabold">Am I?</span>
+            <span className="font-extrabold">Check</span>
             <span className="inline-block ml-2 animate-bounce-in" style={{ animationDelay: "0.3s" }}>
               🍳
             </span>
           </h1>
-          <p className="text-[15px] text-[#8a857d] font-medium tracking-wide">
+          <p className="text-[20px] text-[#8a857d] font-semibold">
             {today}
           </p>
         </div>
