@@ -233,7 +233,14 @@ export default function AdminPage() {
 
             {/* Members */}
             <div className="flex flex-col gap-5">
-              {MEMBERS.map((member, i) => {
+              {[...MEMBERS]
+                .sort((a, b) => {
+                  const aOOO = !!oooStatuses[a.name];
+                  const bOOO = !!oooStatuses[b.name];
+                  if (aOOO !== bOOO) return aOOO ? 1 : -1;
+                  return (statuses[b.name] ?? 50) - (statuses[a.name] ?? 50);
+                })
+                .map((member, i) => {
                 const value = statuses[member.name] ?? 50;
                 const level = getLevel(value);
                 const isOOO = !!oooStatuses[member.name];
