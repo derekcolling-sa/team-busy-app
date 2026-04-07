@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 
 const MEMBERS = [
@@ -53,7 +53,9 @@ export default function AdminPage() {
   const [statuses, setStatuses] = useState<Record<string, number>>({});
   const [oooStatuses, setOooStatuses] = useState<Record<string, boolean>>({});
   const [updatedAt, setUpdatedAt] = useState<Record<string, number>>({});
+  const [sortedMembers, setSortedMembers] = useState(MEMBERS);
   const [loaded, setLoaded] = useState(false);
+  const sortTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -80,6 +82,23 @@ export default function AdminPage() {
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  useEffect(() => {
+    if (sortTimerRef.current) clearTimeout(sortTimerRef.current);
+    sortTimerRef.current = setTimeout(() => {
+      setSortedMembers(
+        [...MEMBERS].sort((a, b) => {
+          const aOOO = !!oooStatuses[a.name];
+          const bOOO = !!oooStatuses[b.name];
+          if (aOOO !== bOOO) return aOOO ? 1 : -1;
+          return (statuses[b.name] ?? 50) - (statuses[a.name] ?? 50);
+        })
+      );
+    }, 3000);
+    return () => {
+      if (sortTimerRef.current) clearTimeout(sortTimerRef.current);
+    };
+  }, [statuses, oooStatuses]);
 
   const saveStatus = async (name: string, value: number) => {
     setStatuses((prev) => ({ ...prev, [name]: value }));
@@ -233,14 +252,7 @@ export default function AdminPage() {
 
             {/* Members */}
             <div className="flex flex-col gap-5">
-              {[...MEMBERS]
-                .sort((a, b) => {
-                  const aOOO = !!oooStatuses[a.name];
-                  const bOOO = !!oooStatuses[b.name];
-                  if (aOOO !== bOOO) return aOOO ? 1 : -1;
-                  return (statuses[b.name] ?? 50) - (statuses[a.name] ?? 50);
-                })
-                .map((member, i) => {
+              {sortedMembers.map((member, i) => {
                 const value = statuses[member.name] ?? 50;
                 const level = getLevel(value);
                 const isOOO = !!oooStatuses[member.name];

@@ -55,8 +55,10 @@ export default function Home() {
   const [statuses, setStatuses] = useState<Record<string, number>>({});
   const [oooStatuses, setOooStatuses] = useState<Record<string, boolean>>({});
   const [updatedAt, setUpdatedAt] = useState<Record<string, number>>({});
+  const [sortedMembers, setSortedMembers] = useState(MEMBERS);
   const [loaded, setLoaded] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const sortTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("team-busy-user");
@@ -92,6 +94,24 @@ export default function Home() {
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  // Debounced sort — waits 3 seconds after last status change before reordering
+  useEffect(() => {
+    if (sortTimerRef.current) clearTimeout(sortTimerRef.current);
+    sortTimerRef.current = setTimeout(() => {
+      setSortedMembers(
+        [...MEMBERS].sort((a, b) => {
+          const aOOO = !!oooStatuses[a.name];
+          const bOOO = !!oooStatuses[b.name];
+          if (aOOO !== bOOO) return aOOO ? 1 : -1;
+          return (statuses[b.name] ?? 50) - (statuses[a.name] ?? 50);
+        })
+      );
+    }, 3000);
+    return () => {
+      if (sortTimerRef.current) clearTimeout(sortTimerRef.current);
+    };
+  }, [statuses, oooStatuses]);
 
   const saveStatus = useCallback((name: string, value: number) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -179,14 +199,7 @@ export default function Home() {
           </p>
         ) : (
           <div className="flex flex-col gap-5">
-            {[...MEMBERS]
-              .sort((a, b) => {
-                const aOOO = !!oooStatuses[a.name];
-                const bOOO = !!oooStatuses[b.name];
-                if (aOOO !== bOOO) return aOOO ? 1 : -1;
-                return (statuses[b.name] ?? 50) - (statuses[a.name] ?? 50);
-              })
-              .map((member, i) => {
+            {sortedMembers.map((member, i) => {
               const value = statuses[member.name] ?? 50;
               const level = getLevel(value);
               const isMe = currentUser === member.name;
