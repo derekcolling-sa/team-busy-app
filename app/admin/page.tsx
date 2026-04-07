@@ -24,6 +24,17 @@ const CARD_BGS = [
 ];
 const TRACK_COLORS = ["#5cb85c", "#4a9eff", "#f5a623", "#e8742d", "#e74c3c"];
 
+function timeAgo(ts: number): string {
+  const seconds = Math.floor((Date.now() - ts) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 function getLevel(val: number) {
   if (val <= 20) return 0;
   if (val <= 40) return 1;
@@ -41,6 +52,7 @@ function getTrackStyle(value: number, level: number) {
 export default function AdminPage() {
   const [statuses, setStatuses] = useState<Record<string, number>>({});
   const [oooStatuses, setOooStatuses] = useState<Record<string, boolean>>({});
+  const [updatedAt, setUpdatedAt] = useState<Record<string, number>>({});
   const [loaded, setLoaded] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -53,7 +65,8 @@ export default function AdminPage() {
         statusRes.json(),
         oooRes.json(),
       ]);
-      setStatuses(statusData);
+      setStatuses(statusData.status);
+      setUpdatedAt(statusData.updated);
       setOooStatuses(oooData);
     } catch {
       // retry next poll
@@ -252,12 +265,19 @@ export default function AdminPage() {
                               isOOO ? "grayscale opacity-50" : ""
                             }`}
                           />
-                          <span
-                            className="text-lg font-bold"
-                            style={{ fontFamily: "var(--font-display)" }}
-                          >
-                            {member.name}
-                          </span>
+                          <div>
+                            <span
+                              className="text-lg font-bold"
+                              style={{ fontFamily: "var(--font-display)" }}
+                            >
+                              {member.name}
+                            </span>
+                            {updatedAt[member.name] && (
+                              <p className="text-[11px] text-[#b5b0a8] font-medium mt-0.5">
+                                updated {timeAgo(updatedAt[member.name])}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         {isOOO ? (
                           <span className="text-sm font-bold px-3 py-1.5 rounded-full bg-[#e5e1dc] text-[#8a857d] border-2 border-[#d9d4cc]">

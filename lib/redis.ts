@@ -7,6 +7,7 @@ export const redis = new Redis({
 
 const REDIS_KEY = "team-busy-status";
 const OOO_KEY = "team-busy-ooo";
+const UPDATED_KEY = "team-busy-updated";
 
 export type TeamStatus = Record<string, number>;
 export type OOOStatus = Record<string, boolean>;
@@ -25,7 +26,22 @@ export async function setMemberStatus(
   name: string,
   value: number
 ): Promise<void> {
-  await redis.hset(REDIS_KEY, { [name]: value });
+  await Promise.all([
+    redis.hset(REDIS_KEY, { [name]: value }),
+    redis.hset(UPDATED_KEY, { [name]: Date.now() }),
+  ]);
+}
+
+export type UpdatedTimestamps = Record<string, number>;
+
+export async function getAllUpdated(): Promise<UpdatedTimestamps> {
+  const data = await redis.hgetall(UPDATED_KEY);
+  if (!data) return {};
+  const result: UpdatedTimestamps = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = Number(value);
+  }
+  return result;
 }
 
 export async function getAllOOO(): Promise<OOOStatus> {
