@@ -7,7 +7,10 @@ export const redis = new Redis({
 
 const REDIS_KEY = "team-busy-status";
 const OOO_KEY = "team-busy-ooo";
+const OOO_DETAILS_KEY = "team-busy-ooo-details";
+const SOS_KEY = "team-busy-sos";
 const UPDATED_KEY = "team-busy-updated";
+const FEEDBACK_KEY = "team-busy-feedback";
 
 export type TeamStatus = Record<string, number>;
 export type OOOStatus = Record<string, boolean>;
@@ -61,6 +64,121 @@ export async function setMemberOOO(
   await redis.hset(OOO_KEY, { [name]: String(ooo) });
 }
 
+export type OOODetails = { note?: string; backDate?: string };
+export type OOODetailsMap = Record<string, OOODetails>;
+
+export async function getAllOOODetails(): Promise<OOODetailsMap> {
+  const data = await redis.hgetall(OOO_DETAILS_KEY);
+  if (!data) return {};
+  const result: OOODetailsMap = {};
+  for (const [key, value] of Object.entries(data)) {
+    try { result[key] = JSON.parse(value as string); } catch { result[key] = {}; }
+  }
+  return result;
+}
+
+export async function setMemberOOODetails(name: string, details: OOODetails): Promise<void> {
+  await redis.hset(OOO_DETAILS_KEY, { [name]: JSON.stringify(details) });
+}
+
+export async function clearMemberOOODetails(name: string): Promise<void> {
+  await redis.hdel(OOO_DETAILS_KEY, name);
+}
+
+export type SOSStatus = Record<string, boolean>;
+
+export async function getAllSOS(): Promise<SOSStatus> {
+  const data = await redis.hgetall(SOS_KEY);
+  if (!data) return {};
+  const result: SOSStatus = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = value === "true" || value === true;
+  }
+  return result;
+}
+
+export async function setMemberSOS(name: string, sos: boolean): Promise<void> {
+  await redis.hset(SOS_KEY, { [name]: String(sos) });
+}
+
+export type FeedbackEntry = { name: string; message: string; ts: number };
+
+export async function addFeedback(name: string, message: string): Promise<void> {
+  const entry: FeedbackEntry = { name, message, ts: Date.now() };
+  await redis.lpush(FEEDBACK_KEY, JSON.stringify(entry));
+}
+
+export async function getFeedback(): Promise<FeedbackEntry[]> {
+  const items = await redis.lrange(FEEDBACK_KEY, 0, 49); // last 50
+  return items.map((item) => (typeof item === "string" ? JSON.parse(item) : item));
+}
+
+const STATUS_NOTES_KEY = "team-busy-status-notes";
+const FEEDBACK_RESOLVED_KEY = "team-busy-feedback-resolved";
+
+export async function getAllStatusNotes(): Promise<Record<string, string>> {
+  const data = await redis.hgetall(STATUS_NOTES_KEY);
+  if (!data) return {};
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = String(value);
+  }
+  return result;
+}
+
+export async function setStatusNote(name: string, note: string): Promise<void> {
+  if (note.trim()) {
+    await redis.hset(STATUS_NOTES_KEY, { [name]: note.trim() });
+  } else {
+    await redis.hdel(STATUS_NOTES_KEY, name);
+  }
+}
+
+export async function markFeedbackResolved(ts: number): Promise<void> {
+  await redis.sadd(FEEDBACK_RESOLVED_KEY, String(ts));
+}
+
+export async function getResolvedFeedbackTs(): Promise<number[]> {
+  const members = await redis.smembers(FEEDBACK_RESOLVED_KEY);
+  return (members ?? []).map(Number);
+}
+
+const PHOTOS_KEY = "team-busy-photos";
+
+export async function getAllPhotos(): Promise<Record<string, string>> {
+  const data = await redis.hgetall(PHOTOS_KEY);
+  if (!data) return {};
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = String(value);
+  }
+  return result;
+}
+
+export async function setMemberPhoto(name: string, url: string): Promise<void> {
+  await redis.hset(PHOTOS_KEY, { [name]: url });
+}
+
+const MESSAGES_KEY = "team-busy-messages";
+
+export type MessageEntry = { name: string; message: string; ts: number };
+
+export async function addMessage(name: string, message: string): Promise<void> {
+  const existing = await getMessages();
+  const filtered = existing.filter((m) => m.name !== name);
+  const newEntry: MessageEntry = { name, message, ts: Date.now() };
+  const all = [newEntry, ...filtered].slice(0, 20);
+  await redis.del(MESSAGES_KEY);
+  for (const entry of all.reverse()) {
+    await redis.lpush(MESSAGES_KEY, JSON.stringify(entry));
+  }
+}
+
+export async function getMessages(): Promise<MessageEntry[]> {
+  const items = await redis.lrange(MESSAGES_KEY, 0, 19);
+  return items.map((item) => (typeof item === "string" ? JSON.parse(item) : item));
+}
+
 // Daily history — key format: team-busy-history:YYYY-MM-DD
 // Stores a hash of { memberName: averageValue } for each day
 
@@ -110,4 +228,127 @@ export async function getHistory(days = 14): Promise<HistoryData> {
   );
   result.sort((a, b) => a.date.localeCompare(b.date));
   return result;
+}
+
+const CHAT_KEY = "team-busy-chat";
+
+export type ChatEntry = { name: string; message: string; ts: number };
+
+export async function addChatMessage(name: string, message: string): Promise<void> {
+  const entry: ChatEntry = { name, message, ts: Date.now() };
+  await redis.lpush(CHAT_KEY, JSON.stringify(entry));
+  await redis.ltrim(CHAT_KEY, 0, 99); // keep last 100
+}
+
+export async function getChatMessages(): Promise<ChatEntry[]> {
+  const items = await redis.lrange(CHAT_KEY, 0, 99);
+  return items
+    .map((item) => (typeof item === "string" ? JSON.parse(item) : item))
+    .reverse(); // oldest first
+}
+
+const GO_HOME_KEY = "team-busy-go-home";
+
+export type GoHomeEntry = { name: string; ts: number };
+
+export async function requestGoHome(name: string): Promise<void> {
+  await redis.hset(GO_HOME_KEY, { [name]: Date.now() });
+}
+
+export async function clearGoHome(name: string): Promise<void> {
+  await redis.hdel(GO_HOME_KEY, name);
+}
+
+export async function getGoHomeRequests(): Promise<GoHomeEntry[]> {
+  const data = await redis.hgetall(GO_HOME_KEY);
+  if (!data) return [];
+  return Object.entries(data).map(([name, ts]) => ({ name, ts: Number(ts) })).sort((a, b) => a.ts - b.ts);
+}
+
+const REACTIONS_KEY = "team-busy-reactions";
+
+// reactions stored as hash: field = "{ts}:{emoji}", value = JSON array of names
+export type ReactionsMap = Record<string, Record<string, string[]>>; // ts → emoji → names[]
+
+export async function getAllReactions(): Promise<ReactionsMap> {
+  const data = await redis.hgetall(REACTIONS_KEY);
+  if (!data) return {};
+  const result: ReactionsMap = {};
+  for (const [field, value] of Object.entries(data)) {
+    const colonIdx = field.lastIndexOf(":");
+    const ts = field.slice(0, colonIdx);
+    const emoji = field.slice(colonIdx + 1);
+    if (!result[ts]) result[ts] = {};
+    try {
+      result[ts][emoji] = typeof value === "string" ? JSON.parse(value) : (value as string[]);
+    } catch { result[ts][emoji] = []; }
+  }
+  return result;
+}
+
+export async function toggleReaction(ts: number, emoji: string, name: string): Promise<void> {
+  const field = `${ts}:${emoji}`;
+  const raw = await redis.hget(REACTIONS_KEY, field);
+  let names: string[] = [];
+  if (raw) {
+    try { names = typeof raw === "string" ? JSON.parse(raw) : (raw as string[]); } catch { names = []; }
+  }
+  if (names.includes(name)) {
+    names = names.filter((n) => n !== name);
+  } else {
+    names = [...names, name];
+  }
+  if (names.length === 0) {
+    await redis.hdel(REACTIONS_KEY, field);
+  } else {
+    await redis.hset(REACTIONS_KEY, { [field]: JSON.stringify(names) });
+  }
+}
+
+const BUDDIES_KEY = "team-busy-buddies";
+
+export type BuddyAssignment = { id: string; hatchedAt: number };
+
+export async function getAllBuddies(): Promise<Record<string, BuddyAssignment>> {
+  const data = await redis.hgetall(BUDDIES_KEY);
+  if (!data) return {};
+  const result: Record<string, BuddyAssignment> = {};
+  for (const [key, value] of Object.entries(data)) {
+    try {
+      result[key] = typeof value === 'string' ? JSON.parse(value) : value as BuddyAssignment;
+    } catch { /* skip */ }
+  }
+  return result;
+}
+
+export async function setMemberBuddy(name: string, id: string): Promise<void> {
+  const assignment: BuddyAssignment = { id, hatchedAt: Date.now() };
+  await redis.hset(BUDDIES_KEY, { [name]: JSON.stringify(assignment) });
+}
+
+const URGENT_KEY = "team-busy-urgent";
+
+export type BroadcastType = "urgent" | "broadcast";
+export type BroadcastMessage = { message: string; type: BroadcastType } | null;
+
+export async function getBroadcast(): Promise<BroadcastMessage> {
+  const val = await redis.get(URGENT_KEY);
+  if (!val) return null;
+  // Upstash auto-deserializes JSON, so val may already be a parsed object
+  if (typeof val === "object") {
+    const obj = val as Record<string, string>;
+    if (obj.message && obj.type) return { message: obj.message, type: obj.type as BroadcastType };
+  }
+  // Legacy plain string
+  const str = String(val);
+  if (!str) return null;
+  return { message: str, type: "urgent" };
+}
+
+export async function setBroadcast(message: string, type: BroadcastType): Promise<void> {
+  if (message.trim()) {
+    await redis.set(URGENT_KEY, JSON.stringify({ message: message.trim(), type }));
+  } else {
+    await redis.del(URGENT_KEY);
+  }
 }

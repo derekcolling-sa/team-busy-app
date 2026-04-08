@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
+import { rollBuddy, getBuddyById, RARITY_STYLES, type Buddy } from "@/lib/buddies";
 
 const MEMBERS = [
   { name: "Brendan", photo: "/photos/Brendan.jpg" },
@@ -13,34 +14,84 @@ const MEMBERS = [
   { name: "Maddie", photo: "/photos/Maddie.jpg" },
 ];
 
-const LABELS = ["Chillin'", "Low-key", "Mid", "Cooking", "Cooked"];
-const EMOJIS = ["😎", "✌️", "👀", "🍳", "🔥"];
-const CARD_BGS = [
-  "var(--card-chillin)",
-  "var(--card-lowkey)",
-  "var(--card-mid)",
-  "var(--card-slammed)",
-  "var(--card-cooked)",
-];
-const TRACK_COLORS = ["#5cb85c", "#4a9eff", "#f5a623", "#e8742d", "#e74c3c"];
+const WRITERS = ["Kerry", "Erin", "Maddie"];
+const VP = ["Derek"];
+
+const SUGGESTIONS: Record<string, string[]> = {
+  writer: [
+    "the brief said 'fun and irreverent.' the client meant 'safe and beige.' mid.",
+    "on my third rewrite. the first one slayed. they just couldn't see it.",
+    "if someone says 'make it punchy' one more time I'm submitting blank copy. no chill.",
+    "concept sold. now to actually write the thing. bet.",
+    "in a words hole. the vibes are bad. send help.",
+    "headlines: still making them up. it's giving chaos.",
+    "the copy is fire. now I just have to convince everyone else of that.",
+    "writing my way out of a brief with zero actual direction. it's giving improv.",
+  ],
+  artDirector: [
+    "the font is fine. the font has always been fine. it's giving slay.",
+    "making it 'more premium' for the 4th time today. the vibe keeps shifting.",
+    "moving boxes around until it looks like art. mood.",
+    "logo bigger. got it. 🙄 the client is extra today.",
+    "yes I will make it pop. no I will not explain what that means. bet.",
+    "in InDesign. the layout is fire. please do not disturb.",
+    "on my 6th version. client picks the first one. we all stan this outcome.",
+    "it's always the kerning. always.",
+  ],
+  vp: [
+    "on a call I could have been an email. no cap.",
+    "reviewing 12 concepts. one of them is actually fire.",
+    "saying 'great question' a lot today. it's a whole vibe.",
+    "the brief has changed. again. we flex and we adapt.",
+    "building decks. this is fine. everything is fine. bet.",
+    "managing up. it's a lifestyle and I'm slaying it.",
+    "holding the vision. and everyone's calendar. GOAT behavior.",
+    "my feedback on your feedback: let's discuss. it's giving layers.",
+  ],
+};
+
+function getSuggestions(name: string | null): string[] {
+  if (!name) return [];
+  if (VP.includes(name)) return SUGGESTIONS.vp;
+  if (WRITERS.includes(name)) return SUGGESTIONS.writer;
+  return SUGGESTIONS.artDirector;
+}
+
+const LABELS = ["Chillin'", "Sautéed", "Cooking", "Cooked"];
+const EMOJIS = ["😎", "🍳", "🔥", "💀"];
+const CARD_BGS = ["#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff"];
+const TRACK_COLORS = ["#5cb85c", "#4a9eff", "#f5a623", "#e8742d"];
 
 function timeAgo(ts: number): string {
   const seconds = Math.floor((Date.now() - ts) / 1000);
-  if (seconds < 60) return "just now";
+  if (seconds < 60) return "literally just now 👀";
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes === 1) return "like a min ago";
+  if (minutes < 5) return `${minutes} mins ago no cap`;
+  if (minutes < 60) return `${minutes} mins ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours === 1) return "an hour ago bestie";
+  if (hours < 24) return `${hours}h ago (oof)`;
   const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+  if (days === 1) return "yesterday… we not gonna talk about it";
+  return `${days} days ago 💀`;
+}
+
+const BUDDIES_ENABLED = true;
+
+// Returns 0–1 staleness: 0 = fresh, 1 = fully stale (16h → 48h)
+function getStaleness(ts: number | undefined): number {
+  if (!ts) return 0;
+  const hours = (Date.now() - ts) / (1000 * 60 * 60);
+  if (hours < 16) return 0;
+  return Math.min((hours - 16) / 32, 1);
 }
 
 function getLevel(val: number) {
   if (val <= 20) return 0;
-  if (val <= 40) return 1;
-  if (val <= 60) return 2;
-  if (val <= 80) return 3;
-  return 4;
+  if (val <= 50) return 1;
+  if (val <= 77) return 2;
+  return 3;
 }
 
 function getTrackStyle(value: number, level: number) {
@@ -49,16 +100,58 @@ function getTrackStyle(value: number, level: number) {
   };
 }
 
+function TickerItem({ msg }: { msg: { name: string; message: string }; photo: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 12px", flexShrink: 0, whiteSpace: "nowrap" }}>
+      <span style={{ fontSize: "18px", fontWeight: 800, color: "#000", fontFamily: "var(--font-display)" }}>{msg.name}</span>
+      <span style={{ fontSize: "18px", fontWeight: 500, color: "#000" }}>&ldquo;{msg.message}&rdquo;</span>
+    </div>
+  );
+}
+
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
+  const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionIdx, setSuggestionIdx] = useState(0);
+  const [tickerCopies, setTickerCopies] = useState(0);
+  const [tickerTextWidth, setTickerTextWidth] = useState(0);
+  const tickerTextRef = useRef<HTMLDivElement>(null);
+  const [urgentTickerCopies, setUrgentTickerCopies] = useState(0);
+  const [urgentTickerWidth, setUrgentTickerWidth] = useState(0);
+  const urgentTickerRef = useRef<HTMLDivElement>(null);
   const [statuses, setStatuses] = useState<Record<string, number>>({});
+  const [statusNotes, setStatusNotes] = useState<Record<string, string>>({});
+  const [editingNote, setEditingNote] = useState<string>("");
   const [oooStatuses, setOooStatuses] = useState<Record<string, boolean>>({});
+  const [oooDetails, setOooDetails] = useState<Record<string, { note?: string; backDate?: string }>>({});
+  const [sosStatuses, setSosStatuses] = useState<Record<string, boolean>>({});
+  const [showGhostModal, setShowGhostModal] = useState(false);
+  const [ghostNote, setGhostNote] = useState("");
+  const [ghostBackDate, setGhostBackDate] = useState("");
   const [updatedAt, setUpdatedAt] = useState<Record<string, number>>({});
   const [sortedMembers, setSortedMembers] = useState(MEMBERS);
   const [loaded, setLoaded] = useState(false);
+  const [photoOverrides, setPhotoOverrides] = useState<Record<string, string>>({});
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const sortTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [chatMessages, setChatMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
+  const [hoveredMsg, setHoveredMsg] = useState<number | null>(null);
+  const [goHomeRequested, setGoHomeRequested] = useState(false);
+  const [buddies, setBuddies] = useState<Record<string, { id: string; hatchedAt: number }>>({});
+  const [showHatchModal, setShowHatchModal] = useState(false);
+  const [hatchedBuddy, setHatchedBuddy] = useState<Buddy | null>(null);
+  const [hatchPhase, setHatchPhase] = useState<"egg" | "cracking" | "reveal">("egg");
 
   useEffect(() => {
     const saved = localStorage.getItem("team-busy-user");
@@ -71,17 +164,42 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
+        fetch("/api/status/sos"),
+        fetch("/api/photos"),
+        fetch("/api/messages"),
+        fetch("/api/urgent"),
+        fetch("/api/chat"),
+        fetch("/api/buddies"),
+        fetch("/api/chat/reactions"),
       ]);
-      const [statusData, oooData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
+        sosRes.json(),
+        photosRes.json(),
+        msgsRes.json(),
+        urgentRes.json(),
+        chatRes.json(),
+        buddiesRes.json(),
+        reactionsRes.json(),
       ]);
       setStatuses(statusData.status);
       setUpdatedAt(statusData.updated);
-      setOooStatuses(oooData);
+      const notes = statusData.notes ?? {};
+      setStatusNotes(notes);
+      setEditingNote((prev) => prev !== "" ? prev : (currentUser && notes[currentUser]) ? notes[currentUser] : prev);
+      setOooStatuses(oooData.ooo ?? oooData);
+      setOooDetails(oooData.details ?? {});
+      setSosStatuses(sosData);
+      setPhotoOverrides(photosData.photos ?? {});
+      setMessages(msgsData.messages ?? []);
+      setBroadcast(urgentData.message ? { message: urgentData.message, type: urgentData.type ?? "broadcast" } : null);
+      setChatMessages(chatData.messages ?? []);
+      setBuddies(buddiesData.buddies ?? {});
+      setReactions(reactionsData.reactions ?? {});
     } catch {
       // retry next poll
     } finally {
@@ -95,7 +213,37 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Debounced sort — waits 3 seconds after last status change before reordering
+  // Auto-reload when a new version is deployed
+  useEffect(() => {
+    let currentBuildId: string | null = null;
+    const checkVersion = async () => {
+      try {
+        const res = await fetch("/api/version");
+        const { buildId } = await res.json();
+        if (currentBuildId === null) {
+          currentBuildId = buildId;
+        } else if (buildId !== currentBuildId) {
+          window.location.reload();
+        }
+      } catch { /* ignore */ }
+    };
+    checkVersion();
+    const interval = setInterval(checkVersion, 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-show hatch modal for users who haven't hatched yet
+  useEffect(() => {
+    if (!BUDDIES_ENABLED) return;
+    if (loaded && currentUser && !buddies[currentUser] && !showHatchModal) {
+      setHatchPhase("egg");
+      setHatchedBuddy(null);
+      setShowHatchModal(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, currentUser]);
+
+  // Sort: OOO members go to the back
   useEffect(() => {
     if (sortTimerRef.current) clearTimeout(sortTimerRef.current);
     sortTimerRef.current = setTimeout(() => {
@@ -104,14 +252,42 @@ export default function Home() {
           const aOOO = !!oooStatuses[a.name];
           const bOOO = !!oooStatuses[b.name];
           if (aOOO !== bOOO) return aOOO ? 1 : -1;
-          return (statuses[b.name] ?? 50) - (statuses[a.name] ?? 50);
+          return 0;
         })
       );
     }, 3000);
-    return () => {
-      if (sortTimerRef.current) clearTimeout(sortTimerRef.current);
+    return () => { if (sortTimerRef.current) clearTimeout(sortTimerRef.current); };
+  }, [oooStatuses]);
+
+  // Measure ticker text width and calculate copies needed to fill viewport
+  useEffect(() => {
+    if (!messages.length) return;
+    const calculate = () => {
+      if (!tickerTextRef.current) return;
+      const tw = tickerTextRef.current.offsetWidth;
+      if (!tw) return;
+      setTickerTextWidth(tw);
+      setTickerCopies(Math.ceil(window.innerWidth / tw) + 1);
     };
-  }, [statuses, oooStatuses]);
+    const t = setTimeout(calculate, 30);
+    window.addEventListener("resize", calculate);
+    return () => { clearTimeout(t); window.removeEventListener("resize", calculate); };
+  }, [messages]);
+
+  // Measure urgent ticker
+  useEffect(() => {
+    if (!broadcast) return;
+    const calculate = () => {
+      if (!urgentTickerRef.current) return;
+      const tw = urgentTickerRef.current.offsetWidth;
+      if (!tw) return;
+      setUrgentTickerWidth(tw);
+      setUrgentTickerCopies(Math.ceil(window.innerWidth / tw) + 1);
+    };
+    const t = setTimeout(calculate, 30);
+    window.addEventListener("resize", calculate);
+    return () => { clearTimeout(t); window.removeEventListener("resize", calculate); };
+  }, [broadcast]);
 
   const saveStatus = useCallback((name: string, value: number) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -129,13 +305,133 @@ export default function Home() {
     saveStatus(name, value);
   };
 
+  const saveNote = async (name: string, note: string) => {
+    setStatusNotes((prev) => ({ ...prev, [name]: note }));
+    await fetch("/api/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, note }),
+    });
+  };
+
   const toggleOOO = async (name: string) => {
-    const newVal = !oooStatuses[name];
-    setOooStatuses((prev) => ({ ...prev, [name]: newVal }));
+    if (!oooStatuses[name]) {
+      setGhostNote("");
+      setGhostBackDate("");
+      setShowGhostModal(true);
+      return;
+    }
+    setOooStatuses((prev) => ({ ...prev, [name]: false }));
+    setOooDetails((prev) => { const n = { ...prev }; delete n[name]; return n; });
     await fetch("/api/status/ooo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, ooo: newVal }),
+      body: JSON.stringify({ name, ooo: false }),
+    });
+  };
+
+  const confirmGhost = async () => {
+    if (!currentUser) return;
+    setOooStatuses((prev) => ({ ...prev, [currentUser]: true }));
+    setOooDetails((prev) => ({ ...prev, [currentUser]: { note: ghostNote, backDate: ghostBackDate } }));
+    setShowGhostModal(false);
+    await fetch("/api/status/ooo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, ooo: true, note: ghostNote, backDate: ghostBackDate }),
+    });
+  };
+
+  const toggleSOS = async (name: string) => {
+    const newVal = !sosStatuses[name];
+    setSosStatuses((prev) => ({ ...prev, [name]: newVal }));
+    await fetch("/api/status/sos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, sos: newVal }),
+    });
+  };
+
+  const handleHatch = () => {
+    setHatchPhase("egg");
+    setHatchedBuddy(null);
+    setShowHatchModal(true);
+  };
+
+  const crackEgg = () => {
+    setHatchPhase("cracking");
+    const buddy = rollBuddy();
+    setTimeout(() => {
+      setHatchedBuddy(buddy);
+      setHatchPhase("reveal");
+    }, 900);
+  };
+
+  const confirmHatch = async () => {
+    if (!currentUser || !hatchedBuddy) return;
+    setBuddies((prev) => ({ ...prev, [currentUser]: { id: hatchedBuddy.id, hatchedAt: Date.now() } }));
+    setShowHatchModal(false);
+    await fetch("/api/buddies", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, buddyId: hatchedBuddy.id }),
+    });
+  };
+
+  const sendChat = async () => {
+    if (!chatInput.trim() || !currentUser) return;
+    const msg = { name: currentUser, message: chatInput.trim(), ts: Date.now() };
+    setChatMessages((prev) => [...prev, msg]);
+    setChatInput("");
+    setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, message: msg.message }),
+    });
+  };
+
+  const REACTION_EMOJIS = ["👍", "❤️", "😂", "🔥", "💀", "👀"];
+
+  const toggleReaction = async (ts: number, emoji: string) => {
+    if (!currentUser) return;
+    const key = String(ts);
+    // optimistic update
+    setReactions((prev) => {
+      const msgReactions = { ...(prev[key] ?? {}) };
+      const names = msgReactions[emoji] ?? [];
+      msgReactions[emoji] = names.includes(currentUser)
+        ? names.filter((n) => n !== currentUser)
+        : [...names, currentUser];
+      if (msgReactions[emoji].length === 0) delete msgReactions[emoji];
+      return { ...prev, [key]: msgReactions };
+    });
+    await fetch("/api/chat/reactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ts, emoji, name: currentUser }),
+    });
+  };
+
+  const handleGoHome = async () => {
+    if (!currentUser || goHomeRequested) return;
+    setGoHomeRequested(true);
+    await fetch("/api/go-home", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser }),
+    });
+  };
+
+  const postMessage = async () => {
+    if (!newMessage.trim() || !currentUser) return;
+    const msg = { name: currentUser, message: newMessage.trim(), ts: Date.now() };
+    setMessages((prev) => [msg, ...prev.filter((m) => m.name !== currentUser)]);
+    setNewMessage("");
+    await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, message: msg.message }),
     });
   };
 
@@ -145,217 +441,722 @@ export default function Home() {
     setShowPicker(false);
   };
 
+  const handlePhotoUpload = async (file: File) => {
+    if (!currentUser) return;
+    setUploadingPhoto(true);
+    const form = new FormData();
+    form.append("name", currentUser);
+    form.append("file", file);
+    const res = await fetch("/api/photos", { method: "POST", body: form });
+    const data = await res.json();
+    if (data.url) setPhotoOverrides((prev) => ({ ...prev, [currentUser]: data.url }));
+    setUploadingPhoto(false);
+  };
+
+  const submitFeedback = async () => {
+    if (!feedbackText.trim()) return;
+    await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, message: feedbackText.trim() }),
+    });
+    setFeedbackText("");
+    setFeedbackSent(true);
+    setTimeout(() => {
+      setFeedbackSent(false);
+      setShowFeedback(false);
+    }, 2000);
+  };
+
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
   });
 
-  return (
-    <div className="min-h-screen px-5 py-14">
-      <div className="max-w-[520px] mx-auto">
-        {/* Header */}
-        <div className="text-center mb-14">
-          <h1
-            className="text-[clamp(2.2rem,7vw,3.5rem)] leading-[1.1] tracking-tight mb-3"
-            style={{ fontFamily: "var(--font-display)" }}
-          >
-            <span className="font-extrabold">Team Temp</span>
-            <br />
-            <span className="font-extrabold">Check</span>
-            <span className="inline-block ml-2 animate-bounce-in" style={{ animationDelay: "0.3s" }}>
-              🍳
+  const myMember = MEMBERS.find((m) => m.name === currentUser);
+  const teamMembers = sortedMembers.filter((m) => m.name !== currentUser);
+
+  const renderBuddyBadge = (buddyId: string) => {
+    const buddy = getBuddyById(buddyId);
+    if (!buddy) return null;
+    const styles = RARITY_STYLES[buddy.rarity];
+    return (
+      <div className="flex flex-col items-center" title={`${buddy.name} — ${buddy.tagline}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`/buddies/${buddy.id}.png`} alt={buddy.name} className="w-10 h-10 object-contain" />
+        <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: styles.text === "#ffffff" ? "#3D52F0" : "#1a1a1a" }}>{buddy.name}</span>
+      </div>
+    );
+  };
+
+  const renderMyCard = (member: typeof MEMBERS[0]) => {
+    const value = statuses[member.name] ?? 50;
+    const level = getLevel(value);
+    const isOOO = !!oooStatuses[member.name];
+    const isSOS = !!sosStatuses[member.name];
+
+    return (
+      <div
+        className={`rounded-[1.4rem] px-6 py-6 border-[4px] transition-all ${
+          isOOO ? "border-black opacity-50"
+          : isSOS ? "border-black shadow-[6px_6px_0_#e74c3c] hover:-translate-y-1 hover:shadow-[9px_9px_0_#e74c3c]"
+          : "border-black shadow-[6px_6px_0_#000] hover:-translate-y-1 hover:shadow-[9px_9px_0_#000]"
+        }`}
+        style={{ background: "#ffffff", position: "relative", overflow: "hidden" }}
+      >
+        {/* Staleness gradient */}
+        {!isOOO && (() => { const t = getStaleness(updatedAt[member.name]); return t > 0 ? (
+          <div className="absolute inset-x-0 bottom-0 pointer-events-none" style={{ height: "70%", background: `linear-gradient(to top, rgba(140,90,30,${0.3 + t * 0.6}) 0%, transparent 100%)`, zIndex: 0 }} />
+        ) : null; })()}
+        {/* Avatar + name row */}
+        <div className="flex items-center gap-4 mb-5">
+          <label className="relative cursor-pointer group shrink-0" title="Click to update photo">
+            <Image
+              src={photoOverrides[member.name] ?? member.photo}
+              alt={member.name} width={72} height={72}
+              className={`rounded-full object-cover border-[4px] border-black w-[72px] h-[72px] transition-opacity ${uploadingPhoto ? "opacity-40" : "group-hover:opacity-70"}`}
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-lg opacity-0 group-hover:opacity-100 transition-opacity">
+              {uploadingPhoto ? "⏳" : "📷"}
             </span>
-          </h1>
-          <p className="text-[20px] text-[#8a857d] font-semibold">
-            {today}
-          </p>
+            <input type="file" accept="image/*" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f); e.target.value = ""; }}
+            />
+          </label>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-2xl font-bold leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest bg-black text-white px-2 py-0.5 rounded-full">you</span>
+            </div>
+            {updatedAt[member.name] && (
+              <>
+                <p className="text-[11px] text-[#7a6f64] font-semibold mt-0.5 italic">{timeAgo(updatedAt[member.name])}</p>
+                {!isOOO && updatedAt[member.name] && (Date.now() - updatedAt[member.name]) > 48 * 60 * 60 * 1000 && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="text-3xl leading-none">💩</span>
+                    <span className="fly-buzz text-xl">🪰</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          {isOOO ? (
+            <span className="text-sm font-bold px-3 py-1.5 rounded-full bg-[#e5e1dc] text-[#8a857d] border-2 border-black shrink-0">👻</span>
+          ) : isSOS ? (
+            <span className="text-2xl animate-pulse shrink-0">🚨</span>
+          ) : BUDDIES_ENABLED && buddies[member.name] ? (
+            <div className="shrink-0 flex items-center gap-2">
+              {renderBuddyBadge(buddies[member.name].id)}
+              <span className="text-4xl emoji-hover cursor-default">{EMOJIS[level]}</span>
+            </div>
+          ) : (
+            <span className="text-4xl emoji-hover cursor-default shrink-0">{EMOJIS[level]}</span>
+          )}
         </div>
 
-        {/* User pill */}
-        {currentUser && (
-          <div className="flex justify-center mb-10">
-            <button
-              onClick={() => setShowPicker(true)}
-              className="hover-wiggle inline-flex items-center gap-2.5 pl-1.5 pr-5 py-1.5 rounded-full border-[3px] border-[#2d2a26] bg-white font-semibold text-sm cursor-pointer transition-transform active:scale-95"
-            >
-              <Image
-                src={MEMBERS.find((m) => m.name === currentUser)?.photo || ""}
-                alt={currentUser}
-                width={32}
-                height={32}
-                className="rounded-full object-cover w-8 h-8"
-              />
-              {currentUser}
-              <span className="text-[#b5b0a8] text-xs">switch</span>
+
+        {isOOO ? (
+          <div className="w-full rounded-xl bg-[#e5e1dc] border-2 border-black px-3 py-3 flex flex-col gap-1.5">
+            {oooDetails[member.name]?.note && <p className="text-xs text-[#6b6560] font-medium">💬 {oooDetails[member.name].note}</p>}
+            {oooDetails[member.name]?.backDate && <p className="text-xs text-[#6b6560] font-medium">📅 Back {oooDetails[member.name].backDate}</p>}
+            <button onClick={() => toggleOOO(member.name)} className="text-sm text-black font-bold hover:underline cursor-pointer text-center mt-1">
+              I&apos;m back fr ✌️
             </button>
           </div>
-        )}
-
-        {/* Loading */}
-        {!loaded ? (
-          <p className="text-center text-[#b5b0a8] text-lg animate-pulse">
-            loading the vibes...
-          </p>
-        ) : (
-          <div className="flex flex-col gap-5">
-            {sortedMembers.map((member, i) => {
-              const value = statuses[member.name] ?? 50;
-              const level = getLevel(value);
-              const isMe = currentUser === member.name;
-              const isOOO = !!oooStatuses[member.name];
-
-              return (
-                <div
-                  key={member.name}
-                  className="animate-pop-in"
-                  style={{ animationDelay: `${i * 60}ms` }}
-                >
-                  <div
-                    className={`rounded-[1.4rem] px-6 py-5 border-[3px] transition-all ${
-                      isOOO
-                        ? "border-[#d9d4cc] opacity-65"
-                        : isMe
-                        ? "border-[#2d2a26] shadow-[4px_4px_0_#2d2a26]"
-                        : "border-[#d9d4cc]"
-                    }`}
-                    style={{
-                      background: isOOO ? "var(--card-ghost)" : CARD_BGS[level],
-                    }}
-                  >
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={member.photo}
-                          alt={member.name}
-                          width={50}
-                          height={50}
-                          className={`rounded-full object-cover w-[50px] h-[50px] border-[3px] border-[#2d2a26] ${
-                            isOOO ? "grayscale opacity-50" : ""
-                          }`}
-                        />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="text-lg font-bold"
-                              style={{ fontFamily: "var(--font-display)" }}
-                            >
-                              {member.name}
-                            </span>
-                            {isMe && (
-                              <span className="text-[10px] font-bold uppercase tracking-widest bg-[#2d2a26] text-white px-2 py-0.5 rounded-full">
-                                you
-                              </span>
-                            )}
-                          </div>
-                          {updatedAt[member.name] && (
-                            <p className="text-[11px] text-[#b5b0a8] font-medium mt-0.5">
-                              updated {timeAgo(updatedAt[member.name])}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {isOOO ? (
-                        <span className="text-sm font-bold px-3 py-1.5 rounded-full bg-[#e5e1dc] text-[#8a857d] border-2 border-[#d9d4cc]">
-                          👻 Ghost Mode
-                        </span>
-                      ) : (
-                        <span className="text-2xl hover-wiggle cursor-default" title={LABELS[level]}>
-                          {EMOJIS[level]}
-                        </span>
-                      )}
-                    </div>
-
-                    {isOOO ? (
-                      <div className="w-full h-11 rounded-xl bg-[#e5e1dc] border-2 border-[#d9d4cc] flex items-center justify-center">
-                        {isMe && (
-                          <button
-                            onClick={() => toggleOOO(member.name)}
-                            className="text-sm text-[#2d2a26] font-bold hover:underline cursor-pointer"
-                          >
-                            I&apos;m back fr ✌️
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="range"
-                            min={0}
-                            max={100}
-                            value={value}
-                            disabled={!isMe}
-                            onChange={(e) =>
-                              handleSliderChange(
-                                member.name,
-                                Number(e.target.value)
-                              )
-                            }
-                            style={getTrackStyle(value, level)}
-                            className="flex-1"
-                          />
-                          <span
-                            className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white/60 border-2 border-[#2d2a26]/10 whitespace-nowrap min-w-[80px] text-center"
-                          >
-                            {LABELS[level]}
-                          </span>
-                        </div>
-                        {isMe && (
-                          <button
-                            onClick={() => toggleOOO(member.name)}
-                            className="mt-3 text-sm text-[#b5b0a8] hover:text-[#8a857d] cursor-pointer transition-colors font-semibold"
-                          >
-                            I&apos;m ghost 👻
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+        ) : isSOS ? (
+          <div className="w-full rounded-xl bg-[#e74c3c]/10 border-2 border-[#e74c3c]/30 px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-sm font-bold text-[#c0392b] animate-pulse">🔥 Burnt af. Send halp.</p>
+            <button onClick={() => toggleSOS(member.name)} className="text-xs font-bold text-[#c0392b] border-2 border-[#e74c3c]/40 rounded-lg px-3 py-1.5 hover:bg-[#e74c3c]/10 cursor-pointer transition-colors whitespace-nowrap">
+              I&apos;m OK now ✌️
+            </button>
           </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-3 mb-3">
+              <input
+                type="range" min={0} max={100} value={value}
+                onChange={(e) => handleSliderChange(member.name, Number(e.target.value))}
+                style={getTrackStyle(value, level)}
+                className="flex-1"
+              />
+              {value === 100 ? (
+                <button onClick={() => toggleSOS(member.name)} className="py-1.5 px-3 rounded-lg border-2 border-[#e74c3c] bg-[#e74c3c] text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap">
+                  halp
+                </button>
+              ) : (
+                <span className="text-xs font-extrabold px-2.5 py-1.5 rounded-lg bg-black text-white whitespace-nowrap min-w-[80px] text-center uppercase tracking-wide">
+                  {LABELS[level]}
+                </span>
+              )}
+            </div>
+            <input
+              type="text"
+              placeholder="add a note… (heads down, in the zone, free to vibe)"
+              value={editingNote}
+              onChange={(e) => setEditingNote(e.target.value)}
+              onBlur={() => saveNote(member.name, editingNote)}
+              onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }}
+              className="w-full text-xs font-medium text-black bg-white border-[3px] border-black rounded-xl px-3 py-2 focus:outline-none placeholder:text-[#b5b0a8] mb-3"
+              maxLength={80}
+            />
+            <button onClick={() => toggleOOO(member.name)} className="w-full py-2 rounded-xl border-[3px] border-black bg-white text-sm text-black cursor-pointer transition-all font-bold hover:bg-[#FFE234] shadow-[3px_3px_0_#000]">
+              👻 Going ghost
+            </button>
+          </>
         )}
       </div>
+    );
+  };
 
-      {/* Identity Picker */}
-      {showPicker && (
-        <div className="fixed inset-0 bg-[#2d2a26]/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="animate-bounce-in bg-[#fef9f0] border-[3px] border-[#2d2a26] rounded-[1.6rem] shadow-[6px_6px_0_#2d2a26] p-8 max-w-[420px] w-[92%]">
-            <div className="text-center mb-7">
-              <div className="text-5xl mb-3">👋</div>
-              <h2
-                className="text-3xl font-extrabold tracking-tight"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                Who dis?
-              </h2>
-              <p className="text-sm text-[#b5b0a8] mt-1 font-medium">
-                pick yourself bestie
-              </p>
+  const renderTeamCard = (member: typeof MEMBERS[0], i: number) => {
+    const value = statuses[member.name] ?? 50;
+    const level = getLevel(value);
+    const isOOO = !!oooStatuses[member.name];
+    const isSOS = !!sosStatuses[member.name];
+
+    return (
+      <div
+        key={member.name}
+        className={`animate-pop-in rounded-2xl px-4 py-4 border-[4px] transition-all flex flex-col gap-2 relative group cursor-default ${
+          isOOO ? "border-black hover:-translate-y-1"
+          : isSOS ? "border-black shadow-[5px_5px_0_#e74c3c] hover:-translate-y-1 hover:shadow-[8px_8px_0_#e74c3c]"
+          : "border-black shadow-[5px_5px_0_#000] hover:-translate-y-1 hover:shadow-[8px_8px_0_#000]"
+        }`}
+        style={{
+          animationDelay: `${i * 50}ms`,
+          background: "#ffffff",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Staleness gradient */}
+        {!isOOO && (() => { const t = getStaleness(updatedAt[member.name]); return t > 0 ? (
+          <div className="absolute inset-x-0 bottom-0 pointer-events-none" style={{ height: "70%", background: `linear-gradient(to top, rgba(140,90,30,${0.3 + t * 0.6}) 0%, transparent 100%)`, zIndex: 0 }} />
+        ) : null; })()}
+        {isOOO && (
+          <>
+            <div className="absolute inset-0 flex items-start justify-center pointer-events-none z-10" style={{ paddingTop: "18px" }}>
+              <Image
+                src="/spirit.png"
+                alt="ghost mode"
+                width={537}
+                height={74}
+                className="w-[115%] h-auto opacity-90"
+                style={{ transform: "rotate(-8deg)" }}
+              />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {MEMBERS.map((member) => (
-                <button
-                  key={member.name}
-                  onClick={() => pickUser(member.name)}
-                  className="hover-wiggle flex items-center gap-3 px-4 py-3.5 border-[3px] border-[#d9d4cc] rounded-2xl bg-white hover:border-[#2d2a26] hover:shadow-[3px_3px_0_#2d2a26] transition-all cursor-pointer text-[15px] font-bold active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-                >
-                  <Image
-                    src={member.photo}
-                    alt={member.name}
-                    width={42}
-                    height={42}
-                    className="rounded-full object-cover w-[42px] h-[42px] border-2 border-[#2d2a26]"
-                  />
-                  {member.name}
-                </button>
-              ))}
+            <div className="absolute bottom-3 right-3 z-20">
+              <span className="text-[13px] font-extrabold text-black" style={{ fontFamily: "var(--font-display)" }}>
+                {member.name}
+              </span>
             </div>
+          </>
+        )}
+        <div className={`flex flex-col gap-2 ${isOOO ? "opacity-30 grayscale" : ""}`}>
+          <div className="flex items-center gap-3">
+            <Image
+              src={photoOverrides[member.name] ?? member.photo}
+              alt={member.name} width={44} height={44}
+              className="rounded-full object-cover border-[3px] border-black w-[44px] h-[44px] shrink-0 transition-transform group-hover:scale-110"
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-extrabold text-xl leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</p>
+              {updatedAt[member.name] && (
+                <>
+                  <p className="text-[12px] text-black font-mono mt-0.5">{timeAgo(updatedAt[member.name])}</p>
+                  {!isOOO && getStaleness(updatedAt[member.name]) > 0 && (
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className="text-3xl leading-none">💩</span>
+                      <span className="fly-buzz text-xl">🪰</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            {isSOS ? (
+              <span className="text-xl animate-pulse shrink-0">🚨</span>
+            ) : BUDDIES_ENABLED && buddies[member.name] ? (
+              <div className="shrink-0 flex items-center gap-2">
+                {renderBuddyBadge(buddies[member.name].id)}
+                <span className="text-4xl emoji-hover cursor-default">{EMOJIS[level]}</span>
+              </div>
+            ) : (
+              <span className="text-4xl emoji-hover cursor-default shrink-0">{EMOJIS[level]}</span>
+            )}
+          </div>
+
+          {!isSOS && (
+            <div className="flex flex-col gap-1.5">
+              <div className="h-3 rounded-full bg-black/10 overflow-hidden border-[2px] border-black">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${value}%`, background: TRACK_COLORS[level] }}
+                />
+              </div>
+              <p className="text-sm font-extrabold text-black uppercase tracking-widest" style={{ fontFamily: "var(--font-display)" }}>{LABELS[level]}</p>
+              {statusNotes[member.name] && (
+                <p className="text-[12px] text-black font-medium font-mono leading-snug">
+                  {statusNotes[member.name]}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const tickerSpeed = 120;
+  const tickerDuration = tickerTextWidth ? tickerTextWidth / tickerSpeed : 0;
+  const urgentDuration = urgentTickerWidth ? urgentTickerWidth / tickerSpeed : 0;
+  const broadcastIsUrgent = broadcast?.type === "urgent";
+  const broadcastBg = broadcastIsUrgent ? "#e74c3c" : "#FF9DC8";
+  const broadcastBorder = broadcastIsUrgent ? "#FFE234" : "#000";
+  const broadcastTextColor = broadcastIsUrgent ? "#fff" : "#000";
+  const broadcastTextStroke = broadcastIsUrgent ? "0.5px #fff" : "none";
+  const broadcastText = broadcast ? broadcast.message.toUpperCase() : "";
+
+  return (
+    <>
+      {/* Banner — broadcast (pink or red scrolling) or normal ticker (yellow) */}
+      {broadcast && (
+        <div style={{ width: "100%", overflow: "hidden", background: broadcastBg, borderBottom: `4px solid ${broadcastBorder}`, height: "50px", position: "relative", zIndex: 10 }}>
+          <div style={{
+            display: "flex", alignItems: "center", height: "100%",
+            ...(urgentDuration > 0 ? { animation: `ticker-scroll ${urgentDuration}s linear infinite`, ["--ticker-text-width" as string]: urgentTickerWidth } : {}),
+            willChange: "transform",
+          }}>
+            <div ref={urgentTickerRef} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
+              <div style={{ display: "flex", alignItems: "center", padding: "0 48px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: "20px", fontWeight: 900, color: broadcastTextColor, letterSpacing: "0.12em", fontFamily: "var(--font-display)", WebkitTextStroke: broadcastTextStroke }}>{broadcastText}</span>
+              </div>
+            </div>
+            {Array.from({ length: urgentTickerCopies }).map((_, ci) => (
+              <div key={ci} style={{ display: "flex", alignItems: "center", padding: "0 48px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: "20px", fontWeight: 900, color: broadcastTextColor, letterSpacing: "0.12em", fontFamily: "var(--font-display)", WebkitTextStroke: broadcastTextStroke }}>{broadcastText}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
-    </div>
+      {!broadcast && messages.length > 0 && (
+        <div style={{ width: "100%", overflow: "hidden", background: "#FFE234", borderBottom: "4px solid #000", height: "50px", position: "relative", zIndex: 10 }}>
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            height: "100%",
+            ...(tickerDuration > 0 ? {
+              animation: `ticker-scroll ${tickerDuration}s linear infinite`,
+              ["--ticker-text-width" as string]: tickerTextWidth,
+            } : {}),
+            willChange: "transform",
+          }}>
+            <div ref={tickerTextRef} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
+              {messages.map((msg, i) => (
+                <TickerItem key={i} msg={msg} photo={photoOverrides[msg.name] ?? (MEMBERS.find(m => m.name === msg.name)?.photo ?? "")} />
+              ))}
+            </div>
+            {Array.from({ length: tickerCopies }).map((_, ci) => (
+              <div key={ci} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
+                {messages.map((msg, i) => (
+                  <TickerItem key={i} msg={msg} photo={photoOverrides[msg.name] ?? (MEMBERS.find(m => m.name === msg.name)?.photo ?? "")} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="min-h-screen px-4 sm:px-8 py-6 sm:py-8">
+        <div className="max-w-[1280px] mx-auto">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-6 sm:mb-8">
+            <span className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>
+              Vibe Check 👁️👄👁️
+            </span>
+            {/* Home button — only shown when user is selected */}
+            {loaded && currentUser && (
+              <button
+                onClick={handleGoHome}
+                disabled={goHomeRequested}
+                title={goHomeRequested ? "Request sent!" : "I want to go home"}
+                className={`transition-all cursor-pointer ${goHomeRequested ? "scale-95" : "hover:scale-110 hover:rotate-6"}`}
+              >
+                <Image src="/home.png" alt="I want to go home" width={80} height={80} className="rounded-full" />
+              </button>
+            )}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <span className="text-lg sm:text-2xl font-extrabold text-white" style={{ fontFamily: "var(--font-display)" }}>{today}</span>
+              <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#3CB55A] animate-pulse inline-block" />
+                v{process.env.NEXT_PUBLIC_APP_VERSION}
+              </div>
+              <button
+                onClick={() => setShowFeedback(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FF9DC8] text-[11px] font-bold text-black hover:bg-[#FFE234] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]"
+              >
+                💬 Feedback
+              </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Message input strip */}
+          {loaded && currentUser && (
+            <div className="mb-7">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    const suggestions = getSuggestions(currentUser);
+                    setNewMessage(suggestions[suggestionIdx % suggestions.length]);
+                    setSuggestionIdx((i) => i + 1);
+                  }}
+                  className="px-3 py-2.5 rounded-xl border-[3px] border-black bg-white hover:bg-[#FFE234] transition-colors cursor-pointer shrink-0 shadow-[3px_3px_0_#000] text-2xl leading-none"
+                  title="Get a suggestion"
+                >
+                  🍵
+                </button>
+                <input
+                  type="text"
+                  placeholder="drop the tea…"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") postMessage(); }}
+                  maxLength={120}
+                  className="flex-1 text-base font-bold text-black bg-white border-[3px] border-black rounded-xl px-4 py-2.5 focus:outline-none shadow-[3px_3px_0_#000] placeholder:text-[#b5b0a8] placeholder:font-normal"
+                />
+                <button
+                  onClick={postMessage}
+                  disabled={!newMessage.trim()}
+                  className="px-4 py-2.5 rounded-xl bg-[#FFE234] border-[3px] border-black text-black text-sm font-bold shadow-[3px_3px_0_#000] disabled:opacity-30 disabled:cursor-default hover:bg-[#FF9DC8] transition-all cursor-pointer shrink-0 active:translate-y-[2px] active:shadow-none"
+                >
+                  drop it ✦
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Loading */}
+          {!loaded ? (
+            <p className="text-center text-white/60 text-lg animate-pulse">
+              loading the vibes...
+            </p>
+          ) : (
+            <>
+              <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
+                {/* Left: My card */}
+                {myMember && (
+                  <div className="animate-pop-in w-full md:w-[320px] md:shrink-0 md:sticky md:top-8">
+                    {renderMyCard(myMember)}
+                  </div>
+                )}
+                {/* Right: Team grid */}
+                <div className="flex-1 min-w-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {teamMembers.map((member, i) => renderTeamCard(member, i))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Team Chat */}
+              {currentUser && (
+                <div className="mt-8 border-[3px] border-black rounded-[1.4rem] bg-white shadow-[5px_5px_0_#000] overflow-hidden">
+                  {/* Chat header */}
+                  <div className="flex items-center gap-2 px-5 py-3 bg-[#3D52F0] border-b-[3px] border-black">
+                    <span className="text-lg font-extrabold text-white" style={{ fontFamily: "var(--font-display)" }}>team chat 💬</span>
+                    <span className="ml-auto text-xs font-bold text-white/70">{chatMessages.length} messages</span>
+                  </div>
+
+                  {/* Messages */}
+                  <div className="h-[400px] overflow-y-auto p-5 flex flex-col gap-3 bg-[#f7f7f5]">
+                    {chatMessages.length === 0 && (
+                      <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
+                        <div className="text-4xl mb-2">💬</div>
+                        <p className="text-sm font-bold text-[#888]">no messages yet. break the ice.</p>
+                      </div>
+                    )}
+                    {chatMessages.map((msg, i) => {
+                      const isMe = msg.name === currentUser;
+                      const member = MEMBERS.find((m) => m.name === msg.name);
+                      const photo = photoOverrides[msg.name] ?? member?.photo ?? "";
+                      const showName = i === 0 || chatMessages[i - 1]?.name !== msg.name;
+                      const msgReactions = reactions[String(msg.ts)] ?? {};
+                      const hasReactions = Object.keys(msgReactions).length > 0;
+                      const isHovered = hoveredMsg === msg.ts;
+                      return (
+                        <div key={i}
+                          className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}
+                          onMouseEnter={() => setHoveredMsg(msg.ts)}
+                          onMouseLeave={() => setHoveredMsg(null)}
+                        >
+                          <div className="w-8 h-8 shrink-0">
+                            {photo && (
+                              <Image src={photo} alt={msg.name} width={32} height={32}
+                                className="rounded-full object-cover w-8 h-8 border-2 border-black" />
+                            )}
+                          </div>
+                          <div className={`flex flex-col gap-0.5 max-w-[70%] ${isMe ? "items-end" : "items-start"}`}>
+                            {showName && (
+                              <span className="text-[10px] font-black uppercase tracking-wider text-[#888] px-1">{msg.name}</span>
+                            )}
+                            <div className="relative">
+                              <div className={`px-3 py-2 rounded-2xl border-[2px] border-black text-sm font-medium leading-snug ${
+                                isMe
+                                  ? "bg-[#FFE234] rounded-br-sm shadow-[2px_2px_0_#000]"
+                                  : "bg-white rounded-bl-sm shadow-[2px_2px_0_#000]"
+                              }`}>
+                                {msg.message}
+                              </div>
+                              {/* Emoji picker on hover */}
+                              {isHovered && currentUser && (
+                                <div className={`absolute top-[-32px] ${isMe ? "right-0" : "left-0"} flex gap-1 bg-white border-[2px] border-black rounded-xl px-1.5 py-1 shadow-[2px_2px_0_#000] z-10`}>
+                                  {REACTION_EMOJIS.map((e) => (
+                                    <button key={e} onClick={() => toggleReaction(msg.ts, e)}
+                                      className={`text-base leading-none hover:scale-125 transition-transform cursor-pointer rounded px-0.5 ${(msgReactions[e] ?? []).includes(currentUser) ? "bg-[#FFE234]" : ""}`}
+                                    >{e}</button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {/* Reaction pills */}
+                            {hasReactions && (
+                              <div className={`flex flex-wrap gap-1 px-1 ${isMe ? "justify-end" : "justify-start"}`}>
+                                {Object.entries(msgReactions).map(([emoji, names]) => (
+                                  <button key={emoji} onClick={() => toggleReaction(msg.ts, emoji)}
+                                    className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full border-[2px] border-black cursor-pointer transition-colors ${
+                                      names.includes(currentUser ?? "") ? "bg-[#FFE234]" : "bg-white hover:bg-[#f5f2ee]"
+                                    }`}
+                                    title={names.join(", ")}
+                                  >
+                                    <span>{emoji}</span>
+                                    {names.length > 1 && <span className="font-bold text-[10px]">{names.length}</span>}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <span className="text-[9px] text-[#aaa] px-1">{timeAgo(msg.ts)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={chatBottomRef} />
+                  </div>
+
+                  {/* Input */}
+                  <div className="px-4 py-3 border-t-[3px] border-black bg-white">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") sendChat(); }}
+                        placeholder="say something…"
+                        maxLength={300}
+                        className="flex-1 bg-[#f7f7f5] border-[2px] border-black rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none placeholder:text-[#bbb] shadow-[2px_2px_0_#000]"
+                      />
+                      <button
+                        onClick={sendChat}
+                        disabled={!chatInput.trim()}
+                        className="px-5 py-2.5 rounded-xl bg-[#3D52F0] border-[2px] border-black text-white text-sm font-bold shadow-[2px_2px_0_#000] disabled:opacity-30 hover:bg-[#2a3fd0] active:translate-y-[1px] active:shadow-none transition-all"
+                      >
+                        send
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Hatch Modal */}
+        {BUDDIES_ENABLED && showHatchModal && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[400px] w-[92%] flex flex-col items-center gap-4">
+              {hatchPhase === "egg" && (
+                <>
+                  <div className="text-7xl select-none">🥚</div>
+                  <h2 className="text-2xl font-extrabold text-center" style={{ fontFamily: "var(--font-display)" }}>your buddy is waiting</h2>
+                  <p className="text-sm text-[#8a857d] text-center">one-time hatch. you get what you get. no trades.</p>
+                  <button
+                    onClick={crackEgg}
+                    className="mt-2 w-full py-3 rounded-2xl bg-[#FFE234] border-[3px] border-black font-extrabold text-base shadow-[4px_4px_0_#000] hover:bg-[#FF9DC8] transition-all cursor-pointer active:translate-y-[2px] active:shadow-none"
+                  >
+                    crack it open 🥚
+                  </button>
+                  <button onClick={() => setShowHatchModal(false)} className="text-sm text-[#b5b0a8] hover:text-black transition-colors cursor-pointer">
+                    not yet
+                  </button>
+                </>
+              )}
+
+              {hatchPhase === "cracking" && (
+                <div className="flex flex-col items-center gap-4 py-6">
+                  <div className="text-7xl animate-egg-crack select-none">🥚</div>
+                  <p className="text-base font-bold text-[#8a857d] animate-pulse">hatching…</p>
+                </div>
+              )}
+
+              {hatchPhase === "reveal" && hatchedBuddy && (() => {
+                const styles = RARITY_STYLES[hatchedBuddy.rarity];
+                return (
+                  <>
+                    <div
+                      className="w-full rounded-2xl border-[3px] border-black p-5 flex flex-col items-center gap-2 animate-buddy-flash shadow-[4px_4px_0_#000]"
+                      style={{ background: styles.bg }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`/buddies/${hatchedBuddy.id}.png`} alt={hatchedBuddy.name} className="w-28 h-28 object-contain" />
+                      <span className="text-2xl font-extrabold mt-1" style={{ color: styles.text, fontFamily: "var(--font-display)" }}>{hatchedBuddy.name}</span>
+                      <span className="text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border-[2px] border-black" style={{ color: styles.text }}>{styles.label}</span>
+                      <span className="text-sm font-medium italic text-center" style={{ color: styles.text }}>&ldquo;{hatchedBuddy.tagline}&rdquo;</span>
+                    </div>
+                    <button
+                      onClick={confirmHatch}
+                      className="w-full py-3 rounded-2xl bg-black text-white border-[3px] border-black font-extrabold text-base shadow-[4px_4px_0_#555] hover:opacity-90 transition-all cursor-pointer active:translate-y-[2px] active:shadow-none"
+                    >
+                      let&apos;s goooo 🔥
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* Ghost Modal */}
+        {showGhostModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
+              <div className="text-4xl mb-2 text-center">👻</div>
+              <h2 className="text-xl font-extrabold text-center mb-1" style={{ fontFamily: "var(--font-display)" }}>Going Ghost</h2>
+              <p className="text-sm text-[#8a857d] text-center mb-5">Let the team know what&apos;s up</p>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="text-xs font-bold text-[#6b6560] uppercase tracking-wide mb-1 block">What&apos;s the vibe?</label>
+                  <input
+                    type="text"
+                    placeholder="OOO, at a conference, touching grass…"
+                    value={ghostNote}
+                    onChange={(e) => setGhostNote(e.target.value)}
+                    className="w-full border-2 border-black rounded-xl px-3 py-2.5 text-sm font-medium bg-white focus:outline-none"
+                    maxLength={80}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-[#6b6560] uppercase tracking-wide mb-1 block">Back when?</label>
+                  <input
+                    type="text"
+                    placeholder="Monday, Jan 20, TBD…"
+                    value={ghostBackDate}
+                    onChange={(e) => setGhostBackDate(e.target.value)}
+                    className="w-full border-2 border-black rounded-xl px-3 py-2.5 text-sm font-medium bg-white focus:outline-none"
+                    maxLength={40}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowGhostModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border-2 border-black text-sm font-bold text-[#8a857d] hover:text-black transition-all cursor-pointer"
+                >
+                  nevermind
+                </button>
+                <button
+                  onClick={confirmGhost}
+                  className="flex-1 py-2.5 rounded-xl border-2 border-black bg-black text-sm font-bold text-white hover:bg-[#2d2a26] transition-all cursor-pointer"
+                >
+                  go ghost 👻
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Feedback Modal */}
+        {showFeedback && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
+              {feedbackSent ? (
+                <div className="text-center py-4">
+                  <div className="text-5xl mb-3">🙏</div>
+                  <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Thanks!</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between mb-1">
+                    <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>App feedback</h2>
+                    <button
+                      onClick={() => { setShowFeedback(false); setFeedbackText(""); }}
+                      className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5"
+                    >✕</button>
+                  </div>
+                  <p className="text-sm text-[#b5b0a8] mb-5 font-medium">what&apos;s working, what&apos;s not, ideas — all welcome</p>
+                  <textarea
+                    autoFocus
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitFeedback(); }}
+                    placeholder="type here..."
+                    rows={4}
+                    className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setShowFeedback(false); setFeedbackText(""); }}
+                      className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
+                    >nevermind</button>
+                    <button
+                      onClick={submitFeedback}
+                      disabled={!feedbackText.trim()}
+                      className="flex-1 py-3 rounded-2xl bg-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default"
+                    >send it ✉️</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Identity Picker */}
+        {showPicker && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
+              <div className="text-center mb-7">
+                <div className="text-5xl mb-3">👋</div>
+                <h2 className="text-3xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Who dis?</h2>
+                <p className="text-sm text-[#b5b0a8] mt-1 font-medium">pick yourself bestie</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {MEMBERS.map((member) => (
+                  <button
+                    key={member.name}
+                    onClick={() => pickUser(member.name)}
+                    className="hover-wiggle flex items-center gap-3 px-4 py-3.5 border-[3px] border-black rounded-2xl bg-white hover:bg-[#FFE234] hover:shadow-[3px_3px_0_#000] transition-all cursor-pointer text-[15px] font-bold active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                  >
+                    <Image
+                      src={photoOverrides[member.name] ?? member.photo}
+                      alt={member.name} width={42} height={42}
+                      className="rounded-full object-cover w-[42px] h-[42px] border-2 border-black"
+                    />
+                    {member.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      {/* Footer */}
+      <div style={{ width: "100%", background: "#FF9DC8", borderTop: "4px solid #000" }}>
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col sm:flex-row items-center gap-2 sm:gap-0 justify-between text-center sm:text-left">
+          <span className="text-base font-extrabold text-black" style={{ fontFamily: "var(--font-display)" }}>Vibe Check 👁️👄👁️</span>
+          <span className="text-sm font-bold text-black font-mono">track s&amp;a creative bandwidth. no cap.</span>
+          <span className="text-sm font-bold text-black">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
+        </div>
+      </div>
+    </>
   );
 }

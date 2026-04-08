@@ -15,7 +15,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Team Temp Check",
+  title: "Vibe Check 👁️👄👁️",
   description: "See how cooked your team is in real time. No cap.",
 };
 

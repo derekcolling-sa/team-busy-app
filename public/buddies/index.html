@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buddy Reference Sheet</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f2ee;
+      padding: 40px 24px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 36px;
+    }
+    .section {
+      margin-bottom: 40px;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 2px solid #000;
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+    .section-label.common   { background: #fff; color: #000; }
+    .section-label.uncommon { background: #3D52F0; color: #fff; }
+    .section-label.rare     { background: #FFE234; color: #000; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: #fff;
+      border: 3px solid #000;
+      border-radius: 16px;
+      box-shadow: 4px 4px 0 #000;
+      padding: 20px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .card img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      flex-shrink: 0;
+      border: 2px solid #eee;
+      border-radius: 10px;
+    }
+    .info { flex: 1; min-width: 0; }
+    .name {
+      font-size: 16px;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+    .tagline {
+      font-size: 11px;
+      color: #888;
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+    .prompt-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #aaa;
+      margin-bottom: 4px;
+    }
+    .prompt {
+      font-size: 11px;
+      color: #555;
+      line-height: 1.5;
+      background: #f5f2ee;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    /* Card preview */
+    .preview-section { margin-bottom: 48px; }
+    .preview-section h2 { font-size: 18px; font-weight: 900; margin-bottom: 16px; }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .mock-card {
+      background: #fff;
+      border: 4px solid #000;
+      border-radius: 22px;
+      box-shadow: 6px 6px 0 #000;
+      padding: 16px;
+    }
+    .mock-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .mock-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 3px solid #000;
+      background: #e5e1dc;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .mock-name {
+      flex: 1;
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .mock-updated {
+      font-size: 10px;
+      color: #aaa;
+      margin-top: 2px;
+      font-style: italic;
+    }
+    .buddy-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .buddy-badge img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+    .buddy-badge .buddy-name {
+      font-size: 8px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+      color: #1a1a1a;
+    }
+    .buddy-badge.uncommon .buddy-name { color: #3D52F0; }
+    .mock-bar-wrap {
+      height: 8px;
+      background: #e8e4de;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .mock-bar {
+      height: 100%;
+      border-radius: 999px;
+    }
+    .mock-label {
+      font-size: 10px;
+      font-weight: 800;
+      color: #8a857d;
+      text-align: right;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🥚 Buddy Reference Sheet</h1>
+<p class="subtitle">All 15 buddies — images, names, and generation prompts</p>
+
+<div class="preview-section">
+  <h2>👆 Card Preview</h2>
+  <div style="max-width:320px">
+    <div class="mock-card">
+      <div class="mock-card-header">
+        <div class="mock-avatar">🧑</div>
+        <div style="flex:1">
+          <div class="mock-name">Nope</div>
+          <div class="mock-updated">3 mins ago no cap</div>
+        </div>
+        <div class="buddy-badge common">
+          <img src="nope.png" alt="Nope" />
+          <span class="buddy-name">Nope</span>
+        </div>
+      </div>
+      <div class="mock-bar-wrap"><div class="mock-bar" style="width:35%;background:#4a9eff"></div></div>
+      <div class="mock-label">Sautéed</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="section-label common">Common — 60%</span>
+  <div class="grid">
+    <div class="card">
+      <img src="crumbs.png" alt="Crumbs" />
+      <div class="info">
+        <div class="name">Crumbs</div>
+        <div class="tagline">"ate and left no crumbs"</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a tiny round mouse with crumbs on its cheeks, big happy grin, holding a cookie</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="glitch.png" alt="Glitch" />
+      <div class="info">
+        <div class="name">Glitch</div>
+        <div class="tagline">"currently experiencing a vibe error"</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a little blob ghost with pixelated glitch effect across its body, X-shaped eyes, static lines</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="beige.png" alt="Beige" />
+      <div class="info">
+        <div class="name">Beige</div>
+        <div class="tagline">"painfully mid but make it chic"</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a flat bored cat with half-closed eyes and completely unimpressed expression, neutral beige coloring</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="yikes.png" alt="Yikes" />
+      <div class="info">
+        <div class="name">Yikes</div>
+        <div class="tagline">"sent it before proofreading again"</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a wide-eyed bunny with shocked expression, hands pressed to cheeks, mouth in a big O shape</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="nope.png" alt="Nope" />
+      <div class="info">
+        <div class="name">Nope</div>
+        <div class="tagline">"respectfully, no"</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a grumpy little frog with arms crossed tight, stern eyebrows, big frown, clearly done with everything</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="vibes.png" alt="Vibes" />
+      <div class="info">
+        <div class="name">Vibes</div>
+        <div class="tagline">"checking in. not doing much else."</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a chill round bear floating with tiny sparkles around it, soft sleepy half-lidded eyes, calm smile</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="section-label uncommon">Uncommon — 30%</span>
+  <div class="grid">
+    <div class="card">
+      <img src="delulu.png" alt="Delulu" />
+      <div class="info">
+        <div class="name">Delulu</div>
+        <div class="tagline">"the solulu is the delulu"</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a dreamy unicorn chibi with heart-shaped eyes, flower crown, little swirly hearts floating around it</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="rizz.png" alt="Rizz" />
+      <div class="info">
+        <div class="name">Rizz</div>
+        <div class="tagline">"effortless. always."</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a suave cool cat wearing tiny sunglasses, confident smirk, one eyebrow raised, effortlessly posing</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="slay.png" alt="Slay" />
+      <div class="info">
+        <div class="name">Slay</div>
+        <div class="tagline">"ate. left crumbs intentionally."</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a fierce little dragon with claws up, sharp confident eyes, tiny crown, surrounded by gold stars</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="lowkey.png" alt="Lowkey" />
+      <div class="info">
+        <div class="name">Lowkey</div>
+        <div class="tagline">"unbothered. moisturized. in my lane."</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a calm unbothered bunny holding a tiny coffee cup, neutral expression, cozy sweater</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="era.png" alt="Era" />
+      <div class="info">
+        <div class="name">Era</div>
+        <div class="tagline">"currently in my main character era"</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a sparkly star-shaped character in a spotlight pose, jazz hands, surrounded by confetti</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="section-label rare">✦ Rare — 10%</span>
+  <div class="grid">
+    <div class="card">
+      <img src="bussin.png" alt="Bussin" />
+      <div class="info">
+        <div class="name">Bussin</div>
+        <div class="tagline">"no notes. bussin bussin."</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a euphoric little character with the biggest smile, arms wide open, stars and sparkles everywhere</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="ghost.png" alt="Ghost" />
+      <div class="info">
+        <div class="name">Ghost</div>
+        <div class="tagline">"left the chat. thriving."</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a cool ghost wearing tiny sunglasses, floating casually, one hand raised in a peace sign</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="cooked.png" alt="Cooked" />
+      <div class="info">
+        <div class="name">Cooked</div>
+        <div class="tagline">"fully cooked. and yet — icon."</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a frazzled exhausted character with steam coming off its head, wide spiral eyes, flipping a tiny table</div>
+      </div>
+    </div>
+    <div class="card">
+      <img src="goat.png" alt="GOAT" />
+      <div class="info">
+        <div class="name">GOAT</div>
+        <div class="tagline">"greatest of all time. no debate."</div>
+        <div class="prompt-label">Prompt</div>
+        <div class="prompt">a confident little goat standing proudly wearing a champion crown, chest puffed out, gold trophy beside it</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
