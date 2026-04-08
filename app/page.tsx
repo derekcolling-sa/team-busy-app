@@ -148,6 +148,7 @@ export default function Home() {
   const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
   const [hoveredMsg, setHoveredMsg] = useState<number | null>(null);
   const [goHomeRequested, setGoHomeRequested] = useState(false);
+  const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number }[]>([]);
   const [buddies, setBuddies] = useState<Record<string, { id: string; hatchedAt: number }>>({});
   const [showHatchModal, setShowHatchModal] = useState(false);
   const [hatchedBuddy, setHatchedBuddy] = useState<Buddy | null>(null);
@@ -164,7 +165,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -174,8 +175,9 @@ export default function Home() {
         fetch("/api/chat"),
         fetch("/api/buddies"),
         fetch("/api/chat/reactions"),
+        fetch("/api/go-home"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -185,6 +187,7 @@ export default function Home() {
         chatRes.json(),
         buddiesRes.json(),
         reactionsRes.json(),
+        goHomeRes.json(),
       ]);
       setStatuses(statusData.status);
       setUpdatedAt(statusData.updated);
@@ -200,6 +203,7 @@ export default function Home() {
       setChatMessages(chatData.messages ?? []);
       setBuddies(buddiesData.buddies ?? {});
       setReactions(reactionsData.reactions ?? {});
+      setGoHomeRequests(goHomeData.requests ?? []);
     } catch {
       // retry next poll
     } finally {
@@ -802,6 +806,30 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          {/* Go Home Requests */}
+          {goHomeRequests.length > 0 && (
+            <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
+              <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
+                <Image src="/home.png" alt="home" width={40} height={40} className="w-10 h-10 rounded-full" />
+                <h2 className="text-lg font-extrabold text-black tracking-tight flex-1">Wants to go home</h2>
+                <span className="text-[11px] font-bold bg-black text-white px-2.5 py-1 rounded-full">{goHomeRequests.length}</span>
+              </div>
+              <div className="flex flex-wrap gap-3 px-5 py-4">
+                {goHomeRequests.map((r) => (
+                  <div key={r.name} className="flex items-center gap-2 bg-white border-[3px] border-black rounded-2xl px-3 py-2 shadow-[3px_3px_0_#000]">
+                    <Image
+                      src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
+                      alt={r.name} width={28} height={28}
+                      className="rounded-full object-cover w-7 h-7 border-2 border-black flex-shrink-0"
+                    />
+                    <span className="font-extrabold text-sm">{r.name}</span>
+                    <span className="text-[10px] text-[#8a857d]">{timeAgo(r.ts)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Message input strip */}
           {loaded && currentUser && (
