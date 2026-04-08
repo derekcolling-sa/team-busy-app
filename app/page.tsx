@@ -545,7 +545,7 @@ export default function Home() {
             <span className="text-sm font-bold px-3 py-1.5 rounded-full bg-[#e5e1dc] text-[#8a857d] border-2 border-black shrink-0">👻</span>
           ) : isSOS ? (
             <span className="text-2xl animate-pulse shrink-0">🚨</span>
-          ) : BUDDIES_ENABLED && buddies[member.name] ? (
+          ) : BUDDIES_ENABLED && buddies[member.name] && member.name === currentUser ? (
             <div className="shrink-0 flex items-center gap-2">
               {renderBuddyBadge(buddies[member.name].id)}
               <span className="text-4xl emoji-hover cursor-default">{EMOJIS[level]}</span>
@@ -676,7 +676,7 @@ export default function Home() {
             </div>
             {isSOS ? (
               <span className="text-xl animate-pulse shrink-0">🚨</span>
-            ) : BUDDIES_ENABLED && buddies[member.name] ? (
+            ) : BUDDIES_ENABLED && buddies[member.name] && member.name === currentUser ? (
               <div className="shrink-0 flex items-center gap-2">
                 {renderBuddyBadge(buddies[member.name].id)}
                 <span className="text-4xl emoji-hover cursor-default">{EMOJIS[level]}</span>
