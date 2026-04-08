@@ -326,6 +326,10 @@ export async function setMemberBuddy(name: string, id: string): Promise<void> {
   await redis.hset(BUDDIES_KEY, { [name]: JSON.stringify(assignment) });
 }
 
+export async function clearMemberBuddy(name: string): Promise<void> {
+  await redis.hdel(BUDDIES_KEY, name);
+}
+
 const URGENT_KEY = "team-busy-urgent";
 
 export type BroadcastType = "urgent" | "broadcast";

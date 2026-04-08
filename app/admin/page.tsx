@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
-import { getBuddyById, RARITY_STYLES, BUDDIES } from "@/lib/buddies";
+import { getBuddyById, getBuddyImagePath, RARITY_STYLES, BUDDIES } from "@/lib/buddies";
 
 const BUDDIES_ENABLED = true;
 
@@ -504,7 +504,7 @@ export default function AdminPage() {
                         <div className="shrink-0 flex items-center gap-2">
                           <div className="flex flex-col items-center" title={`${buddy.name} — ${buddy.tagline}`}>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={`/buddies/${buddy.id}.png`} alt={buddy.name} className="w-10 h-10 object-contain" />
+                            <img src={getBuddyImagePath(buddy)} alt={buddy.name} className="w-10 h-10 object-contain" />
                             <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: styles?.text === "#ffffff" ? "#3D52F0" : "#1a1a1a" }}>{buddy.name}</span>
                           </div>
                           <span className="text-4xl">{EMOJIS[level]}</span>
@@ -742,7 +742,7 @@ export default function AdminPage() {
                         {buddy && styles ? (
                           <div className="flex items-center gap-2">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={`/buddies/${buddy.id}.png`} alt={buddy.name} className="w-8 h-8 object-contain" />
+                            <img src={getBuddyImagePath(buddy)} alt={buddy.name} className="w-8 h-8 object-contain" />
                             <div className="flex flex-col items-end">
                               <span className="text-xs font-black">{buddy.name}</span>
                               <span
@@ -752,6 +752,18 @@ export default function AdminPage() {
                                 {styles.label}
                               </span>
                             </div>
+                            <button
+                              onClick={async () => {
+                                setBuddies((prev) => { const n = { ...prev }; delete n[member.name]; return n; });
+                                await fetch("/api/buddies", {
+                                  method: "DELETE",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ name: member.name }),
+                                });
+                              }}
+                              className="w-5 h-5 rounded-full bg-black/10 hover:bg-[#e74c3c] hover:text-white text-black text-[10px] font-bold flex items-center justify-center transition-colors cursor-pointer flex-shrink-0"
+                              title={`Reset ${member.name}'s buddy`}
+                            >↺</button>
                           </div>
                         ) : (
                           <span className="text-[11px] text-[#c5bfb8] italic">not hatched</span>
@@ -782,7 +794,7 @@ export default function AdminPage() {
                         {group.map((buddy) => (
                           <div key={buddy.id} className="flex flex-col items-center gap-1 p-2 rounded-xl border-[2px] border-black/10 hover:border-black transition-colors">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={`/buddies/${buddy.id}.png`} alt={buddy.name} className="w-16 h-16 object-contain" />
+                            <img src={getBuddyImagePath(buddy)} alt={buddy.name} className="w-16 h-16 object-contain" />
                             <span className="text-[11px] font-extrabold text-center leading-tight">{buddy.name}</span>
                             <span className="text-[9px] text-[#8a857d] text-center leading-tight italic">&ldquo;{buddy.tagline}&rdquo;</span>
                           </div>

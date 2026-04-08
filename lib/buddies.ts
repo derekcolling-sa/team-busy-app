@@ -5,7 +5,12 @@ export type Buddy = {
   name: string;
   rarity: Rarity;
   tagline: string;
+  ext?: string;
 };
+
+export function getBuddyImagePath(buddy: Buddy): string {
+  return `/buddies/${buddy.id}.${buddy.ext ?? "png"}`;
+}
 
 export const BUDDIES: Buddy[] = [
   // --- Common ---
@@ -14,7 +19,7 @@ export const BUDDIES: Buddy[] = [
   { id: "beige",   name: "Beige",   rarity: "common",   tagline: "painfully mid but make it chic" },
   { id: "yikes",   name: "Yikes",   rarity: "common",   tagline: "sent it before proofreading again" },
   { id: "nope",    name: "Nope",    rarity: "common",   tagline: "respectfully, no" },
-  { id: "vibes",   name: "Vibes",   rarity: "common",   tagline: "checking in. not doing much else." },
+  { id: "vibes",   name: "Vibes",   rarity: "common",   tagline: "checking in. not doing much else.", ext: "gif" },
   // --- Uncommon ---
   { id: "delulu",  name: "Delulu",  rarity: "uncommon", tagline: "the solulu is the delulu" },
   { id: "rizz",    name: "Rizz",    rarity: "uncommon", tagline: "effortless. always." },

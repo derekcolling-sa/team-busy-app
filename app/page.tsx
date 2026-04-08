@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
-import { rollBuddy, getBuddyById, RARITY_STYLES, type Buddy } from "@/lib/buddies";
+import { rollBuddy, getBuddyById, getBuddyImagePath, RARITY_STYLES, type Buddy } from "@/lib/buddies";
 
 const MEMBERS = [
   { name: "Brendan", photo: "/photos/Brendan.jpg" },
@@ -484,7 +484,7 @@ export default function Home() {
     return (
       <div className="flex flex-col items-center" title={`${buddy.name} — ${buddy.tagline}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`/buddies/${buddy.id}.png`} alt={buddy.name} className="w-10 h-10 object-contain" />
+        <img src={getBuddyImagePath(buddy)} alt={buddy.name} className="w-10 h-10 object-contain" />
         <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: styles.text === "#ffffff" ? "#3D52F0" : "#1a1a1a" }}>{buddy.name}</span>
       </div>
     );
@@ -1008,7 +1008,7 @@ export default function Home() {
                       style={{ background: styles.bg }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`/buddies/${hatchedBuddy.id}.png`} alt={hatchedBuddy.name} className="w-28 h-28 object-contain" />
+                      <img src={getBuddyImagePath(hatchedBuddy)} alt={hatchedBuddy.name} className="w-28 h-28 object-contain" />
                       <span className="text-2xl font-extrabold mt-1" style={{ color: styles.text, fontFamily: "var(--font-display)" }}>{hatchedBuddy.name}</span>
                       <span className="text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border-[2px] border-black" style={{ color: styles.text }}>{styles.label}</span>
                       <span className="text-sm font-medium italic text-center" style={{ color: styles.text }}>&ldquo;{hatchedBuddy.tagline}&rdquo;</span>
