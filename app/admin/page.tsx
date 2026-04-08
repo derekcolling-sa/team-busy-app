@@ -390,10 +390,21 @@ export default function AdminPage() {
           </h1>
           <p className="text-sm text-white/70 font-semibold mt-1">{today}</p>
         </div>
-        <span className="flex items-center gap-1.5 text-black bg-white border-[3px] border-black px-3 py-1.5 rounded-xl shadow-[3px_3px_0_#000] uppercase tracking-widest text-[11px] font-bold">
-          <span className="w-2 h-2 rounded-full bg-[#5cb85c] animate-pulse inline-block" />
-          live
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              await fetch("/api/reload", { method: "POST" });
+            }}
+            className="flex items-center gap-1.5 text-black bg-[#FFE234] border-[3px] border-black px-3 py-1.5 rounded-xl shadow-[3px_3px_0_#000] uppercase tracking-widest text-[11px] font-bold cursor-pointer hover:opacity-80 transition-opacity"
+            title="Force all clients to refresh"
+          >
+            🔄 Refresh all
+          </button>
+          <span className="flex items-center gap-1.5 text-black bg-white border-[3px] border-black px-3 py-1.5 rounded-xl shadow-[3px_3px_0_#000] uppercase tracking-widest text-[11px] font-bold">
+            <span className="w-2 h-2 rounded-full bg-[#5cb85c] animate-pulse inline-block" />
+            live
+          </span>
+        </div>
       </div>
 
       {!loaded && <p className="text-center text-white/60 text-lg animate-pulse">loading the vibes...</p>}

@@ -330,6 +330,17 @@ export async function clearMemberBuddy(name: string): Promise<void> {
   await redis.hdel(BUDDIES_KEY, name);
 }
 
+const RELOAD_KEY = "team-busy-reload";
+
+export async function getReloadSignal(): Promise<number> {
+  const val = await redis.get(RELOAD_KEY);
+  return typeof val === "number" ? val : 0;
+}
+
+export async function triggerReload(): Promise<void> {
+  await redis.set(RELOAD_KEY, Date.now());
+}
+
 const URGENT_KEY = "team-busy-urgent";
 
 export type BroadcastType = "urgent" | "broadcast";

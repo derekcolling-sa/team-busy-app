@@ -138,6 +138,7 @@ export default function Home() {
   const [updatedAt, setUpdatedAt] = useState<Record<string, number>>({});
   const [sortedMembers, setSortedMembers] = useState(MEMBERS);
   const [loaded, setLoaded] = useState(false);
+  const pageLoadTime = useRef(Date.now());
   const [photoOverrides, setPhotoOverrides] = useState<Record<string, string>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -165,7 +166,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -176,8 +177,9 @@ export default function Home() {
         fetch("/api/buddies"),
         fetch("/api/chat/reactions"),
         fetch("/api/go-home"),
+        fetch("/api/reload"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -188,7 +190,12 @@ export default function Home() {
         buddiesRes.json(),
         reactionsRes.json(),
         goHomeRes.json(),
+        reloadRes.json(),
       ]);
+      if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
+        window.location.reload();
+        return;
+      }
       setStatuses(statusData.status);
       setUpdatedAt(statusData.updated);
       const notes = statusData.notes ?? {};
@@ -787,7 +794,7 @@ export default function Home() {
                 title={goHomeRequested ? "Request sent!" : "I want to go home"}
                 className={`transition-all cursor-pointer ${goHomeRequested ? "scale-95" : "hover:scale-110 hover:rotate-6"}`}
               >
-                <Image src="/home.png" alt="I want to go home" width={80} height={80} className="rounded-full" />
+                <Image src="/home.png" alt="I want to go home" width={120} height={120} className="rounded-full" />
               </button>
             )}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
@@ -811,20 +818,20 @@ export default function Home() {
           {goHomeRequests.length > 0 && (
             <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
               <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
-                <Image src="/home.png" alt="home" width={40} height={40} className="w-10 h-10 rounded-full" />
-                <h2 className="text-lg font-extrabold text-black tracking-tight flex-1">Wants to go home</h2>
-                <span className="text-[11px] font-bold bg-black text-white px-2.5 py-1 rounded-full">{goHomeRequests.length}</span>
+                <Image src="/home.png" alt="home" width={56} height={56} className="w-14 h-14 rounded-full" />
+                <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">Wants to go home</h2>
+                <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{goHomeRequests.length}</span>
               </div>
               <div className="flex flex-wrap gap-3 px-5 py-4">
                 {goHomeRequests.map((r) => (
-                  <div key={r.name} className="flex items-center gap-2 bg-white border-[3px] border-black rounded-2xl px-3 py-2 shadow-[3px_3px_0_#000]">
+                  <div key={r.name} className="flex items-center gap-2.5 bg-white border-[3px] border-black rounded-2xl px-4 py-2.5 shadow-[3px_3px_0_#000]">
                     <Image
                       src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
-                      alt={r.name} width={28} height={28}
-                      className="rounded-full object-cover w-7 h-7 border-2 border-black flex-shrink-0"
+                      alt={r.name} width={36} height={36}
+                      className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
                     />
-                    <span className="font-extrabold text-sm">{r.name}</span>
-                    <span className="text-[10px] text-[#8a857d]">{timeAgo(r.ts)}</span>
+                    <span className="font-extrabold text-base">{r.name}</span>
+                    <span className="text-xs text-[#8a857d] font-semibold">{timeAgo(r.ts)}</span>
                   </div>
                 ))}
               </div>
