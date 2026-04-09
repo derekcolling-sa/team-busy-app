@@ -139,6 +139,7 @@ export default function Home() {
   const [oooStatuses, setOooStatuses] = useState<Record<string, boolean>>({});
   const [oooDetails, setOooDetails] = useState<Record<string, { note?: string; backDate?: string }>>({});
   const [sosStatuses, setSosStatuses] = useState<Record<string, boolean>>({});
+  const [metcalfStatuses, setMetcalfStatuses] = useState<Record<string, boolean>>({});
   const [showGhostModal, setShowGhostModal] = useState(false);
   const [ghostNote, setGhostNote] = useState("");
   const [ghostBackDate, setGhostBackDate] = useState("");
@@ -178,7 +179,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes, metcalfRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -194,8 +195,9 @@ export default function Home() {
         fetch("/api/poke"),
         fetch("/api/time-off"),
         fetch("/api/ratings"),
+        fetch("/api/status/metcalf"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData, metcalfData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -211,6 +213,7 @@ export default function Home() {
         pokeRes.json(),
         timeOffRes.json(),
         ratingsRes.json(),
+        metcalfRes.json(),
       ]);
       if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
         window.location.reload();
@@ -233,6 +236,7 @@ export default function Home() {
       setGoHomeRequests(goHomeData.requests ?? []);
       setTimeOffRequests(timeOffData.requests ?? []);
       setRatings(ratingsData.ratings ?? {});
+      setMetcalfStatuses(metcalfData ?? {});
       if (bannerData.banner?.message) setBanner({ message: bannerData.banner.message, type: bannerData.banner.type ?? "daily" });
       const allPokes: { from: string; to: string; ts: number }[] = pokeData.pokes ?? [];
       setPokes(allPokes);
@@ -375,6 +379,16 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: currentUser, ooo: true, note: ghostNote, backDate: ghostBackDate }),
+    });
+  };
+
+  const toggleMetcalf = async (name: string) => {
+    const newVal = !metcalfStatuses[name];
+    setMetcalfStatuses((prev) => ({ ...prev, [name]: newVal }));
+    await fetch("/api/status/metcalf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, active: newVal }),
     });
   };
 
@@ -622,6 +636,7 @@ export default function Home() {
     const level = getLevel(value);
     const isOOO = !!oooStatuses[member.name];
     const isSOS = !!sosStatuses[member.name];
+    const isMetcalf = !!metcalfStatuses[member.name];
 
     return (
       <div
@@ -672,6 +687,8 @@ export default function Home() {
             <span className="text-sm font-bold px-3 py-1.5 rounded-full bg-[#e5e1dc] text-[#8a857d] border-2 border-black shrink-0">👻</span>
           ) : isSOS ? (
             <span className="text-2xl animate-pulse shrink-0">🚨</span>
+          ) : isMetcalf ? (
+            <span className="text-2xl animate-bounce shrink-0">🚗</span>
           ) : BUDDIES_ENABLED && buddies[member.name] && member.name === currentUser ? (
             <div className="shrink-0 flex items-center gap-2">
               {renderBuddyBadge(buddies[member.name].id)}
@@ -730,7 +747,19 @@ export default function Home() {
             <button onClick={() => toggleOOO(member.name)} className="w-full py-2 rounded-xl border-[3px] border-black bg-white text-sm text-black cursor-pointer transition-all font-bold hover:bg-[#FFE234] shadow-[3px_3px_0_#000]">
               👻 Going ghost
             </button>
+            <button
+              onClick={() => toggleMetcalf(member.name)}
+              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${isMetcalf ? "bg-black text-white shadow-none" : "bg-white text-black hover:bg-black hover:text-white shadow-[3px_3px_0_#000]"}`}
+            >
+              🚗 {isMetcalf ? "catch me on metcalf ✓" : "catch me on metcalf"}
+            </button>
           </>
+        )}
+        {isMetcalf && member.name !== currentUser && (
+          <div className="w-full rounded-xl bg-black px-4 py-2.5 flex items-center gap-2 mt-1">
+            <span className="text-lg">🚗</span>
+            <p className="text-sm font-bold text-white">catch me on metcalf</p>
+          </div>
         )}
         {/* Incoming pokes */}
         {pokes.filter((p) => p.to === member.name).length > 0 && (
@@ -760,6 +789,7 @@ export default function Home() {
     const level = getLevel(value);
     const isOOO = !!oooStatuses[member.name];
     const isSOS = !!sosStatuses[member.name];
+    const isMetcalf = !!metcalfStatuses[member.name];
 
     return (
       <div
@@ -822,6 +852,8 @@ export default function Home() {
             </div>
             {isSOS ? (
               <span className="text-xl animate-pulse shrink-0">🚨</span>
+            ) : isMetcalf ? (
+              <span className="text-2xl animate-bounce shrink-0">🚗</span>
             ) : BUDDIES_ENABLED && buddies[member.name] && member.name === currentUser ? (
               <div className="shrink-0 flex items-center gap-2">
                 {renderBuddyBadge(buddies[member.name].id)}
@@ -846,6 +878,12 @@ export default function Home() {
                   {statusNotes[member.name]}
                 </p>
               )}
+            </div>
+          )}
+          {isMetcalf && (
+            <div className="w-full rounded-xl bg-black px-4 py-2.5 flex items-center gap-2">
+              <span className="text-lg">🚗</span>
+              <p className="text-sm font-bold text-white">catch me on metcalf</p>
             </div>
           )}
           {currentUser && currentUser !== member.name && (

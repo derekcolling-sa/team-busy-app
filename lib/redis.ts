@@ -432,6 +432,24 @@ export async function setBroadcast(message: string, type: BroadcastType): Promis
   }
 }
 
+const METCALF_KEY = "team-busy-metcalf";
+
+export type MetcalfStatus = Record<string, boolean>;
+
+export async function getAllMetcalf(): Promise<MetcalfStatus> {
+  const data = await redis.hgetall(METCALF_KEY);
+  if (!data) return {};
+  const result: MetcalfStatus = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = value === "true" || value === true;
+  }
+  return result;
+}
+
+export async function setMemberMetcalf(name: string, active: boolean): Promise<void> {
+  await redis.hset(METCALF_KEY, { [name]: String(active) });
+}
+
 const RATINGS_KEY = "team-busy-ratings";
 
 // ratings stored as hash: field = "{rater}:{ratee}", value = 1-5
