@@ -511,6 +511,22 @@ export async function addSessionTime(name: string, seconds: number): Promise<voi
   await redis.hincrbyfloat(SESSION_TIME_KEY, name, seconds);
 }
 
+const ADHD_KEY = "team-busy-adhd";
+
+export async function getAllAdhd(): Promise<Record<string, number>> {
+  const data = await redis.hgetall(ADHD_KEY);
+  if (!data) return {};
+  const result: Record<string, number> = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = Number(value);
+  }
+  return result;
+}
+
+export async function setMemberAdhd(name: string, value: number): Promise<void> {
+  await redis.hset(ADHD_KEY, { [name]: value });
+}
+
 const RATINGS_KEY = "team-busy-ratings";
 
 // ratings stored as hash: field = "{rater}:{ratee}", value = 1-5

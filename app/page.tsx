@@ -63,6 +63,8 @@ const LABELS = ["Chillin'", "Sautéed", "Cooking", "Cooked"];
 const EMOJIS = ["😎", "🍳", "🔥", "💀"];
 const CARD_BGS = ["#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff"];
 const TRACK_COLORS = ["#5cb85c", "#4a9eff", "#f5a623", "#e8742d"];
+const ADHD_LABELS = ["locked tf in 🎯", "lowkey glazed 🫠", "brainrot szn 🌀", "absolutely feral 🐿️"];
+const ADHD_COLORS = ["#a8f5c8", "#b8d4ff", "#dbb8ff", "#ffb8e0"];
 
 function timeAgo(ts: number): string {
   const seconds = Math.floor((Date.now() - ts) / 1000);
@@ -93,6 +95,13 @@ function getLevel(val: number) {
   if (val <= 20) return 0;
   if (val <= 50) return 1;
   if (val <= 77) return 2;
+  return 3;
+}
+
+function getAdhdLevel(val: number) {
+  if (val <= 25) return 0;
+  if (val <= 50) return 1;
+  if (val <= 75) return 2;
   return 3;
 }
 
@@ -167,6 +176,7 @@ export default function Home() {
   const [timeOffSent, setTimeOffSent] = useState(false);
   const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
   const [sessionTimes, setSessionTimes] = useState<Record<string, number>>({});
+  const [adhdLevels, setAdhdLevels] = useState<Record<string, number>>({});
   const sessionAccRef = useRef(0);
   const lastVisibleRef = useRef<number | null>(null);
   const [pokedBy, setPokedBy] = useState<string[]>([]);
@@ -187,7 +197,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes, metcalfRes, bossReactionsRes, needWorkRes, sessionTimeRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes, metcalfRes, bossReactionsRes, needWorkRes, sessionTimeRes, adhdRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -207,8 +217,9 @@ export default function Home() {
         fetch("/api/boss-reactions"),
         fetch("/api/status/need-work"),
         fetch("/api/session-time"),
+        fetch("/api/status/adhd"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData, metcalfData, bossReactionsData, needWorkData, sessionTimeData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData, metcalfData, bossReactionsData, needWorkData, sessionTimeData, adhdData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -228,6 +239,7 @@ export default function Home() {
         bossReactionsRes.json(),
         needWorkRes.json(),
         sessionTimeRes.json(),
+        adhdRes.json(),
       ]);
       if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
         window.location.reload();
@@ -254,6 +266,7 @@ export default function Home() {
       setBossReactions(bossReactionsData.reactions ?? {});
       setNeedWorkStatuses(needWorkData ?? {});
       setSessionTimes(sessionTimeData ?? {});
+      setAdhdLevels(adhdData ?? {});
       if (bannerData.banner?.message) setBanner({ message: bannerData.banner.message, type: bannerData.banner.type ?? "daily" });
       const allPokes: { from: string; to: string; ts: number }[] = pokeData.pokes ?? [];
       setPokes(allPokes);
@@ -463,6 +476,15 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: currentUser, reaction: next }),
+    });
+  };
+
+  const handleAdhdChange = async (name: string, value: number) => {
+    setAdhdLevels((prev) => ({ ...prev, [name]: value }));
+    await fetch("/api/status/adhd", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, value }),
     });
   };
 
@@ -849,6 +871,19 @@ export default function Home() {
               className="w-full text-xs font-medium text-black bg-white border-[3px] border-black rounded-xl px-3 py-2 focus:outline-none placeholder:text-[#b5b0a8] mb-3"
               maxLength={80}
             />
+            {/* ADHD slider */}
+            <div className="rounded-xl border-[3px] border-black px-3 py-2.5 mb-3" style={{ background: ADHD_COLORS[getAdhdLevel(adhdLevels[member.name] ?? 0)] }}>
+              <p className="text-[10px] font-extrabold uppercase tracking-widest text-black/60 mb-1.5">adhd check</p>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range" min={0} max={100} value={adhdLevels[member.name] ?? 0}
+                  onChange={(e) => handleAdhdChange(member.name, Number(e.target.value))}
+                  style={{ background: `linear-gradient(to right, rgba(0,0,0,0.3) ${adhdLevels[member.name] ?? 0}%, rgba(0,0,0,0.1) ${adhdLevels[member.name] ?? 0}%)` }}
+                  className="flex-1"
+                />
+                <span className="text-xs font-extrabold text-black whitespace-nowrap">{ADHD_LABELS[getAdhdLevel(adhdLevels[member.name] ?? 0)]}</span>
+              </div>
+            </div>
             <button onClick={() => toggleOOO(member.name)} className="w-full py-2 rounded-xl border-[3px] border-black bg-white text-sm text-black cursor-pointer transition-all font-bold hover:bg-[#FFE234] shadow-[3px_3px_0_#000]">
               👻 Going ghost
             </button>
@@ -996,6 +1031,12 @@ export default function Home() {
                   {statusNotes[member.name]}
                 </p>
               )}
+            </div>
+          )}
+          {adhdLevels[member.name] != null && (
+            <div className="flex items-center gap-2 rounded-xl px-3 py-2 border-[2px] border-black/20" style={{ background: ADHD_COLORS[getAdhdLevel(adhdLevels[member.name])] }}>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/50">adhd</span>
+              <span className="text-xs font-extrabold text-black">{ADHD_LABELS[getAdhdLevel(adhdLevels[member.name])]}</span>
             </div>
           )}
           {isMetcalf && (
