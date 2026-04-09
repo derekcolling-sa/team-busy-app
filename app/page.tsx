@@ -1290,13 +1290,11 @@ export default function Home() {
                       </button>
                     </div>
                   )}
-                  {currentUser === BOSS && Object.keys(bossReactions).length > 0 && (
-                    <div className="flex items-center gap-3 px-6 pb-5 flex-wrap">
-                      <span className="text-xs font-extrabold uppercase tracking-widest text-black/50">vibes:</span>
-                      <span className="flex items-center gap-1 text-sm font-bold">❤️ {Object.values(bossReactions).filter(r => r === "heart").length}</span>
-                      <span className="flex items-center gap-1 text-sm font-bold">👎 {Object.values(bossReactions).filter(r => r === "thumbsdown").length}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-3 px-6 pb-5 flex-wrap">
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-black/50">today&apos;s vibes:</span>
+                    <span className="flex items-center gap-1 text-sm font-bold">❤️ {Object.values(bossReactions).filter(r => r === "heart").length}</span>
+                    <span className="flex items-center gap-1 text-sm font-bold">👎 {Object.values(bossReactions).filter(r => r === "thumbsdown").length}</span>
+                  </div>
                 </div>
               )}
 

@@ -1,4 +1,4 @@
-import { clearAllGoHome, clearAllPokes, clearBanner } from "@/lib/redis";
+import { clearAllGoHome, clearAllPokes, clearBanner, clearAllBossReactions } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -7,6 +7,6 @@ export async function GET(request: Request) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  await Promise.all([clearAllGoHome(), clearAllPokes(), clearBanner()]);
+  await Promise.all([clearAllGoHome(), clearAllPokes(), clearBanner(), clearAllBossReactions()]);
   return Response.json({ ok: true });
 }

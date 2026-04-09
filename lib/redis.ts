@@ -455,6 +455,10 @@ export async function setBossReaction(name: string, reaction: BossReaction | nul
   }
 }
 
+export async function clearAllBossReactions(): Promise<void> {
+  await redis.del(BOSS_REACTIONS_KEY);
+}
+
 const METCALF_KEY = "team-busy-metcalf";
 
 export type MetcalfStatus = Record<string, boolean>;
