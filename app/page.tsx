@@ -1377,9 +1377,24 @@ export default function Home() {
             </p>
           ) : (
             <>
+              <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
+                {/* Left: My card */}
+                {myMember && (
+                  <div className="animate-pop-in w-full md:w-[320px] md:shrink-0 md:sticky md:top-8">
+                    {renderMyCard(myMember)}
+                  </div>
+                )}
+                {/* Right: Team grid */}
+                <div className="flex-1 min-w-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {teamMembers.map((member, i) => renderTeamCard(member, i))}
+                  </div>
+                </div>
+              </div>
+
               {/* Boss Card */}
               {bossMember && currentUser !== BOSS && (
-                <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
+                <div className="animate-pop-in mt-8 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
                   <div className="flex items-center gap-5 px-6 py-5">
                     <div className="relative shrink-0">
                       <Image
@@ -1434,21 +1449,6 @@ export default function Home() {
                   </div>
                 </div>
               )}
-
-              <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
-                {/* Left: My card */}
-                {myMember && (
-                  <div className="animate-pop-in w-full md:w-[320px] md:shrink-0 md:sticky md:top-8">
-                    {renderMyCard(myMember)}
-                  </div>
-                )}
-                {/* Right: Team grid */}
-                <div className="flex-1 min-w-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {teamMembers.map((member, i) => renderTeamCard(member, i))}
-                  </div>
-                </div>
-              </div>
 
               {/* Team Chat */}
               {currentUser && (
