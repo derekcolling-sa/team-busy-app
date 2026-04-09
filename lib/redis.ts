@@ -417,6 +417,29 @@ export async function setBroadcast(message: string, type: BroadcastType): Promis
   }
 }
 
+const RATINGS_KEY = "team-busy-ratings";
+
+// ratings stored as hash: field = "{rater}:{ratee}", value = 1-5
+export type RatingsMap = Record<string, Record<string, number>>; // ratee → rater → stars
+
+export async function getAllRatings(): Promise<RatingsMap> {
+  const data = await redis.hgetall(RATINGS_KEY);
+  if (!data) return {};
+  const result: RatingsMap = {};
+  for (const [field, value] of Object.entries(data)) {
+    const colonIdx = field.indexOf(":");
+    const rater = field.slice(0, colonIdx);
+    const ratee = field.slice(colonIdx + 1);
+    if (!result[ratee]) result[ratee] = {};
+    result[ratee][rater] = Number(value);
+  }
+  return result;
+}
+
+export async function setRating(rater: string, ratee: string, stars: number): Promise<void> {
+  await redis.hset(RATINGS_KEY, { [`${rater}:${ratee}`]: stars });
+}
+
 const TIMEOFF_KEY = "team-busy-timeoff";
 
 export type TimeOffEntry = { name: string; ts: number };

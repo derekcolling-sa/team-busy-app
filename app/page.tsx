@@ -158,6 +158,7 @@ export default function Home() {
   const [timeOffSent, setTimeOffSent] = useState(false);
   const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
   const [pokedBy, setPokedBy] = useState<string[]>([]);
+  const [ratings, setRatings] = useState<Record<string, Record<string, number>>>({});
   const [buddies, setBuddies] = useState<Record<string, { id: string; hatchedAt: number }>>({});
   const [showHatchModal, setShowHatchModal] = useState(false);
   const [hatchedBuddy, setHatchedBuddy] = useState<Buddy | null>(null);
@@ -174,7 +175,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -189,8 +190,9 @@ export default function Home() {
         fetch("/api/banner"),
         fetch("/api/poke"),
         fetch("/api/time-off"),
+        fetch("/api/ratings"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -205,6 +207,7 @@ export default function Home() {
         bannerRes.json(),
         pokeRes.json(),
         timeOffRes.json(),
+        ratingsRes.json(),
       ]);
       if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
         window.location.reload();
@@ -226,6 +229,7 @@ export default function Home() {
       setReactions(reactionsData.reactions ?? {});
       setGoHomeRequests(goHomeData.requests ?? []);
       setTimeOffRequests(timeOffData.requests ?? []);
+      setRatings(ratingsData.ratings ?? {});
       if (bannerData.banner?.message) setBanner({ message: bannerData.banner.message, type: bannerData.banner.type ?? "daily" });
       const allPokes: { from: string; to: string; ts: number }[] = pokeData.pokes ?? [];
       setPokes(allPokes);
@@ -439,6 +443,19 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ts, emoji, name: currentUser }),
+    });
+  };
+
+  const rateUser = async (ratee: string, stars: number) => {
+    if (!currentUser || currentUser === ratee) return;
+    setRatings((prev) => ({
+      ...prev,
+      [ratee]: { ...(prev[ratee] ?? {}), [currentUser]: stars },
+    }));
+    await fetch("/api/ratings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rater: currentUser, ratee, stars }),
     });
   };
 
@@ -803,6 +820,23 @@ export default function Home() {
                   {statusNotes[member.name]}
                 </p>
               )}
+            </div>
+          )}
+          {currentUser && currentUser !== member.name && (
+            <div className="flex items-center justify-center gap-0.5 mt-2">
+              {[1, 2, 3, 4, 5].map((star) => {
+                const myRating = ratings[member.name]?.[currentUser] ?? 0;
+                return (
+                  <button
+                    key={star}
+                    onClick={() => rateUser(member.name, star)}
+                    className="text-xl leading-none cursor-pointer hover:scale-125 transition-transform active:scale-95"
+                    title={`Rate ${member.name} ${star} star${star !== 1 ? "s" : ""}`}
+                  >
+                    {star <= myRating ? "⭐" : "☆"}
+                  </button>
+                );
+              })}
             </div>
           )}
           {currentUser && currentUser !== member.name && (
