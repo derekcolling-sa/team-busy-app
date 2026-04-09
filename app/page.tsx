@@ -8,6 +8,7 @@ const MEMBERS = [
   { name: "Brendan", photo: "/photos/Brendan.jpg" },
   { name: "Callie", photo: "/photos/Callie.jpg" },
   { name: "Chris", photo: "/photos/Chris.jpg" },
+  { name: "Derek", photo: "/photos/Derek.jpeg" },
   { name: "Erin", photo: "/photos/Erin.jpg" },
   { name: "KC", photo: "/photos/KC.jpeg" },
   { name: "Kerry", photo: "/photos/Kerry.jpg" },
@@ -16,6 +17,7 @@ const MEMBERS = [
 
 const WRITERS = ["Kerry", "Erin", "Maddie"];
 const VP = ["Derek"];
+const BOSS = "Derek";
 
 const SUGGESTIONS: Record<string, string[]> = {
   writer: [
@@ -616,7 +618,8 @@ export default function Home() {
   });
 
   const myMember = MEMBERS.find((m) => m.name === currentUser);
-  const teamMembers = sortedMembers.filter((m) => m.name !== currentUser);
+  const bossMember = MEMBERS.find((m) => m.name === BOSS);
+  const teamMembers = sortedMembers.filter((m) => m.name !== currentUser && m.name !== BOSS);
 
   const renderBuddyBadge = (buddyId: string) => {
     const buddy = getBuddyById(buddyId);
@@ -1217,6 +1220,40 @@ export default function Home() {
             </p>
           ) : (
             <>
+              {/* Boss Card */}
+              {bossMember && currentUser !== BOSS && (
+                <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
+                  <div className="flex items-center gap-5 px-6 py-5">
+                    <div className="relative shrink-0">
+                      <Image
+                        src={photoOverrides[bossMember.name] ?? bossMember.photo}
+                        alt={bossMember.name} width={72} height={72}
+                        className="rounded-full object-cover w-[72px] h-[72px] border-[3px] border-black"
+                      />
+                      <span className="absolute -bottom-1 -right-1 text-lg">👑</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>{bossMember.name}</span>
+                        <span className="text-xs font-extrabold bg-black text-[#FFE234] px-3 py-1 rounded-full uppercase tracking-widest">The Boss</span>
+                        {sosStatuses[bossMember.name] && <span className="text-xl animate-pulse">🚨</span>}
+                        {metcalfStatuses[bossMember.name] && <span className="text-xl animate-bounce">🚗</span>}
+                      </div>
+                      <div className="mt-2 flex items-center gap-3">
+                        <div className="flex-1 h-3 rounded-full bg-black/20 overflow-hidden border-[2px] border-black max-w-xs">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${statuses[bossMember.name] ?? 50}%`, background: TRACK_COLORS[getLevel(statuses[bossMember.name] ?? 50)] }} />
+                        </div>
+                        <span className="text-xs font-extrabold uppercase tracking-widest">{LABELS[getLevel(statuses[bossMember.name] ?? 50)]}</span>
+                      </div>
+                      {statusNotes[bossMember.name] && (
+                        <p className="text-xs font-medium text-black/70 mt-1 font-mono">{statusNotes[bossMember.name]}</p>
+                      )}
+                    </div>
+                    <span className="text-5xl shrink-0">{EMOJIS[getLevel(statuses[bossMember.name] ?? 50)]}</span>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
                 {/* Left: My card */}
                 {myMember && (
