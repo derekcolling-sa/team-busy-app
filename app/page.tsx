@@ -1460,7 +1460,7 @@ export default function Home() {
                 <div className="relative w-full" style={{ height: "min(85vh, 560px)" }}>
                   <iframe
                     ref={vibeIframeRef}
-                    src="https://www.youtube.com/embed/5hH9dOwzrtc?autoplay=1&mute=1&loop=1&playlist=5hH9dOwzrtc&controls=0&modestbranding=1&rel=0&enablejsapi=1"
+                    src="https://www.youtube.com/embed/vTfD20dbxho?autoplay=1&mute=1&loop=1&playlist=vTfD20dbxho&controls=0&modestbranding=1&rel=0&enablejsapi=1&start=4"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     style={{
                       position: "absolute",
