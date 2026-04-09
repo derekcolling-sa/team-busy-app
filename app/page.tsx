@@ -1055,11 +1055,13 @@ export default function Home() {
 
       {/* Banner ad */}
       <div className="w-full flex justify-center border-b-[3px] border-black bg-white">
-        <img
-          src="https://storage.googleapis.com/website-production/uploads/2023/01/gobble-banner-ad-example.png"
-          alt="Advertisement"
-          className="w-full max-w-[1280px] object-cover"
-        />
+        <a href="https://www.gobble.com/?srsltid=AfmBOorjeGVfijzb7fcw603dlxiTOjCn8XNjq1yg5dn1vimXYRCZWXs_" target="_blank" rel="noopener noreferrer" className="w-full max-w-[1280px]">
+          <img
+            src="https://storage.googleapis.com/website-production/uploads/2023/01/gobble-banner-ad-example.png"
+            alt="Advertisement"
+            className="w-full object-cover"
+          />
+        </a>
       </div>
 
       <div className="min-h-screen px-4 sm:px-8 py-6 sm:py-8">
