@@ -692,6 +692,8 @@ export default function Home() {
         {!isOOO && (() => { const t = getStaleness(updatedAt[member.name]); return t > 0 ? (
           <div className="absolute inset-x-0 bottom-0 pointer-events-none" style={{ height: "70%", background: `linear-gradient(to top, rgba(140,90,30,${0.3 + t * 0.6}) 0%, transparent 100%)`, zIndex: 0 }} />
         ) : null; })()}
+        {/* Stop clicks on interactive content from flipping the card */}
+        <div onClick={(e) => e.stopPropagation()}>
         {/* Avatar + name row */}
         <div className="flex items-center gap-4 mb-5">
           <label className="relative cursor-pointer group shrink-0" title="Click to update photo">
@@ -795,7 +797,7 @@ export default function Home() {
               🚗 {isMetcalf ? "catch me on metcalf ✓" : "catch me on metcalf"}
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); toggleNeedWork(member.name); }}
+              onClick={() => toggleNeedWork(member.name)}
               className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${isNeedWork ? "bg-[#3D52F0] text-white shadow-none" : "bg-white text-black hover:bg-[#3D52F0] hover:text-white shadow-[3px_3px_0_#000]"}`}
             >
               📋 {isNeedWork ? "I need work ✓" : "I need work"}
@@ -827,6 +829,7 @@ export default function Home() {
             ))}
           </div>
         )}
+        </div>{/* end stopPropagation wrapper */}
       </div>
     );
   };
