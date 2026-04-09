@@ -1016,6 +1016,32 @@ export default function Home() {
             </div>
           </div>
 
+          {/* iPhone YouTube Embed */}
+          <div className="flex justify-center mb-8">
+            <div className="relative" style={{ width: 220 }}>
+              {/* Phone shell */}
+              <div className="relative bg-black rounded-[2.8rem] border-[4px] border-black shadow-[8px_8px_0_#000]" style={{ padding: "14px 10px" }}>
+                {/* Dynamic island */}
+                <div className="absolute top-[18px] left-1/2 -translate-x-1/2 bg-black rounded-full z-10" style={{ width: 72, height: 22 }} />
+                {/* Screen */}
+                <div className="overflow-hidden rounded-[2.2rem] bg-black" style={{ aspectRatio: "9/19.5" }}>
+                  <iframe
+                    src="https://www.youtube.com/embed/vTfD20dbxho?autoplay=1&mute=1&loop=1&playlist=vTfD20dbxho&controls=0&modestbranding=1&rel=0"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                    className="w-full h-full"
+                    style={{ border: "none", display: "block", transform: "scale(1.01)" }}
+                  />
+                </div>
+              </div>
+              {/* Side buttons */}
+              <div className="absolute bg-black rounded-r-sm" style={{ left: -7, top: 80, width: 5, height: 32, borderRadius: "2px 0 0 2px" }} />
+              <div className="absolute bg-black rounded-r-sm" style={{ left: -7, top: 122, width: 5, height: 52, borderRadius: "2px 0 0 2px" }} />
+              <div className="absolute bg-black rounded-r-sm" style={{ left: -7, top: 184, width: 5, height: 52, borderRadius: "2px 0 0 2px" }} />
+              <div className="absolute bg-black" style={{ right: -7, top: 130, width: 5, height: 70, borderRadius: "0 2px 2px 0" }} />
+            </div>
+          </div>
+
           {/* Go Home Requests */}
           {goHomeRequests.length > 0 && (() => {
             const sorted = [...goHomeRequests].sort((a, b) => b.count - a.count || a.ts - b.ts);
