@@ -1,4 +1,4 @@
-import { requestGoHome, clearGoHome, getGoHomeRequests } from "@/lib/redis";
+import { requestGoHome, clearGoHome, clearAllGoHome, getGoHomeRequests } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,9 @@ export async function GET() {
 export async function POST(request: Request) {
   const { name, clear } = await request.json();
   if (typeof name !== "string") return Response.json({ error: "Invalid input" }, { status: 400 });
-  if (clear) {
+  if (clear === "all") {
+    await clearAllGoHome();
+  } else if (clear) {
     await clearGoHome(name);
   } else {
     await requestGoHome(name);

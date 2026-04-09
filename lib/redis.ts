@@ -259,6 +259,10 @@ export async function clearGoHome(name: string): Promise<void> {
   await redis.hdel(GO_HOME_KEY, name);
 }
 
+export async function clearAllGoHome(): Promise<void> {
+  await redis.del(GO_HOME_KEY);
+}
+
 export async function getGoHomeRequests(): Promise<GoHomeEntry[]> {
   const data = await redis.hgetall(GO_HOME_KEY);
   if (!data) return [];
