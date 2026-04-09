@@ -249,10 +249,18 @@ export async function getChatMessages(): Promise<ChatEntry[]> {
 
 const GO_HOME_KEY = "team-busy-go-home";
 
-export type GoHomeEntry = { name: string; ts: number };
+export type GoHomeEntry = { name: string; ts: number; count: number };
 
 export async function requestGoHome(name: string): Promise<void> {
-  await redis.hset(GO_HOME_KEY, { [name]: Date.now() });
+  const raw = await redis.hget(GO_HOME_KEY, name);
+  let count = 1;
+  if (raw) {
+    try {
+      const existing = typeof raw === "string" ? JSON.parse(raw) : raw as GoHomeEntry;
+      count = (existing.count ?? 1) + 1;
+    } catch { count = 2; }
+  }
+  await redis.hset(GO_HOME_KEY, { [name]: JSON.stringify({ ts: Date.now(), count }) });
 }
 
 export async function clearGoHome(name: string): Promise<void> {
@@ -266,7 +274,14 @@ export async function clearAllGoHome(): Promise<void> {
 export async function getGoHomeRequests(): Promise<GoHomeEntry[]> {
   const data = await redis.hgetall(GO_HOME_KEY);
   if (!data) return [];
-  return Object.entries(data).map(([name, ts]) => ({ name, ts: Number(ts) })).sort((a, b) => a.ts - b.ts);
+  return Object.entries(data).map(([name, val]) => {
+    try {
+      const parsed = typeof val === "string" ? JSON.parse(val) : val as GoHomeEntry;
+      return { name, ts: Number(parsed.ts ?? val), count: Number(parsed.count ?? 1) };
+    } catch {
+      return { name, ts: Number(val), count: 1 };
+    }
+  }).sort((a, b) => a.ts - b.ts);
 }
 
 const POKES_KEY = "team-busy-pokes";

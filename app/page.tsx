@@ -153,7 +153,7 @@ export default function Home() {
   const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
   const [hoveredMsg, setHoveredMsg] = useState<number | null>(null);
   const [goHomeRequested, setGoHomeRequested] = useState(false);
-  const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number }[]>([]);
+  const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number; count: number }[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
   const [timeOffSent, setTimeOffSent] = useState(false);
   const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
@@ -482,11 +482,19 @@ export default function Home() {
   const handleGoHome = async () => {
     if (!currentUser || goHomeRequested) return;
     setGoHomeRequested(true);
+    setGoHomeRequests((prev) => {
+      const existing = prev.find((r) => r.name === currentUser);
+      if (existing) {
+        return prev.map((r) => r.name === currentUser ? { ...r, count: r.count + 1, ts: Date.now() } : r);
+      }
+      return [...prev, { name: currentUser, ts: Date.now(), count: 1 }];
+    });
     await fetch("/api/go-home", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: currentUser }),
     });
+    setTimeout(() => setGoHomeRequested(false), 1500);
   };
 
   const handleTimeOffRequest = async () => {
@@ -1001,6 +1009,9 @@ export default function Home() {
                       className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
                     />
                     <span className="font-extrabold text-base">{r.name}</span>
+                    {r.count > 1 && (
+                      <span className="text-[11px] font-extrabold bg-black text-[#FFE234] px-2 py-0.5 rounded-full">x{r.count}</span>
+                    )}
                     <span className="text-xs text-[#8a857d] font-semibold">{timeAgo(r.ts)}</span>
                   </div>
                 ))}
