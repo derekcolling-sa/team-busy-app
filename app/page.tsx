@@ -1128,7 +1128,7 @@ export default function Home() {
                     {sorted.map((r, i) => {
                       const isTop = i === 0 && topScore > 1;
                       const isAngel = r.count >= 777;
-                      const isDevil = !isAngel && r.count >= 666;
+                      const isDevil = r.count === 666;
                       return (
                         <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isAngel ? "bg-sky-200 border-sky-400" : isDevil ? "bg-red-600 border-red-900" : isTop ? "bg-black border-black" : "bg-white border-black"}`}>
                           {isTop && !isDevil && !isAngel && <span className="text-base">🏆</span>}
