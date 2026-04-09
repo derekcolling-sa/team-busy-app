@@ -1626,12 +1626,14 @@ export default function Home() {
                   <textarea
                     autoFocus
                     value={featureRequestText}
-                    onChange={(e) => setFeatureRequestText(e.target.value)}
+                    onChange={(e) => setFeatureRequestText(e.target.value.slice(0, 200))}
                     onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitFeatureRequest(); }}
                     placeholder="what should we build..."
                     rows={4}
-                    className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
+                    maxLength={200}
+                    className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-2"
                   />
+                  <p className="text-xs text-[#b5b0a8] text-right mb-4 font-medium">{featureRequestText.length}/200</p>
                   <div className="flex gap-3">
                     <button
                       onClick={() => { setShowFeatureRequest(false); setFeatureRequestText(""); }}
