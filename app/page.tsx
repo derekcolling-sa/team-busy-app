@@ -104,9 +104,9 @@ function getTrackStyle(value: number, level: number) {
 
 function TickerItem({ msg }: { msg: { name: string; message: string }; photo: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 12px", flexShrink: 0, whiteSpace: "nowrap" }}>
-      <span style={{ fontSize: "18px", fontWeight: 800, color: "#000", fontFamily: "var(--font-display)" }}>{msg.name}</span>
-      <span style={{ fontSize: "18px", fontWeight: 500, color: "#000" }}>&ldquo;{msg.message}&rdquo;</span>
+    <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 8px", flexShrink: 0, whiteSpace: "nowrap" }}>
+      <span style={{ fontSize: "14px", fontWeight: 800, color: "#000", fontFamily: "var(--font-display)" }}>{msg.name}</span>
+      <span style={{ fontSize: "14px", fontWeight: 500, color: "#000" }}>&ldquo;{msg.message}&rdquo;</span>
     </div>
   );
 }
@@ -992,27 +992,27 @@ export default function Home() {
     <>
       {/* Banner — broadcast (pink or red scrolling) or normal ticker (yellow) */}
       {broadcast && (
-        <div style={{ width: "100%", overflow: "hidden", background: broadcastBg, borderBottom: `4px solid ${broadcastBorder}`, height: "50px", position: "relative", zIndex: 10 }}>
+        <div style={{ width: "100%", overflow: "hidden", background: broadcastBg, borderBottom: `3px solid ${broadcastBorder}`, height: "36px", position: "relative", zIndex: 10 }}>
           <div style={{
             display: "flex", alignItems: "center", height: "100%",
             ...(urgentDuration > 0 ? { animation: `ticker-scroll ${urgentDuration}s linear infinite`, ["--ticker-text-width" as string]: urgentTickerWidth } : {}),
             willChange: "transform",
           }}>
             <div ref={urgentTickerRef} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
-              <div style={{ display: "flex", alignItems: "center", padding: "0 48px", flexShrink: 0, whiteSpace: "nowrap" }}>
-                <span style={{ fontSize: "20px", fontWeight: 900, color: broadcastTextColor, letterSpacing: "0.12em", fontFamily: "var(--font-display)", WebkitTextStroke: broadcastTextStroke }}>{broadcastText}</span>
+              <div style={{ display: "flex", alignItems: "center", padding: "0 28px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: "14px", fontWeight: 900, color: broadcastTextColor, letterSpacing: "0.10em", fontFamily: "var(--font-display)", WebkitTextStroke: broadcastTextStroke }}>{broadcastText}</span>
               </div>
             </div>
             {Array.from({ length: urgentTickerCopies }).map((_, ci) => (
-              <div key={ci} style={{ display: "flex", alignItems: "center", padding: "0 48px", flexShrink: 0, whiteSpace: "nowrap" }}>
-                <span style={{ fontSize: "20px", fontWeight: 900, color: broadcastTextColor, letterSpacing: "0.12em", fontFamily: "var(--font-display)", WebkitTextStroke: broadcastTextStroke }}>{broadcastText}</span>
+              <div key={ci} style={{ display: "flex", alignItems: "center", padding: "0 28px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                <span style={{ fontSize: "14px", fontWeight: 900, color: broadcastTextColor, letterSpacing: "0.10em", fontFamily: "var(--font-display)", WebkitTextStroke: broadcastTextStroke }}>{broadcastText}</span>
               </div>
             ))}
           </div>
         </div>
       )}
       {!broadcast && (messages.length > 0 || banner?.type === "feature") && (
-        <div style={{ width: "100%", overflow: "hidden", background: "#FFE234", borderBottom: "4px solid #000", height: "50px", position: "relative", zIndex: 10 }}>
+        <div style={{ width: "100%", overflow: "hidden", background: "#FFE234", borderBottom: "3px solid #000", height: "36px", position: "relative", zIndex: 10 }}>
           <div style={{
             display: "flex",
             alignItems: "center",
@@ -1025,8 +1025,8 @@ export default function Home() {
           }}>
             <div ref={tickerTextRef} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
               {banner?.type === "feature" && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: "8px", background: "#000", color: "#FFE234", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.08em" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 16px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "6px", background: "#000", color: "#FFE234", padding: "3px 10px", borderRadius: "999px", fontSize: "12px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.08em" }}>
                     ✨ {banner.message} ✨
                   </span>
                 </div>
@@ -1038,10 +1038,10 @@ export default function Home() {
             {Array.from({ length: tickerCopies }).map((_, ci) => (
               <div key={ci} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
                 {banner?.type === "feature" && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
-                    <span style={{ fontSize: "16px" }}>✨</span>
-                    <span style={{ fontSize: "18px", fontWeight: 900, color: "#000", fontFamily: "var(--font-display)", letterSpacing: "0.05em" }}>{banner.message}</span>
-                    <span style={{ fontSize: "16px" }}>✨</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "0 16px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: "13px" }}>✨</span>
+                    <span style={{ fontSize: "13px", fontWeight: 900, color: "#000", fontFamily: "var(--font-display)", letterSpacing: "0.05em" }}>{banner.message}</span>
+                    <span style={{ fontSize: "13px" }}>✨</span>
                   </div>
                 )}
                 {messages.map((msg, i) => (
