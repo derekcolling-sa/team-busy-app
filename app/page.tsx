@@ -801,10 +801,10 @@ export default function Home() {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-2xl font-bold leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</span>
               <span className="text-[10px] font-bold uppercase tracking-widest bg-black text-white px-2 py-0.5 rounded-full">you</span>
-              {topOnlineUser === member.name && (
-                <span className="text-[10px] font-extrabold bg-[#FFE234] border-[2px] border-black text-black px-2 py-0.5 rounded-full uppercase tracking-widest whitespace-nowrap">🖥️ most online</span>
-              )}
             </div>
+            {topOnlineUser === member.name && (
+              <span className="text-[10px] font-extrabold text-black/50 uppercase tracking-widest">🖥️ most online</span>
+            )}
             {updatedAt[member.name] && (
               <>
                 <p className="text-[11px] text-[#7a6f64] font-semibold mt-0.5 italic">{timeAgo(updatedAt[member.name])}</p>
@@ -992,12 +992,10 @@ export default function Home() {
               className="rounded-full object-cover border-[3px] border-black w-[44px] h-[44px] shrink-0 transition-transform group-hover:scale-110"
             />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <p className="font-extrabold text-xl leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</p>
-                {topOnlineUser === member.name && (
-                  <span className="text-[10px] font-extrabold bg-[#FFE234] border-[2px] border-black text-black px-2 py-0.5 rounded-full uppercase tracking-widest whitespace-nowrap">🖥️ most online</span>
-                )}
-              </div>
+              <p className="font-extrabold text-xl leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</p>
+              {topOnlineUser === member.name && (
+                <span className="text-[10px] font-extrabold text-black/50 uppercase tracking-widest">🖥️ most online</span>
+              )}
               {updatedAt[member.name] && (
                 <>
                   <p className="text-[12px] text-black font-mono mt-0.5">{timeAgo(updatedAt[member.name])}</p>
