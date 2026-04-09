@@ -134,6 +134,7 @@ export default function Home() {
   const [bugReportSent, setBugReportSent] = useState(false);
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -1109,7 +1110,7 @@ export default function Home() {
   return (
     <>
       {/* Banner — broadcast (pink or red scrolling) or normal ticker (yellow) */}
-      {broadcast && (
+      {!bannerDismissed && broadcast && (
         <div style={{ width: "100%", overflow: "hidden", background: broadcastBg, borderBottom: `4px solid ${broadcastBorder}`, height: "50px", position: "relative", zIndex: 10 }}>
           <div style={{
             display: "flex", alignItems: "center", height: "100%",
@@ -1127,9 +1128,10 @@ export default function Home() {
               </div>
             ))}
           </div>
+          <button onClick={() => setBannerDismissed(true)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.25)", border: "none", color: broadcastTextColor, width: 28, height: 28, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, zIndex: 20, flexShrink: 0 }}>✕</button>
         </div>
       )}
-      {!broadcast && (messages.length > 0 || banner?.type === "feature") && (
+      {!bannerDismissed && !broadcast && (messages.length > 0 || banner?.type === "feature") && (
         <div style={{ width: "100%", overflow: "hidden", background: "#FFE234", borderBottom: "4px solid #000", height: "50px", position: "relative", zIndex: 10 }}>
           <div style={{
             display: "flex",
@@ -1168,6 +1170,7 @@ export default function Home() {
               </div>
             ))}
           </div>
+          <button onClick={() => setBannerDismissed(true)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.15)", border: "none", color: "#000", width: 28, height: 28, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, zIndex: 20, flexShrink: 0 }}>✕</button>
         </div>
       )}
 
