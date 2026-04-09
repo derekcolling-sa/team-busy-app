@@ -1017,31 +1017,37 @@ export default function Home() {
           </div>
 
           {/* Go Home Requests */}
-          {goHomeRequests.length > 0 && (
-            <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
-              <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
-                <Image src="/home.png" alt="home" width={56} height={56} className="w-14 h-14 rounded-full" />
-                <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">Wants to go home</h2>
-                <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{goHomeRequests.length}</span>
+          {goHomeRequests.length > 0 && (() => {
+            const sorted = [...goHomeRequests].sort((a, b) => b.count - a.count || a.ts - b.ts);
+            const topScore = sorted[0].count;
+            return (
+              <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
+                <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
+                  <Image src="/home.png" alt="home" width={56} height={56} className="w-14 h-14 rounded-full" />
+                  <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">Wants to go home</h2>
+                  <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{goHomeRequests.length}</span>
+                </div>
+                <div className="flex flex-wrap gap-3 px-5 py-4">
+                  {sorted.map((r, i) => {
+                    const isTop = i === 0 && topScore > 1;
+                    return (
+                      <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isTop ? "bg-black border-black" : "bg-white border-black"}`}>
+                        {isTop && <span className="text-base">🏆</span>}
+                        <Image
+                          src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
+                          alt={r.name} width={36} height={36}
+                          className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
+                        />
+                        <span className={`font-extrabold text-base ${isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
+                        <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
+                        <span className={`text-xs font-semibold ${isTop ? "text-white/60" : "text-[#8a857d]"}`}>{timeAgo(r.ts)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-3 px-5 py-4">
-                {goHomeRequests.map((r) => (
-                  <div key={r.name} className="flex items-center gap-2.5 bg-white border-[3px] border-black rounded-2xl px-4 py-2.5 shadow-[3px_3px_0_#000]">
-                    <Image
-                      src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
-                      alt={r.name} width={36} height={36}
-                      className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
-                    />
-                    <span className="font-extrabold text-base">{r.name}</span>
-                    {r.count > 1 && (
-                      <span className="text-[11px] font-extrabold bg-black text-[#FFE234] px-2 py-0.5 rounded-full">x{r.count}</span>
-                    )}
-                    <span className="text-xs text-[#8a857d] font-semibold">{timeAgo(r.ts)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Time Off Requests — visible to Derek */}
           {VP.includes(currentUser ?? "") && timeOffRequests.length > 0 && (
