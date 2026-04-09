@@ -164,6 +164,7 @@ export default function Home() {
   const [photoOverrides, setPhotoOverrides] = useState<Record<string, string>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const adhdDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const sortTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [chatMessages, setChatMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
   const [chatInput, setChatInput] = useState("");
@@ -479,13 +480,16 @@ export default function Home() {
     });
   };
 
-  const handleAdhdChange = async (name: string, value: number) => {
+  const handleAdhdChange = (name: string, value: number) => {
     setAdhdLevels((prev) => ({ ...prev, [name]: value }));
-    await fetch("/api/status/adhd", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, value }),
-    });
+    if (adhdDebounceRef.current) clearTimeout(adhdDebounceRef.current);
+    adhdDebounceRef.current = setTimeout(async () => {
+      await fetch("/api/status/adhd", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, value }),
+      });
+    }, 300);
   };
 
   const toggleNeedWork = async (name: string) => {
