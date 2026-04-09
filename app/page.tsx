@@ -850,7 +850,9 @@ export default function Home() {
                 Vibe Check 👁️👄👁️
               </span>
               {banner && (
-                <p className="text-sm sm:text-base font-bold text-white/80 tracking-tight">{banner}</p>
+                <div className="inline-flex items-center gap-2 bg-[#FFE234] border-[3px] border-black rounded-xl px-3 py-1.5 shadow-[3px_3px_0_#000] self-start">
+                  <span className="text-sm font-extrabold text-black">{banner}</span>
+                </div>
               )}
             </div>
             {/* Home button — only shown when user is selected */}
