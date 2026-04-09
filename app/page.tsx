@@ -153,7 +153,7 @@ export default function Home() {
   const sortTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [chatMessages, setChatMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
   const [chatInput, setChatInput] = useState("");
-  const chatBottomRef = useRef<HTMLDivElement>(null);
+  const chatTopRef = useRef<HTMLDivElement>(null);
   const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
   const [hoveredMsg, setHoveredMsg] = useState<number | null>(null);
   const [goHomeRequested, setGoHomeRequested] = useState(false);
@@ -433,7 +433,7 @@ export default function Home() {
     const msg = { name: currentUser, message: chatInput.trim(), ts: Date.now() };
     setChatMessages((prev) => [...prev, msg]);
     setChatInput("");
-    setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    setTimeout(() => chatTopRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
     await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1236,17 +1236,18 @@ export default function Home() {
 
                   {/* Messages */}
                   <div className="h-[400px] overflow-y-auto p-5 flex flex-col gap-3 bg-[#f7f7f5]">
+                    <div ref={chatTopRef} />
                     {chatMessages.length === 0 && (
                       <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
                         <div className="text-4xl mb-2">💬</div>
                         <p className="text-sm font-bold text-[#888]">no messages yet. break the ice.</p>
                       </div>
                     )}
-                    {chatMessages.map((msg, i) => {
+                    {[...chatMessages].reverse().map((msg, i, arr) => {
                       const isMe = msg.name === currentUser;
                       const member = MEMBERS.find((m) => m.name === msg.name);
                       const photo = photoOverrides[msg.name] ?? member?.photo ?? "";
-                      const showName = i === 0 || chatMessages[i - 1]?.name !== msg.name;
+                      const showName = i === 0 || arr[i - 1]?.name !== msg.name;
                       const msgReactions = reactions[String(msg.ts)] ?? {};
                       const hasReactions = Object.keys(msgReactions).length > 0;
                       const isHovered = hoveredMsg === msg.ts;
@@ -1306,7 +1307,6 @@ export default function Home() {
                         </div>
                       );
                     })}
-                    <div ref={chatBottomRef} />
                   </div>
 
                   {/* Input */}
