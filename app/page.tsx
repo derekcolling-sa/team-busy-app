@@ -52,12 +52,6 @@ const SUGGESTIONS: Record<string, string[]> = {
   ],
 };
 
-function getSuggestions(name: string | null): string[] {
-  if (!name) return [];
-  if (VP.includes(name)) return SUGGESTIONS.vp;
-  if (WRITERS.includes(name)) return SUGGESTIONS.writer;
-  return SUGGESTIONS.artDirector;
-}
 
 const LABELS = ["Chillin'", "Sautéed", "Cooking", "Cooked"];
 const EMOJIS = ["😎", "🍳", "🔥", "💀"];
@@ -136,9 +130,7 @@ export default function Home() {
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
 
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestionIdx, setSuggestionIdx] = useState(0);
+  const [goHomeExpanded, setGoHomeExpanded] = useState(false);
   const [tickerCopies, setTickerCopies] = useState(0);
   const [tickerTextWidth, setTickerTextWidth] = useState(0);
   const tickerTextRef = useRef<HTMLDivElement>(null);
@@ -593,17 +585,6 @@ export default function Home() {
     });
   };
 
-  const postMessage = async () => {
-    if (!newMessage.trim() || !currentUser) return;
-    const msg = { name: currentUser, message: newMessage.trim(), ts: Date.now() };
-    setMessages((prev) => [msg, ...prev.filter((m) => m.name !== currentUser)]);
-    setNewMessage("");
-    await fetch("/api/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: currentUser, message: msg.message }),
-    });
-  };
 
   const pickUser = (name: string) => {
     localStorage.setItem("team-busy-user", name);
@@ -1190,133 +1171,52 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Go Home Requests + iPhone */}
+          {/* Go Home Requests */}
           {goHomeRequests.length > 0 && (() => {
             const sorted = [...goHomeRequests].sort((a, b) => b.count - a.count || a.ts - b.ts);
             const topScore = sorted[0].count;
             return (
-              <div className="animate-pop-in mb-6 flex gap-6 items-start">
-                <div className="flex-1 flex flex-col gap-4">
+              <div className="animate-pop-in mb-6">
                 <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
-                  <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
+                  <button
+                    onClick={() => setGoHomeExpanded((v) => !v)}
+                    className="w-full px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3 cursor-pointer hover:bg-[#f5d800] transition-colors"
+                  >
                     <Image src="/home.png" alt="home" width={56} height={56} className="w-14 h-14 rounded-full" />
-                    <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">Wants to go home</h2>
+                    <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1 text-left">Wants to go home</h2>
                     <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{goHomeRequests.length}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-3 px-5 py-4">
-                    {sorted.map((r, i) => {
-                      const isTop = i === 0 && topScore > 1;
-                      const isAngel = r.count >= 777;
-                      const isDevil = r.count === 666;
-                      return (
-                        <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isAngel ? "bg-sky-200 border-sky-400" : isDevil ? "bg-red-600 border-red-900" : isTop ? "bg-black border-black" : "bg-white border-black"}`}>
-                          {isTop && !isDevil && !isAngel && <span className="text-base">🏆</span>}
-                          {isAngel
-                            ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-bounce">😇</span>
-                            : isDevil
-                            ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-pulse">😈</span>
-                            : <Image
-                                src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
-                                alt={r.name} width={36} height={36}
-                                className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
-                              />
-                          }
-                          <span className={`font-extrabold text-base ${isAngel ? "text-sky-800" : isDevil ? "text-white" : isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
-                          <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isAngel ? "bg-sky-400 text-white" : isDevil ? "bg-red-900 text-white" : isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                {/* Message input inside left column */}
-                {loaded && currentUser && (
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => {
-                        const suggestions = getSuggestions(currentUser);
-                        setNewMessage(suggestions[suggestionIdx % suggestions.length]);
-                        setSuggestionIdx((i) => i + 1);
-                      }}
-                      className="px-3 py-2.5 rounded-xl border-[3px] border-black bg-white hover:bg-[#FFE234] transition-colors cursor-pointer shrink-0 shadow-[3px_3px_0_#000] text-2xl leading-none"
-                      title="Get a suggestion"
-                    >
-                      🍵
-                    </button>
-                    <input
-                      type="text"
-                      placeholder="drop the tea…"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === "Enter") postMessage(); }}
-                      maxLength={120}
-                      className="flex-1 text-base font-bold text-black bg-white border-[3px] border-black rounded-xl px-4 py-2.5 focus:outline-none shadow-[3px_3px_0_#000] placeholder:text-[#b5b0a8] placeholder:font-normal"
-                    />
-                    <button
-                      onClick={postMessage}
-                      disabled={!newMessage.trim()}
-                      className="px-4 py-2.5 rounded-xl bg-[#FFE234] border-[3px] border-black text-black text-sm font-bold shadow-[3px_3px_0_#000] disabled:opacity-30 disabled:cursor-default hover:bg-[#FF9DC8] transition-all cursor-pointer shrink-0 active:translate-y-[2px] active:shadow-none"
-                    >
-                      drop it ✦
-                    </button>
-                  </div>
-                )}
-                </div>
-                {/* iPhone */}
-                <div className="relative shrink-0 hidden sm:block" style={{ width: 180 }}>
-                  <div className="relative bg-black rounded-[2.4rem] border-[4px] border-black " style={{ padding: "12px 8px" }}>
-                    <div className="absolute top-[15px] left-1/2 -translate-x-1/2 bg-black rounded-full z-10" style={{ width: 60, height: 18 }} />
-                    <div className="overflow-hidden rounded-[1.8rem] bg-black" style={{ aspectRatio: "9/19.5", position: "relative" }}>
-                      <iframe
-                        src="https://www.youtube.com/embed/8ynJNz_0Hvg?autoplay=1&mute=1&loop=1&playlist=8ynJNz_0Hvg&controls=0&modestbranding=1&rel=0&vq=hd720"
-                        allow="autoplay; encrypted-media"
-                        allowFullScreen
-                        style={{ border: "none", display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "100%", height: "100%" }}
-                      />
+                    <span className="text-xl ml-1">{goHomeExpanded ? "▲" : "▼"}</span>
+                  </button>
+                  {goHomeExpanded && (
+                    <div className="flex flex-wrap gap-3 px-5 py-4">
+                      {sorted.map((r, i) => {
+                        const isTop = i === 0 && topScore > 1;
+                        const isAngel = r.count >= 777;
+                        const isDevil = r.count === 666;
+                        return (
+                          <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isAngel ? "bg-sky-200 border-sky-400" : isDevil ? "bg-red-600 border-red-900" : isTop ? "bg-black border-black" : "bg-white border-black"}`}>
+                            {isTop && !isDevil && !isAngel && <span className="text-base">🏆</span>}
+                            {isAngel
+                              ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-bounce">😇</span>
+                              : isDevil
+                              ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-pulse">😈</span>
+                              : <Image
+                                  src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
+                                  alt={r.name} width={36} height={36}
+                                  className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
+                                />
+                            }
+                            <span className={`font-extrabold text-base ${isAngel ? "text-sky-800" : isDevil ? "text-white" : isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
+                            <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isAngel ? "bg-sky-400 text-white" : isDevil ? "bg-red-900 text-white" : isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
-                  <div className="absolute bg-black" style={{ left: -6, top: 65, width: 4, height: 26, borderRadius: "2px 0 0 2px" }} />
-                  <div className="absolute bg-black" style={{ left: -6, top: 100, width: 4, height: 42, borderRadius: "2px 0 0 2px" }} />
-                  <div className="absolute bg-black" style={{ left: -6, top: 152, width: 4, height: 42, borderRadius: "2px 0 0 2px" }} />
-                  <div className="absolute bg-black" style={{ right: -6, top: 108, width: 4, height: 58, borderRadius: "0 2px 2px 0" }} />
+                  )}
                 </div>
               </div>
             );
           })()}
-
-          {/* Message input strip — shown here only when go-home pod is not visible */}
-          {loaded && currentUser && goHomeRequests.length === 0 && (
-            <div className="mb-7">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    const suggestions = getSuggestions(currentUser);
-                    setNewMessage(suggestions[suggestionIdx % suggestions.length]);
-                    setSuggestionIdx((i) => i + 1);
-                  }}
-                  className="px-3 py-2.5 rounded-xl border-[3px] border-black bg-white hover:bg-[#FFE234] transition-colors cursor-pointer shrink-0 shadow-[3px_3px_0_#000] text-2xl leading-none"
-                  title="Get a suggestion"
-                >
-                  🍵
-                </button>
-                <input
-                  type="text"
-                  placeholder="drop the tea…"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") postMessage(); }}
-                  maxLength={120}
-                  className="flex-1 text-base font-bold text-black bg-white border-[3px] border-black rounded-xl px-4 py-2.5 focus:outline-none shadow-[3px_3px_0_#000] placeholder:text-[#b5b0a8] placeholder:font-normal"
-                />
-                <button
-                  onClick={postMessage}
-                  disabled={!newMessage.trim()}
-                  className="px-4 py-2.5 rounded-xl bg-[#FFE234] border-[3px] border-black text-black text-sm font-bold shadow-[3px_3px_0_#000] disabled:opacity-30 disabled:cursor-default hover:bg-[#FF9DC8] transition-all cursor-pointer shrink-0 active:translate-y-[2px] active:shadow-none"
-                >
-                  drop it ✦
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Loading */}
           {!loaded ? (
