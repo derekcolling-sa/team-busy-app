@@ -1033,12 +1033,12 @@ export default function Home() {
                   {statusNotes[member.name]}
                 </p>
               )}
-            </div>
-          )}
-          {adhdLevels[member.name] != null && (
-            <div className="flex items-center gap-2 rounded-xl px-3 py-2 border-[2px] border-black/20" style={{ background: ADHD_COLORS[getAdhdLevel(adhdLevels[member.name])] }}>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/50">adhd</span>
-              <span className="text-xs font-extrabold text-black">{ADHD_LABELS[getAdhdLevel(adhdLevels[member.name])]}</span>
+              {adhdLevels[member.name] != null && (
+                <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 border-[2px] border-black/20" style={{ background: ADHD_COLORS[getAdhdLevel(adhdLevels[member.name])] }}>
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/50">adhd</span>
+                  <span className="text-xs font-extrabold text-black">{ADHD_LABELS[getAdhdLevel(adhdLevels[member.name])]}</span>
+                </div>
+              )}
             </div>
           )}
           {isMetcalf && (
