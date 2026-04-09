@@ -166,6 +166,9 @@ export default function Home() {
   const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
   const [timeOffSent, setTimeOffSent] = useState(false);
   const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
+  const [sessionTimes, setSessionTimes] = useState<Record<string, number>>({});
+  const sessionAccRef = useRef(0);
+  const lastVisibleRef = useRef<number | null>(null);
   const [pokedBy, setPokedBy] = useState<string[]>([]);
   const [ratings, setRatings] = useState<Record<string, Record<string, number>>>({});
   const [buddies, setBuddies] = useState<Record<string, { id: string; hatchedAt: number }>>({});
@@ -184,7 +187,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes, metcalfRes, bossReactionsRes, needWorkRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes, metcalfRes, bossReactionsRes, needWorkRes, sessionTimeRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -203,8 +206,9 @@ export default function Home() {
         fetch("/api/status/metcalf"),
         fetch("/api/boss-reactions"),
         fetch("/api/status/need-work"),
+        fetch("/api/session-time"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData, metcalfData, bossReactionsData, needWorkData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData, metcalfData, bossReactionsData, needWorkData, sessionTimeData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -223,6 +227,7 @@ export default function Home() {
         metcalfRes.json(),
         bossReactionsRes.json(),
         needWorkRes.json(),
+        sessionTimeRes.json(),
       ]);
       if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
         window.location.reload();
@@ -248,6 +253,7 @@ export default function Home() {
       setMetcalfStatuses(metcalfData ?? {});
       setBossReactions(bossReactionsData.reactions ?? {});
       setNeedWorkStatuses(needWorkData ?? {});
+      setSessionTimes(sessionTimeData ?? {});
       if (bannerData.banner?.message) setBanner({ message: bannerData.banner.message, type: bannerData.banner.type ?? "daily" });
       const allPokes: { from: string; to: string; ts: number }[] = pokeData.pokes ?? [];
       setPokes(allPokes);
@@ -263,6 +269,56 @@ export default function Home() {
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  // Session time tracking — accumulate visible time and flush every 30s
+  useEffect(() => {
+    if (!currentUser) return;
+    const flush = () => {
+      if (sessionAccRef.current <= 0) return;
+      const secs = Math.round(sessionAccRef.current);
+      sessionAccRef.current = 0;
+      fetch("/api/session-time", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: currentUser, seconds: secs }),
+      }).catch(() => {});
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        if (lastVisibleRef.current !== null) {
+          sessionAccRef.current += (Date.now() - lastVisibleRef.current) / 1000;
+          lastVisibleRef.current = null;
+        }
+        flush();
+      } else {
+        lastVisibleRef.current = Date.now();
+      }
+    };
+    if (document.visibilityState === "visible") lastVisibleRef.current = Date.now();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    const interval = setInterval(() => {
+      if (lastVisibleRef.current !== null) {
+        sessionAccRef.current += (Date.now() - lastVisibleRef.current) / 1000;
+        lastVisibleRef.current = Date.now();
+      }
+      flush();
+    }, 30000);
+    const onUnload = () => {
+      if (lastVisibleRef.current !== null) {
+        sessionAccRef.current += (Date.now() - lastVisibleRef.current) / 1000;
+        lastVisibleRef.current = null;
+      }
+      if (sessionAccRef.current > 0) {
+        navigator.sendBeacon("/api/session-time", new Blob([JSON.stringify({ name: currentUser, seconds: Math.round(sessionAccRef.current) })], { type: "application/json" }));
+      }
+    };
+    window.addEventListener("beforeunload", onUnload);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      clearInterval(interval);
+      window.removeEventListener("beforeunload", onUnload);
+    };
+  }, [currentUser]);
 
   // Auto-reload when a new version is deployed
   useEffect(() => {
@@ -656,6 +712,9 @@ export default function Home() {
   const myMember = MEMBERS.find((m) => m.name === currentUser);
   const bossMember = MEMBERS.find((m) => m.name === BOSS);
   const teamMembers = sortedMembers.filter((m) => m.name !== currentUser && m.name !== BOSS);
+  const topOnlineUser = Object.keys(sessionTimes).length > 0
+    ? Object.entries(sessionTimes).sort((a, b) => b[1] - a[1])[0][0]
+    : null;
 
   const renderBuddyBadge = (buddyId: string) => {
     const buddy = getBuddyById(buddyId);
@@ -713,6 +772,9 @@ export default function Home() {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-2xl font-bold leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</span>
               <span className="text-[10px] font-bold uppercase tracking-widest bg-black text-white px-2 py-0.5 rounded-full">you</span>
+              {topOnlineUser === member.name && (
+                <span className="text-[10px] font-extrabold bg-[#FFE234] border-[2px] border-black text-black px-2 py-0.5 rounded-full uppercase tracking-widest whitespace-nowrap">🖥️ most online</span>
+              )}
             </div>
             {updatedAt[member.name] && (
               <>
@@ -888,7 +950,12 @@ export default function Home() {
               className="rounded-full object-cover border-[3px] border-black w-[44px] h-[44px] shrink-0 transition-transform group-hover:scale-110"
             />
             <div className="flex-1 min-w-0">
-              <p className="font-extrabold text-xl leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</p>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <p className="font-extrabold text-xl leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</p>
+                {topOnlineUser === member.name && (
+                  <span className="text-[10px] font-extrabold bg-[#FFE234] border-[2px] border-black text-black px-2 py-0.5 rounded-full uppercase tracking-widest whitespace-nowrap">🖥️ most online</span>
+                )}
+              </div>
               {updatedAt[member.name] && (
                 <>
                   <p className="text-[12px] text-black font-mono mt-0.5">{timeAgo(updatedAt[member.name])}</p>
