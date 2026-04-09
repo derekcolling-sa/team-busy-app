@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { setBanner } from "@/lib/redis";
+import { getBanner, setBanner } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +32,12 @@ export async function GET(request: Request) {
 
   const today = DAYS[new Date().getDay()];
   const date = new Date().toISOString().split("T")[0];
+
+  // Don't overwrite a feature announcement set today
+  const existing = await getBanner();
+  if (existing?.type === "feature" && existing.date === date) {
+    return Response.json({ ok: true, skipped: true, message: existing.message });
+  }
 
   const { text } = await generateText({
     model: "anthropic/claude-haiku-4.5",
