@@ -946,7 +946,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-6 sm:mb-8">
             <div className="flex flex-col gap-1">
               <span className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>
-                Vibe Check 👁️👄👁️
+                Vibe Check <span className="whitespace-nowrap">👁️👄👁️</span>
               </span>
             </div>
             {/* Home button — only shown when user is selected */}
