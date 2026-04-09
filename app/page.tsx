@@ -1132,7 +1132,7 @@ export default function Home() {
               </button>
             )}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <span className="text-lg sm:text-2xl font-extrabold text-white" style={{ fontFamily: "var(--font-display)" }}>{today}</span>
+              <span className="text-lg sm:text-2xl font-extrabold text-white whitespace-nowrap" style={{ fontFamily: "var(--font-display)" }}>{today}</span>
               <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3CB55A] animate-pulse inline-block" />
