@@ -416,3 +416,23 @@ export async function setBroadcast(message: string, type: BroadcastType): Promis
     await redis.del(URGENT_KEY);
   }
 }
+
+const TIMEOFF_KEY = "team-busy-timeoff";
+
+export type TimeOffEntry = { name: string; ts: number };
+
+export async function requestTimeOff(name: string): Promise<void> {
+  await redis.hset(TIMEOFF_KEY, { [name]: Date.now() });
+}
+
+export async function clearTimeOff(name: string): Promise<void> {
+  await redis.hdel(TIMEOFF_KEY, name);
+}
+
+export async function getTimeOffRequests(): Promise<TimeOffEntry[]> {
+  const data = await redis.hgetall(TIMEOFF_KEY);
+  if (!data) return [];
+  return Object.entries(data)
+    .map(([name, ts]) => ({ name, ts: Number(ts) }))
+    .sort((a, b) => a.ts - b.ts);
+}

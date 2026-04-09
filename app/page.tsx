@@ -115,6 +115,9 @@ export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const [showFeatureRequest, setShowFeatureRequest] = useState(false);
+  const [featureRequestText, setFeatureRequestText] = useState("");
+  const [featureRequestSent, setFeatureRequestSent] = useState(false);
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
@@ -151,6 +154,8 @@ export default function Home() {
   const [hoveredMsg, setHoveredMsg] = useState<number | null>(null);
   const [goHomeRequested, setGoHomeRequested] = useState(false);
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number }[]>([]);
+  const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
+  const [timeOffSent, setTimeOffSent] = useState(false);
   const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
   const [pokedBy, setPokedBy] = useState<string[]>([]);
   const [buddies, setBuddies] = useState<Record<string, { id: string; hatchedAt: number }>>({});
@@ -169,7 +174,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -183,8 +188,9 @@ export default function Home() {
         fetch("/api/reload"),
         fetch("/api/banner"),
         fetch("/api/poke"),
+        fetch("/api/time-off"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -198,6 +204,7 @@ export default function Home() {
         reloadRes.json(),
         bannerRes.json(),
         pokeRes.json(),
+        timeOffRes.json(),
       ]);
       if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
         window.location.reload();
@@ -218,6 +225,7 @@ export default function Home() {
       setBuddies(buddiesData.buddies ?? {});
       setReactions(reactionsData.reactions ?? {});
       setGoHomeRequests(goHomeData.requests ?? []);
+      setTimeOffRequests(timeOffData.requests ?? []);
       if (bannerData.banner?.message) setBanner({ message: bannerData.banner.message, type: bannerData.banner.type ?? "daily" });
       const allPokes: { from: string; to: string; ts: number }[] = pokeData.pokes ?? [];
       setPokes(allPokes);
@@ -464,6 +472,26 @@ export default function Home() {
     });
   };
 
+  const handleTimeOffRequest = async () => {
+    if (!currentUser || timeOffSent) return;
+    setTimeOffSent(true);
+    setTimeOffRequests((prev) => prev.some((r) => r.name === currentUser) ? prev : [...prev, { name: currentUser, ts: Date.now() }]);
+    await fetch("/api/time-off", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser }),
+    });
+  };
+
+  const approveTimeOff = async (name: string) => {
+    setTimeOffRequests((prev) => prev.filter((r) => r.name !== name));
+    await fetch("/api/time-off", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+  };
+
   const postMessage = async () => {
     if (!newMessage.trim() || !currentUser) return;
     const msg = { name: currentUser, message: newMessage.trim(), ts: Date.now() };
@@ -492,6 +520,21 @@ export default function Home() {
     const data = await res.json();
     if (data.url) setPhotoOverrides((prev) => ({ ...prev, [currentUser]: data.url }));
     setUploadingPhoto(false);
+  };
+
+  const submitFeatureRequest = async () => {
+    if (!featureRequestText.trim()) return;
+    await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, message: `[Feature Request] ${featureRequestText.trim()}` }),
+    });
+    setFeatureRequestText("");
+    setFeatureRequestSent(true);
+    setTimeout(() => {
+      setFeatureRequestSent(false);
+      setShowFeatureRequest(false);
+    }, 2000);
   };
 
   const submitFeedback = async () => {
@@ -888,6 +931,21 @@ export default function Home() {
               >
                 💬 Feedback
               </button>
+              <button
+                onClick={() => setShowFeatureRequest(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FFE234] text-[11px] font-bold text-black hover:bg-[#FF9DC8] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]"
+              >
+                💡 Feature Request
+              </button>
+              {currentUser && !VP.includes(currentUser) && (
+                <button
+                  onClick={handleTimeOffRequest}
+                  disabled={timeOffSent || timeOffRequests.some((r) => r.name === currentUser)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#b5f0c8] text-[11px] font-bold text-black hover:bg-[#FFE234] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000] disabled:opacity-60 disabled:cursor-default"
+                >
+                  🏖️ {(timeOffSent || timeOffRequests.some((r) => r.name === currentUser)) ? "Request sent!" : "hey Derek, approve my time off"}
+                </button>
+              )}
               </div>
             </div>
           </div>
@@ -910,6 +968,34 @@ export default function Home() {
                     />
                     <span className="font-extrabold text-base">{r.name}</span>
                     <span className="text-xs text-[#8a857d] font-semibold">{timeAgo(r.ts)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Time Off Requests — visible to Derek */}
+          {VP.includes(currentUser ?? "") && timeOffRequests.length > 0 && (
+            <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#b5f0c8] overflow-hidden">
+              <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
+                <span className="text-4xl">🏖️</span>
+                <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">Time Off Requests</h2>
+                <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{timeOffRequests.length}</span>
+              </div>
+              <div className="flex flex-wrap gap-3 px-5 py-4">
+                {timeOffRequests.map((r) => (
+                  <div key={r.name} className="flex items-center gap-2.5 bg-white border-[3px] border-black rounded-2xl px-4 py-2.5 shadow-[3px_3px_0_#000]">
+                    <Image
+                      src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
+                      alt={r.name} width={36} height={36}
+                      className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
+                    />
+                    <span className="font-extrabold text-base">{r.name}</span>
+                    <span className="text-xs text-[#8a857d] font-semibold">{timeAgo(r.ts)}</span>
+                    <button
+                      onClick={() => approveTimeOff(r.name)}
+                      className="ml-1 px-2.5 py-1 rounded-xl bg-black text-white text-[11px] font-extrabold cursor-pointer hover:bg-[#333] transition-colors"
+                    >approved ✓</button>
                   </div>
                 ))}
               </div>
@@ -1226,6 +1312,51 @@ export default function Home() {
                       disabled={!feedbackText.trim()}
                       className="flex-1 py-3 rounded-2xl bg-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default"
                     >send it ✉️</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Feature Request Modal */}
+        {showFeatureRequest && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
+              {featureRequestSent ? (
+                <div className="text-center py-4">
+                  <div className="text-5xl mb-3">💡</div>
+                  <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Noted!</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between mb-1">
+                    <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Feature Request</h2>
+                    <button
+                      onClick={() => { setShowFeatureRequest(false); setFeatureRequestText(""); }}
+                      className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5"
+                    >✕</button>
+                  </div>
+                  <p className="text-sm text-[#b5b0a8] mb-5 font-medium">got an idea? drop it here and we&apos;ll cook</p>
+                  <textarea
+                    autoFocus
+                    value={featureRequestText}
+                    onChange={(e) => setFeatureRequestText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitFeatureRequest(); }}
+                    placeholder="what should we build..."
+                    rows={4}
+                    className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setShowFeatureRequest(false); setFeatureRequestText(""); }}
+                      className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
+                    >nevermind</button>
+                    <button
+                      onClick={submitFeatureRequest}
+                      disabled={!featureRequestText.trim()}
+                      className="flex-1 py-3 rounded-2xl bg-[#FFE234] border-[3px] border-black text-black font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
+                    >send it 💡</button>
                   </div>
                 </>
               )}
