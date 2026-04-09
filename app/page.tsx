@@ -714,6 +714,7 @@ export default function Home() {
     day: "numeric",
   });
 
+  const isGuest = currentUser === "__guest__";
   const myMember = MEMBERS.find((m) => m.name === currentUser);
   const bossMember = MEMBERS.find((m) => m.name === BOSS);
   const teamMembers = sortedMembers.filter((m) => m.name !== currentUser && m.name !== BOSS);
@@ -1194,7 +1195,7 @@ export default function Home() {
               </span>
             </div>
             {/* Home button — only shown when user is selected */}
-            {loaded && currentUser && (
+            {loaded && currentUser && !isGuest && (
               <button
                 onClick={handleGoHome}
                 disabled={goHomeRequested}
@@ -1211,6 +1212,7 @@ export default function Home() {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3CB55A] animate-pulse inline-block" />
                 v{process.env.NEXT_PUBLIC_APP_VERSION}
               </div>
+              {!isGuest && <>
               <button
                 onClick={() => setShowFeedback(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FF9DC8] text-[11px] font-bold text-black hover:bg-[#FFE234] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]"
@@ -1229,7 +1231,8 @@ export default function Home() {
               >
                 🐛 Submit Bug
               </button>
-              {currentUser && !VP.includes(currentUser) && (
+              </>}
+              {currentUser && !isGuest && !VP.includes(currentUser) && (
                 <button
                   onClick={handleTimeOffRequest}
                   disabled={timeOffSent || timeOffRequests.some((r) => r.name === currentUser)}
@@ -1426,7 +1429,7 @@ export default function Home() {
                     </div>
                     <span className="text-5xl shrink-0">{EMOJIS[getLevel(statuses[bossMember.name] ?? 50)]}</span>
                   </div>
-                  {currentUser !== BOSS && (
+                  {currentUser !== BOSS && !isGuest && (
                     <div className="flex items-center gap-4 px-6 pb-5">
                       <button
                         onClick={() => reactToBoss("heart")}
@@ -1555,6 +1558,11 @@ export default function Home() {
                   </div>
 
                   {/* Input */}
+                  {isGuest ? (
+                    <div className="px-4 py-3 border-t-[3px] border-black bg-[#f7f7f5] text-center text-xs font-bold text-[#b5b0a8] uppercase tracking-widest">
+                      👀 viewing as guest — pick yourself to chat
+                    </div>
+                  ) : (
                   <div className="px-4 py-3 border-t-[3px] border-black bg-white">
                     <div className="flex gap-2">
                       <input
@@ -1575,6 +1583,7 @@ export default function Home() {
                       </button>
                     </div>
                   </div>
+                  )}
                 </div>
               )}
             </>
@@ -1847,6 +1856,12 @@ export default function Home() {
                   </button>
                 ))}
               </div>
+              <button
+                onClick={() => pickUser("__guest__")}
+                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-3 border-[3px] border-dashed border-black rounded-2xl bg-white hover:bg-[#f7f7f5] transition-all cursor-pointer text-sm font-bold text-[#b5b0a8] hover:text-black"
+              >
+                👀 just looking (guest mode)
+              </button>
             </div>
           </div>
         )}
