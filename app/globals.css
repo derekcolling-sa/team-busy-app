@@ -19,10 +19,7 @@
 }
 
 body {
-  background-color: var(--bg);
-  background-image: url('/abby.jpg');
-  background-repeat: repeat;
-  background-size: 280px;
+  background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
