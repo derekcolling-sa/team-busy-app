@@ -1053,6 +1053,15 @@ export default function Home() {
         </div>
       )}
 
+      {/* Banner ad */}
+      <div className="w-full flex justify-center border-b-[3px] border-black bg-white">
+        <img
+          src="https://storage.googleapis.com/website-production/uploads/2023/01/gobble-banner-ad-example.png"
+          alt="Advertisement"
+          className="w-full max-w-[1280px] object-cover"
+        />
+      </div>
+
       <div className="min-h-screen px-4 sm:px-8 py-6 sm:py-8">
         <div className="max-w-[1280px] mx-auto">
           {/* Header */}
