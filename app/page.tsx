@@ -199,79 +199,32 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes, metcalfRes, bossReactionsRes, needWorkRes, sessionTimeRes, adhdRes] = await Promise.all([
-        fetch("/api/status"),
-        fetch("/api/status/ooo"),
-        fetch("/api/status/sos"),
-        fetch("/api/photos"),
-        fetch("/api/messages"),
-        fetch("/api/urgent"),
-        fetch("/api/chat"),
-        fetch("/api/buddies"),
-        fetch("/api/chat/reactions"),
-        fetch("/api/go-home"),
-        fetch("/api/reload"),
-        fetch("/api/banner"),
-        fetch("/api/poke"),
-        fetch("/api/time-off"),
-        fetch("/api/ratings"),
-        fetch("/api/status/metcalf"),
-        fetch("/api/boss-reactions"),
-        fetch("/api/status/need-work"),
-        fetch("/api/session-time"),
-        fetch("/api/status/adhd"),
-      ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData, metcalfData, bossReactionsData, needWorkData, sessionTimeData, adhdData] = await Promise.all([
-        statusRes.json(),
-        oooRes.json(),
-        sosRes.json(),
-        photosRes.json(),
-        msgsRes.json(),
-        urgentRes.json(),
-        chatRes.json(),
-        buddiesRes.json(),
-        reactionsRes.json(),
-        goHomeRes.json(),
-        reloadRes.json(),
-        bannerRes.json(),
-        pokeRes.json(),
-        timeOffRes.json(),
-        ratingsRes.json(),
-        metcalfRes.json(),
-        bossReactionsRes.json(),
-        needWorkRes.json(),
-        sessionTimeRes.json(),
-        adhdRes.json(),
-      ]);
-      if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
+      const poll = await fetch("/api/poll").then((r) => r.json());
+      if (poll.reload && poll.reload > pageLoadTime.current) {
         window.location.reload();
         return;
       }
-      setStatuses(statusData.status);
-      setUpdatedAt(statusData.updated);
-      const notes = statusData.notes ?? {};
+      setStatuses(poll.status ?? {});
+      setUpdatedAt(poll.updated ?? {});
+      const notes = poll.notes ?? {};
       setStatusNotes(notes);
       setEditingNote((prev) => prev !== "" ? prev : (currentUser && notes[currentUser]) ? notes[currentUser] : prev);
-      setOooStatuses(oooData.ooo ?? oooData);
-      setOooDetails(oooData.details ?? {});
-      setSosStatuses(sosData);
-      setPhotoOverrides(photosData.photos ?? {});
-      setMessages(msgsData.messages ?? []);
-      setBroadcast(urgentData.message ? { message: urgentData.message, type: urgentData.type ?? "broadcast" } : null);
-      setChatMessages(chatData.messages ?? []);
-      setBuddies(buddiesData.buddies ?? {});
-      setReactions(reactionsData.reactions ?? {});
-      setGoHomeRequests(goHomeData.requests ?? []);
-      setTimeOffRequests(timeOffData.requests ?? []);
-      setRatings(ratingsData.ratings ?? {});
-      setMetcalfStatuses(metcalfData ?? {});
-      setBossReactions(bossReactionsData.reactions ?? {});
-      setNeedWorkStatuses(needWorkData ?? {});
-      setSessionTimes(sessionTimeData ?? {});
-      setAdhdLevels(adhdData ?? {});
-      if (bannerData.banner?.message) setBanner({ message: bannerData.banner.message, type: bannerData.banner.type ?? "daily" });
-      const allPokes: { from: string; to: string; ts: number }[] = pokeData.pokes ?? [];
-      setPokes(allPokes);
+      setOooStatuses(poll.ooo ?? {});
+      setOooDetails(poll.oooDetails ?? {});
+      setSosStatuses(poll.sos ?? {});
+      setMessages(poll.messages ?? []);
+      setBroadcast(poll.urgent?.message ? { message: poll.urgent.message, type: poll.urgent.type ?? "broadcast" } : null);
+      setChatMessages(poll.chat ?? []);
+      setReactions(poll.reactions ?? {});
+      setGoHomeRequests(poll.goHome ?? []);
+      setTimeOffRequests(poll.timeOff ?? []);
+      setMetcalfStatuses(poll.metcalf ?? {});
+      setBossReactions(poll.bossReactions ?? {});
+      setNeedWorkStatuses(poll.needWork ?? {});
+      setSessionTimes(poll.sessionTime ?? {});
+      setAdhdLevels(poll.adhd ?? {});
+      setPokes(poll.pokes ?? []);
+      if (poll.banner?.message) setBanner({ message: poll.banner.message, type: poll.banner.type ?? "daily" });
     } catch {
       // retry next poll
     } finally {
@@ -279,11 +232,28 @@ export default function Home() {
     }
   }, []);
 
+  // Slow data — photos, buddies, ratings change rarely; fetch once on mount
+  const fetchSlowData = useCallback(async () => {
+    try {
+      const [photosData, buddiesData, ratingsData] = await Promise.all([
+        fetch("/api/photos").then((r) => r.json()),
+        fetch("/api/buddies").then((r) => r.json()),
+        fetch("/api/ratings").then((r) => r.json()),
+      ]);
+      setPhotoOverrides(photosData.photos ?? {});
+      setBuddies(buddiesData.buddies ?? {});
+      setRatings(ratingsData.ratings ?? {});
+    } catch {
+      // non-critical
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
+    fetchSlowData();
     const interval = setInterval(fetchData, 12000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchData, fetchSlowData]);
 
   // Session time tracking — accumulate visible time and flush every 30s
   useEffect(() => {
@@ -1104,7 +1074,7 @@ export default function Home() {
     );
   };
 
-  const OFFLINE = true;
+  const OFFLINE = false;
   if (OFFLINE) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#1a1a1a", padding: "40px 20px", textAlign: "center" }}>
