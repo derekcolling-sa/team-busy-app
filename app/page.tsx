@@ -1188,7 +1188,7 @@ export default function Home() {
                     <div className="absolute top-[15px] left-1/2 -translate-x-1/2 bg-black rounded-full z-10" style={{ width: 60, height: 18 }} />
                     <div className="overflow-hidden rounded-[1.8rem] bg-black" style={{ aspectRatio: "9/19.5", position: "relative" }}>
                       <iframe
-                        src="https://www.youtube.com/embed/Q5KtBKk4hC0?autoplay=1&mute=1&loop=1&playlist=Q5KtBKk4hC0&controls=0&modestbranding=1&rel=0&vq=hd720"
+                        src="https://www.youtube.com/embed/oep4KmkpqJU?autoplay=1&mute=1&loop=1&playlist=oep4KmkpqJU&controls=0&modestbranding=1&rel=0&vq=hd720"
                         allow="autoplay; encrypted-media"
                         allowFullScreen
                         style={{ border: "none", display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "100%", height: "100%" }}
