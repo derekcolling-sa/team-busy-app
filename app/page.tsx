@@ -1450,6 +1450,26 @@ export default function Home() {
                 </div>
               )}
 
+              {/* Vibe Music */}
+              <div className="mt-8 border-[3px] border-black rounded-[1.4rem] shadow-[5px_5px_0_#000] overflow-hidden bg-black">
+                <div className="relative w-full" style={{ height: "min(85vh, 560px)" }}>
+                  <iframe
+                    src="https://www.youtube.com/embed/5hH9dOwzrtc?autoplay=0&list=RD5hH9dOwzrtc&start_radio=1"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{
+                      position: "absolute",
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                      width: "max(100%, calc(min(85vh, 560px) * 16 / 9))",
+                      height: "max(100%, calc(100% * 9 / 16))",
+                      border: "none",
+                    }}
+                  />
+                </div>
+              </div>
+
               {/* Team Chat */}
               {currentUser && (
                 <div className="mt-8 border-[3px] border-black rounded-[1.4rem] bg-white shadow-[5px_5px_0_#000] overflow-hidden">
