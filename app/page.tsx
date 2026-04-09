@@ -1048,7 +1048,7 @@ export default function Home() {
                 </div>
                 {/* iPhone */}
                 <div className="relative shrink-0 hidden sm:block" style={{ width: 180 }}>
-                  <div className="relative bg-black rounded-[2.4rem] border-[4px] border-black shadow-[8px_8px_0_#000]" style={{ padding: "12px 8px" }}>
+                  <div className="relative bg-black rounded-[2.4rem] border-[4px] border-black " style={{ padding: "12px 8px" }}>
                     <div className="absolute top-[15px] left-1/2 -translate-x-1/2 bg-black rounded-full z-10" style={{ width: 60, height: 18 }} />
                     <div className="overflow-hidden rounded-[1.8rem] bg-black" style={{ aspectRatio: "9/19.5", position: "relative" }}>
                       <iframe
