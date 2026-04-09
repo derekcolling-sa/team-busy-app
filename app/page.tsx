@@ -1022,7 +1022,8 @@ export default function Home() {
             const topScore = sorted[0].count;
             return (
               <div className="animate-pop-in mb-6 flex gap-6 items-start">
-                <div className="flex-1 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
+                <div className="flex-1 flex flex-col gap-4">
+                <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
                   <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
                     <Image src="/home.png" alt="home" width={56} height={56} className="w-14 h-14 rounded-full" />
                     <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">Wants to go home</h2>
@@ -1045,6 +1046,39 @@ export default function Home() {
                       );
                     })}
                   </div>
+                </div>
+                {/* Message input inside left column */}
+                {loaded && currentUser && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        const suggestions = getSuggestions(currentUser);
+                        setNewMessage(suggestions[suggestionIdx % suggestions.length]);
+                        setSuggestionIdx((i) => i + 1);
+                      }}
+                      className="px-3 py-2.5 rounded-xl border-[3px] border-black bg-white hover:bg-[#FFE234] transition-colors cursor-pointer shrink-0 shadow-[3px_3px_0_#000] text-2xl leading-none"
+                      title="Get a suggestion"
+                    >
+                      🍵
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="drop the tea…"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") postMessage(); }}
+                      maxLength={120}
+                      className="flex-1 text-base font-bold text-black bg-white border-[3px] border-black rounded-xl px-4 py-2.5 focus:outline-none shadow-[3px_3px_0_#000] placeholder:text-[#b5b0a8] placeholder:font-normal"
+                    />
+                    <button
+                      onClick={postMessage}
+                      disabled={!newMessage.trim()}
+                      className="px-4 py-2.5 rounded-xl bg-[#FFE234] border-[3px] border-black text-black text-sm font-bold shadow-[3px_3px_0_#000] disabled:opacity-30 disabled:cursor-default hover:bg-[#FF9DC8] transition-all cursor-pointer shrink-0 active:translate-y-[2px] active:shadow-none"
+                    >
+                      drop it ✦
+                    </button>
+                  </div>
+                )}
                 </div>
                 {/* iPhone */}
                 <div className="relative shrink-0 hidden sm:block" style={{ width: 180 }}>
@@ -1096,8 +1130,8 @@ export default function Home() {
             </div>
           )}
 
-          {/* Message input strip */}
-          {loaded && currentUser && (
+          {/* Message input strip — shown here only when go-home pod is not visible */}
+          {loaded && currentUser && goHomeRequests.length === 0 && (
             <div className="mb-7">
               <div className="flex items-center gap-3">
                 <button
