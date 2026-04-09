@@ -118,6 +118,9 @@ export default function Home() {
   const [showFeatureRequest, setShowFeatureRequest] = useState(false);
   const [featureRequestText, setFeatureRequestText] = useState("");
   const [featureRequestSent, setFeatureRequestSent] = useState(false);
+  const [showBugReport, setShowBugReport] = useState(false);
+  const [bugReportText, setBugReportText] = useState("");
+  const [bugReportSent, setBugReportSent] = useState(false);
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
@@ -545,6 +548,21 @@ export default function Home() {
     const data = await res.json();
     if (data.url) setPhotoOverrides((prev) => ({ ...prev, [currentUser]: data.url }));
     setUploadingPhoto(false);
+  };
+
+  const submitBugReport = async () => {
+    if (!bugReportText.trim()) return;
+    await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, message: `[Bug Report] ${bugReportText.trim()}` }),
+    });
+    setBugReportText("");
+    setBugReportSent(true);
+    setTimeout(() => {
+      setBugReportSent(false);
+      setShowBugReport(false);
+    }, 2000);
   };
 
   const submitFeatureRequest = async () => {
@@ -979,6 +997,12 @@ export default function Home() {
               >
                 💡 Feature Request
               </button>
+              <button
+                onClick={() => setShowBugReport(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FF9DC8] text-[11px] font-bold text-black hover:bg-[#FFE234] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]"
+              >
+                🐛 Submit Bug
+              </button>
               {currentUser && !VP.includes(currentUser) && (
                 <button
                   onClick={handleTimeOffRequest}
@@ -1402,6 +1426,51 @@ export default function Home() {
                       disabled={!featureRequestText.trim()}
                       className="flex-1 py-3 rounded-2xl bg-[#FFE234] border-[3px] border-black text-black font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
                     >send it 💡</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Bug Report Modal */}
+        {showBugReport && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
+              {bugReportSent ? (
+                <div className="text-center py-4">
+                  <div className="text-5xl mb-3">🐛</div>
+                  <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Got it!</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between mb-1">
+                    <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Submit a Bug</h2>
+                    <button
+                      onClick={() => { setShowBugReport(false); setBugReportText(""); }}
+                      className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5"
+                    >✕</button>
+                  </div>
+                  <p className="text-sm text-[#b5b0a8] mb-5 font-medium">something broken? spill the tea</p>
+                  <textarea
+                    autoFocus
+                    value={bugReportText}
+                    onChange={(e) => setBugReportText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitBugReport(); }}
+                    placeholder="what broke and when..."
+                    rows={4}
+                    className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setShowBugReport(false); setBugReportText(""); }}
+                      className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
+                    >nevermind</button>
+                    <button
+                      onClick={submitBugReport}
+                      disabled={!bugReportText.trim()}
+                      className="flex-1 py-3 rounded-2xl bg-[#FF9DC8] border-[3px] border-black text-black font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
+                    >send it 🐛</button>
                   </div>
                 </>
               )}
