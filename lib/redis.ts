@@ -269,6 +269,31 @@ export async function getGoHomeRequests(): Promise<GoHomeEntry[]> {
   return Object.entries(data).map(([name, ts]) => ({ name, ts: Number(ts) })).sort((a, b) => a.ts - b.ts);
 }
 
+const POKES_KEY = "team-busy-pokes";
+
+export type PokeEntry = { from: string; to: string; ts: number };
+
+export async function sendPoke(from: string, to: string): Promise<void> {
+  await redis.hset(POKES_KEY, { [`${to}:${from}`]: Date.now() });
+}
+
+export async function clearPoke(from: string, to: string): Promise<void> {
+  await redis.hdel(POKES_KEY, `${to}:${from}`);
+}
+
+export async function clearAllPokes(): Promise<void> {
+  await redis.del(POKES_KEY);
+}
+
+export async function getAllPokes(): Promise<PokeEntry[]> {
+  const data = await redis.hgetall(POKES_KEY);
+  if (!data) return [];
+  return Object.entries(data).map(([key, ts]) => {
+    const [to, from] = key.split(":");
+    return { to, from, ts: Number(ts) };
+  });
+}
+
 const REACTIONS_KEY = "team-busy-reactions";
 
 // reactions stored as hash: field = "{ts}:{emoji}", value = JSON array of names

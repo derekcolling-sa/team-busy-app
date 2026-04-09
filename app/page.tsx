@@ -151,6 +151,8 @@ export default function Home() {
   const [hoveredMsg, setHoveredMsg] = useState<number | null>(null);
   const [goHomeRequested, setGoHomeRequested] = useState(false);
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number }[]>([]);
+  const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
+  const [pokedBy, setPokedBy] = useState<string[]>([]);
   const [buddies, setBuddies] = useState<Record<string, { id: string; hatchedAt: number }>>({});
   const [showHatchModal, setShowHatchModal] = useState(false);
   const [hatchedBuddy, setHatchedBuddy] = useState<Buddy | null>(null);
@@ -167,7 +169,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -180,8 +182,9 @@ export default function Home() {
         fetch("/api/go-home"),
         fetch("/api/reload"),
         fetch("/api/banner"),
+        fetch("/api/poke"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -194,6 +197,7 @@ export default function Home() {
         goHomeRes.json(),
         reloadRes.json(),
         bannerRes.json(),
+        pokeRes.json(),
       ]);
       if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
         window.location.reload();
@@ -215,6 +219,8 @@ export default function Home() {
       setReactions(reactionsData.reactions ?? {});
       setGoHomeRequests(goHomeData.requests ?? []);
       if (bannerData.banner?.message) setBanner(bannerData.banner.message);
+      const allPokes: { from: string; to: string; ts: number }[] = pokeData.pokes ?? [];
+      setPokes(allPokes);
     } catch {
       // retry next poll
     } finally {
@@ -428,6 +434,26 @@ export default function Home() {
     });
   };
 
+  const sendPoke = async (to: string) => {
+    if (!currentUser || currentUser === to) return;
+    setPokes((prev) => [...prev.filter((p) => !(p.from === currentUser && p.to === to)), { from: currentUser, to, ts: Date.now() }]);
+    await fetch("/api/poke", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from: currentUser, to }),
+    });
+  };
+
+  const dismissPoke = async (from: string) => {
+    if (!currentUser) return;
+    setPokes((prev) => prev.filter((p) => !(p.to === currentUser && p.from === from)));
+    await fetch("/api/poke", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to: currentUser }),
+    });
+  };
+
   const handleGoHome = async () => {
     if (!currentUser || goHomeRequested) return;
     setGoHomeRequested(true);
@@ -620,6 +646,25 @@ export default function Home() {
             </button>
           </>
         )}
+        {/* Incoming pokes */}
+        {pokes.filter((p) => p.to === member.name).length > 0 && (
+          <div className="flex flex-col gap-1.5 mt-2">
+            {pokes.filter((p) => p.to === member.name).map((poke) => (
+              <div key={poke.from} className="flex items-center gap-2 bg-[#FFE234] border-[2px] border-black rounded-xl px-3 py-2 shadow-[2px_2px_0_#000] animate-pop-in">
+                <span className="text-base">👉</span>
+                <span className="text-xs font-bold flex-1">{poke.from} poked you!</span>
+                <button
+                  onClick={() => sendPoke(poke.from)}
+                  className="text-[10px] font-bold bg-white border-[2px] border-black rounded-lg px-2 py-1 cursor-pointer hover:bg-black hover:text-white transition-colors"
+                >poke back</button>
+                <button
+                  onClick={() => dismissPoke(poke.from)}
+                  className="w-5 h-5 rounded-full bg-black/10 hover:bg-black hover:text-white text-black text-[10px] font-bold flex items-center justify-center transition-colors cursor-pointer"
+                >✕</button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };
@@ -716,6 +761,19 @@ export default function Home() {
                 </p>
               )}
             </div>
+          )}
+          {currentUser && currentUser !== member.name && (
+            <button
+              onClick={() => sendPoke(member.name)}
+              disabled={pokes.some((p) => p.from === currentUser && p.to === member.name)}
+              className={`w-full mt-1 py-1.5 rounded-xl border-[2px] border-black text-xs font-bold transition-all cursor-pointer
+                ${pokes.some((p) => p.from === currentUser && p.to === member.name)
+                  ? "bg-[#FFE234] opacity-60 cursor-default"
+                  : "bg-white hover:bg-[#FFE234] active:scale-95 shadow-[2px_2px_0_#000]"
+                }`}
+            >
+              {pokes.some((p) => p.from === currentUser && p.to === member.name) ? "👉 poked!" : "👉 poke"}
+            </button>
           )}
         </div>
       </div>
