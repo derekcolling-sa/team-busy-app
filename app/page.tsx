@@ -1016,59 +1016,54 @@ export default function Home() {
             </div>
           </div>
 
-          {/* iPhone YouTube Embed */}
-          <div className="flex justify-center mb-8">
-            <div className="relative" style={{ width: 220 }}>
-              {/* Phone shell */}
-              <div className="relative bg-black rounded-[2.8rem] border-[4px] border-black shadow-[8px_8px_0_#000]" style={{ padding: "14px 10px" }}>
-                {/* Dynamic island */}
-                <div className="absolute top-[18px] left-1/2 -translate-x-1/2 bg-black rounded-full z-10" style={{ width: 72, height: 22 }} />
-                {/* Screen */}
-                <div className="overflow-hidden rounded-[2.2rem] bg-black" style={{ aspectRatio: "9/19.5" }}>
-                  <iframe
-                    src="https://www.youtube.com/embed/vTfD20dbxho?autoplay=1&mute=1&loop=1&playlist=vTfD20dbxho&controls=0&modestbranding=1&rel=0"
-                    allow="autoplay; encrypted-media"
-                    allowFullScreen
-                    className="w-full h-full"
-                    style={{ border: "none", display: "block", transform: "scale(1.01)" }}
-                  />
-                </div>
-              </div>
-              {/* Side buttons */}
-              <div className="absolute bg-black rounded-r-sm" style={{ left: -7, top: 80, width: 5, height: 32, borderRadius: "2px 0 0 2px" }} />
-              <div className="absolute bg-black rounded-r-sm" style={{ left: -7, top: 122, width: 5, height: 52, borderRadius: "2px 0 0 2px" }} />
-              <div className="absolute bg-black rounded-r-sm" style={{ left: -7, top: 184, width: 5, height: 52, borderRadius: "2px 0 0 2px" }} />
-              <div className="absolute bg-black" style={{ right: -7, top: 130, width: 5, height: 70, borderRadius: "0 2px 2px 0" }} />
-            </div>
-          </div>
-
-          {/* Go Home Requests */}
+          {/* Go Home Requests + iPhone */}
           {goHomeRequests.length > 0 && (() => {
             const sorted = [...goHomeRequests].sort((a, b) => b.count - a.count || a.ts - b.ts);
             const topScore = sorted[0].count;
             return (
-              <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
-                <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
-                  <Image src="/home.png" alt="home" width={56} height={56} className="w-14 h-14 rounded-full" />
-                  <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">Wants to go home</h2>
-                  <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{goHomeRequests.length}</span>
+              <div className="animate-pop-in mb-6 flex gap-6 items-start">
+                <div className="flex-1 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
+                  <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
+                    <Image src="/home.png" alt="home" width={56} height={56} className="w-14 h-14 rounded-full" />
+                    <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">Wants to go home</h2>
+                    <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{goHomeRequests.length}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-3 px-5 py-4">
+                    {sorted.map((r, i) => {
+                      const isTop = i === 0 && topScore > 1;
+                      return (
+                        <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isTop ? "bg-black border-black" : "bg-white border-black"}`}>
+                          {isTop && <span className="text-base">🏆</span>}
+                          <Image
+                            src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
+                            alt={r.name} width={36} height={36}
+                            className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
+                          />
+                          <span className={`font-extrabold text-base ${isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
+                          <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-3 px-5 py-4">
-                  {sorted.map((r, i) => {
-                    const isTop = i === 0 && topScore > 1;
-                    return (
-                      <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isTop ? "bg-black border-black" : "bg-white border-black"}`}>
-                        {isTop && <span className="text-base">🏆</span>}
-                        <Image
-                          src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
-                          alt={r.name} width={36} height={36}
-                          className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
-                        />
-                        <span className={`font-extrabold text-base ${isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
-                        <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
-                      </div>
-                    );
-                  })}
+                {/* iPhone */}
+                <div className="relative shrink-0 hidden sm:block" style={{ width: 180 }}>
+                  <div className="relative bg-black rounded-[2.4rem] border-[4px] border-black shadow-[8px_8px_0_#000]" style={{ padding: "12px 8px" }}>
+                    <div className="absolute top-[15px] left-1/2 -translate-x-1/2 bg-black rounded-full z-10" style={{ width: 60, height: 18 }} />
+                    <div className="overflow-hidden rounded-[1.8rem] bg-black" style={{ aspectRatio: "9/19.5" }}>
+                      <iframe
+                        src="https://www.youtube.com/embed/vTfD20dbxho?autoplay=1&mute=1&loop=1&playlist=vTfD20dbxho&controls=0&modestbranding=1&rel=0"
+                        allow="autoplay; encrypted-media"
+                        allowFullScreen
+                        className="w-full h-full"
+                        style={{ border: "none", display: "block" }}
+                      />
+                    </div>
+                  </div>
+                  <div className="absolute bg-black" style={{ left: -6, top: 65, width: 4, height: 26, borderRadius: "2px 0 0 2px" }} />
+                  <div className="absolute bg-black" style={{ left: -6, top: 100, width: 4, height: 42, borderRadius: "2px 0 0 2px" }} />
+                  <div className="absolute bg-black" style={{ left: -6, top: 152, width: 4, height: 42, borderRadius: "2px 0 0 2px" }} />
+                  <div className="absolute bg-black" style={{ right: -6, top: 108, width: 4, height: 58, borderRadius: "0 2px 2px 0" }} />
                 </div>
               </div>
             );
