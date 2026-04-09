@@ -459,6 +459,24 @@ export async function clearAllBossReactions(): Promise<void> {
   await redis.del(BOSS_REACTIONS_KEY);
 }
 
+const NEED_WORK_KEY = "team-busy-need-work";
+
+export type NeedWorkStatus = Record<string, boolean>;
+
+export async function getAllNeedWork(): Promise<NeedWorkStatus> {
+  const data = await redis.hgetall(NEED_WORK_KEY);
+  if (!data) return {};
+  const result: NeedWorkStatus = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = value === "true" || value === true;
+  }
+  return result;
+}
+
+export async function setMemberNeedWork(name: string, active: boolean): Promise<void> {
+  await redis.hset(NEED_WORK_KEY, { [name]: String(active) });
+}
+
 const METCALF_KEY = "team-busy-metcalf";
 
 export type MetcalfStatus = Record<string, boolean>;

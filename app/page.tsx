@@ -142,6 +142,7 @@ export default function Home() {
   const [oooDetails, setOooDetails] = useState<Record<string, { note?: string; backDate?: string }>>({});
   const [sosStatuses, setSosStatuses] = useState<Record<string, boolean>>({});
   const [metcalfStatuses, setMetcalfStatuses] = useState<Record<string, boolean>>({});
+  const [needWorkStatuses, setNeedWorkStatuses] = useState<Record<string, boolean>>({});
   const [cardFlipped, setCardFlipped] = useState(false);
   const [bossReactions, setBossReactions] = useState<Record<string, "heart" | "thumbsdown">>({});
   const [showGhostModal, setShowGhostModal] = useState(false);
@@ -183,7 +184,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes, metcalfRes, bossReactionsRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes, metcalfRes, bossReactionsRes, needWorkRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -201,8 +202,9 @@ export default function Home() {
         fetch("/api/ratings"),
         fetch("/api/status/metcalf"),
         fetch("/api/boss-reactions"),
+        fetch("/api/status/need-work"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData, metcalfData, bossReactionsData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData, metcalfData, bossReactionsData, needWorkData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -220,6 +222,7 @@ export default function Home() {
         ratingsRes.json(),
         metcalfRes.json(),
         bossReactionsRes.json(),
+        needWorkRes.json(),
       ]);
       if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
         window.location.reload();
@@ -244,6 +247,7 @@ export default function Home() {
       setRatings(ratingsData.ratings ?? {});
       setMetcalfStatuses(metcalfData ?? {});
       setBossReactions(bossReactionsData.reactions ?? {});
+      setNeedWorkStatuses(needWorkData ?? {});
       if (bannerData.banner?.message) setBanner({ message: bannerData.banner.message, type: bannerData.banner.type ?? "daily" });
       const allPokes: { from: string; to: string; ts: number }[] = pokeData.pokes ?? [];
       setPokes(allPokes);
@@ -403,6 +407,16 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: currentUser, reaction: next }),
+    });
+  };
+
+  const toggleNeedWork = async (name: string) => {
+    const newVal = !needWorkStatuses[name];
+    setNeedWorkStatuses((prev) => ({ ...prev, [name]: newVal }));
+    await fetch("/api/status/need-work", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, active: newVal }),
     });
   };
 
@@ -662,6 +676,7 @@ export default function Home() {
     const isOOO = !!oooStatuses[member.name];
     const isSOS = !!sosStatuses[member.name];
     const isMetcalf = !!metcalfStatuses[member.name];
+    const isNeedWork = !!needWorkStatuses[member.name];
 
     return (
       <div
@@ -779,6 +794,12 @@ export default function Home() {
             >
               🚗 {isMetcalf ? "catch me on metcalf ✓" : "catch me on metcalf"}
             </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleNeedWork(member.name); }}
+              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${isNeedWork ? "bg-[#3D52F0] text-white shadow-none" : "bg-white text-black hover:bg-[#3D52F0] hover:text-white shadow-[3px_3px_0_#000]"}`}
+            >
+              📋 {isNeedWork ? "I need work ✓" : "I need work"}
+            </button>
           </>
         )}
         {isMetcalf && member.name !== currentUser && (
@@ -816,6 +837,7 @@ export default function Home() {
     const isOOO = !!oooStatuses[member.name];
     const isSOS = !!sosStatuses[member.name];
     const isMetcalf = !!metcalfStatuses[member.name];
+    const isNeedWork = !!needWorkStatuses[member.name];
 
     return (
       <div
@@ -910,6 +932,12 @@ export default function Home() {
             <div className="w-full rounded-xl bg-black px-4 py-2.5 flex items-center gap-2">
               <span className="text-lg">🚗</span>
               <p className="text-sm font-bold text-white">catch me on metcalf</p>
+            </div>
+          )}
+          {isNeedWork && (
+            <div className="w-full rounded-xl bg-[#3D52F0] px-4 py-2.5 flex items-center gap-2">
+              <span className="text-lg">📋</span>
+              <p className="text-sm font-bold text-white">I need work</p>
             </div>
           )}
           {currentUser && currentUser !== member.name && (
