@@ -1070,16 +1070,20 @@ export default function Home() {
                   <div className="flex flex-wrap gap-3 px-5 py-4">
                     {sorted.map((r, i) => {
                       const isTop = i === 0 && topScore > 1;
+                      const isDevil = r.count >= 666;
                       return (
-                        <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isTop ? "bg-black border-black" : "bg-white border-black"}`}>
-                          {isTop && <span className="text-base">🏆</span>}
-                          <Image
-                            src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
-                            alt={r.name} width={36} height={36}
-                            className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
-                          />
-                          <span className={`font-extrabold text-base ${isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
-                          <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
+                        <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isDevil ? "bg-red-600 border-red-900" : isTop ? "bg-black border-black" : "bg-white border-black"}`}>
+                          {isTop && !isDevil && <span className="text-base">🏆</span>}
+                          {isDevil
+                            ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-pulse">😈</span>
+                            : <Image
+                                src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
+                                alt={r.name} width={36} height={36}
+                                className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
+                              />
+                          }
+                          <span className={`font-extrabold text-base ${isDevil ? "text-white" : isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
+                          <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isDevil ? "bg-red-900 text-white" : isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
                         </div>
                       );
                     })}
