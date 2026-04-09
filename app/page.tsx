@@ -793,7 +793,7 @@ export default function Home() {
                 <span className="text-base">👉</span>
                 <span className="text-xs font-bold flex-1">{poke.from} poked you!</span>
                 <button
-                  onClick={() => sendPoke(poke.from)}
+                  onClick={() => { sendPoke(poke.from); dismissPoke(poke.from); }}
                   className="text-[10px] font-bold bg-white border-[2px] border-black rounded-lg px-2 py-1 cursor-pointer hover:bg-black hover:text-white transition-colors"
                 >poke back</button>
                 <button
