@@ -281,7 +281,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 12000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
@@ -740,9 +740,11 @@ export default function Home() {
   const bossMember = MEMBERS.find((m) => m.name === BOSS);
   const teamMembers = sortedMembers.filter((m) => m.name !== currentUser && m.name !== BOSS);
   const topOnlineUser = (() => {
-    const entries = Object.entries(sessionTimes).filter(([name]) => name !== BOSS);
+    const entries = Object.entries(sessionTimes);
     if (!entries.length) return null;
-    return entries.sort((a, b) => b[1] - a[1])[0][0];
+    const sorted = entries.sort((a, b) => b[1] - a[1]);
+    if (sorted[0][1] <= 0) return null;
+    return sorted[0][0];
   })();
 
   const renderBuddyBadge = (buddyId: string) => {
@@ -1396,6 +1398,9 @@ export default function Home() {
                       <div className="flex items-center gap-3 flex-wrap">
                         <span className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>{bossMember.name}</span>
                         <span className="text-xs font-extrabold bg-black text-[#FFE234] px-3 py-1 rounded-full uppercase tracking-widest">The Boss</span>
+                        {topOnlineUser === bossMember.name && (
+                          <span className="text-[10px] font-extrabold text-black/50 uppercase tracking-widest">🖥️ most online</span>
+                        )}
                         {sosStatuses[bossMember.name] && <span className="text-xl animate-pulse">🚨</span>}
                         {metcalfStatuses[bossMember.name] && <span className="text-xl animate-bounce">🚗</span>}
                       </div>
