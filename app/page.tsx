@@ -134,7 +134,7 @@ export default function Home() {
   const [bugReportSent, setBugReportSent] = useState(false);
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [adDismissed, setAdDismissed] = useState(false);
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -1110,7 +1110,7 @@ export default function Home() {
   return (
     <>
       {/* Banner — broadcast (pink or red scrolling) or normal ticker (yellow) */}
-      {!bannerDismissed && broadcast && (
+      {broadcast && (
         <div style={{ width: "100%", overflow: "hidden", background: broadcastBg, borderBottom: `4px solid ${broadcastBorder}`, height: "50px", position: "relative", zIndex: 10 }}>
           <div style={{
             display: "flex", alignItems: "center", height: "100%",
@@ -1128,10 +1128,9 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <button onClick={() => setBannerDismissed(true)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.25)", border: "none", color: broadcastTextColor, width: 28, height: 28, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, zIndex: 20, flexShrink: 0 }}>✕</button>
         </div>
       )}
-      {!bannerDismissed && !broadcast && (messages.length > 0 || banner?.type === "feature") && (
+      {!broadcast && (messages.length > 0 || banner?.type === "feature") && (
         <div style={{ width: "100%", overflow: "hidden", background: "#FFE234", borderBottom: "4px solid #000", height: "50px", position: "relative", zIndex: 10 }}>
           <div style={{
             display: "flex",
@@ -1170,20 +1169,25 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <button onClick={() => setBannerDismissed(true)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.15)", border: "none", color: "#000", width: 28, height: 28, borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, zIndex: 20, flexShrink: 0 }}>✕</button>
         </div>
       )}
 
       {/* Banner ad */}
-      <div className="w-full flex justify-center border-b-[3px] border-black bg-white">
-        <a href="https://www.gobble.com/?srsltid=AfmBOorjeGVfijzb7fcw603dlxiTOjCn8XNjq1yg5dn1vimXYRCZWXs_" target="_blank" rel="noopener noreferrer" className="w-full max-w-[1280px]">
-          <img
-            src="https://storage.googleapis.com/website-production/uploads/2023/01/gobble-banner-ad-example.png"
-            alt="Advertisement"
-            className="w-full object-cover"
-          />
-        </a>
-      </div>
+      {!adDismissed && (
+        <div className="w-full flex justify-center border-b-[3px] border-black bg-white relative">
+          <a href="https://www.gobble.com/?srsltid=AfmBOorjeGVfijzb7fcw603dlxiTOjCn8XNjq1yg5dn1vimXYRCZWXs_" target="_blank" rel="noopener noreferrer" className="w-full max-w-[1280px]">
+            <img
+              src="https://storage.googleapis.com/website-production/uploads/2023/01/gobble-banner-ad-example.png"
+              alt="Advertisement"
+              className="w-full object-cover"
+            />
+          </a>
+          <button
+            onClick={() => setAdDismissed(true)}
+            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/40 hover:bg-black text-white text-xs font-black flex items-center justify-center cursor-pointer border-2 border-white transition-colors"
+          >✕</button>
+        </div>
+      )}
 
       <div className="min-h-screen px-4 sm:px-8 py-6 sm:py-8">
         <div className="max-w-[1280px] mx-auto">
