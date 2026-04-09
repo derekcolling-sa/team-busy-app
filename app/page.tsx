@@ -188,6 +188,8 @@ export default function Home() {
   const [showHatchModal, setShowHatchModal] = useState(false);
   const [hatchedBuddy, setHatchedBuddy] = useState<Buddy | null>(null);
   const [hatchPhase, setHatchPhase] = useState<"egg" | "cracking" | "reveal">("egg");
+  const [vibeMuted, setVibeMuted] = useState(true);
+  const vibeIframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("team-busy-user");
@@ -1457,9 +1459,9 @@ export default function Home() {
               <div className="mt-8 border-[3px] border-black rounded-[1.4rem] shadow-[5px_5px_0_#000] overflow-hidden bg-black">
                 <div className="relative w-full" style={{ height: "min(85vh, 560px)" }}>
                   <iframe
-                    src="https://www.youtube.com/embed/5hH9dOwzrtc?autoplay=0&list=RD5hH9dOwzrtc&start_radio=1"
+                    ref={vibeIframeRef}
+                    src="https://www.youtube.com/embed/5hH9dOwzrtc?autoplay=1&mute=1&loop=1&playlist=5hH9dOwzrtc&controls=0&modestbranding=1&rel=0&enablejsapi=1"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
                     style={{
                       position: "absolute",
                       top: "50%",
@@ -1470,6 +1472,33 @@ export default function Home() {
                       border: "none",
                     }}
                   />
+                  <button
+                    onClick={() => {
+                      const cmd = vibeMuted ? "unMute" : "mute";
+                      vibeIframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func: cmd, args: [] }), "*");
+                      setVibeMuted(!vibeMuted);
+                    }}
+                    style={{
+                      position: "absolute",
+                      bottom: "16px",
+                      right: "16px",
+                      zIndex: 10,
+                      background: "rgba(0,0,0,0.6)",
+                      border: "2px solid rgba(255,255,255,0.4)",
+                      borderRadius: "999px",
+                      padding: "8px 16px",
+                      color: "#fff",
+                      fontSize: "13px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      backdropFilter: "blur(6px)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    {vibeMuted ? "🔇 unmute" : "🔊 mute"}
+                  </button>
                 </div>
               </div>
 
