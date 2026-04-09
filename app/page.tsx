@@ -142,6 +142,7 @@ export default function Home() {
   const [oooDetails, setOooDetails] = useState<Record<string, { note?: string; backDate?: string }>>({});
   const [sosStatuses, setSosStatuses] = useState<Record<string, boolean>>({});
   const [metcalfStatuses, setMetcalfStatuses] = useState<Record<string, boolean>>({});
+  const [bossReactions, setBossReactions] = useState<Record<string, "heart" | "thumbsdown">>({});
   const [showGhostModal, setShowGhostModal] = useState(false);
   const [ghostNote, setGhostNote] = useState("");
   const [ghostBackDate, setGhostBackDate] = useState("");
@@ -181,7 +182,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes, metcalfRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes, pokeRes, timeOffRes, ratingsRes, metcalfRes, bossReactionsRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -198,8 +199,9 @@ export default function Home() {
         fetch("/api/time-off"),
         fetch("/api/ratings"),
         fetch("/api/status/metcalf"),
+        fetch("/api/boss-reactions"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData, metcalfData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData, pokeData, timeOffData, ratingsData, metcalfData, bossReactionsData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -216,6 +218,7 @@ export default function Home() {
         timeOffRes.json(),
         ratingsRes.json(),
         metcalfRes.json(),
+        bossReactionsRes.json(),
       ]);
       if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
         window.location.reload();
@@ -239,6 +242,7 @@ export default function Home() {
       setTimeOffRequests(timeOffData.requests ?? []);
       setRatings(ratingsData.ratings ?? {});
       setMetcalfStatuses(metcalfData ?? {});
+      setBossReactions(bossReactionsData.reactions ?? {});
       if (bannerData.banner?.message) setBanner({ message: bannerData.banner.message, type: bannerData.banner.type ?? "daily" });
       const allPokes: { from: string; to: string; ts: number }[] = pokeData.pokes ?? [];
       setPokes(allPokes);
@@ -381,6 +385,23 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: currentUser, ooo: true, note: ghostNote, backDate: ghostBackDate }),
+    });
+  };
+
+  const reactToBoss = async (reaction: "heart" | "thumbsdown") => {
+    if (!currentUser || currentUser === BOSS) return;
+    const current = bossReactions[currentUser];
+    const next = current === reaction ? null : reaction;
+    setBossReactions((prev) => {
+      const updated = { ...prev };
+      if (next === null) delete updated[currentUser];
+      else updated[currentUser] = next;
+      return updated;
+    });
+    await fetch("/api/boss-reactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, reaction: next }),
     });
   };
 
@@ -1251,6 +1272,29 @@ export default function Home() {
                     </div>
                     <span className="text-5xl shrink-0">{EMOJIS[getLevel(statuses[bossMember.name] ?? 50)]}</span>
                   </div>
+                  {currentUser !== BOSS && (
+                    <div className="flex items-center gap-4 px-6 pb-5">
+                      <button
+                        onClick={() => reactToBoss("heart")}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border-[3px] border-black font-bold text-sm cursor-pointer transition-all shadow-[3px_3px_0_#000] active:shadow-none active:translate-y-[2px] ${bossReactions[currentUser ?? ""] === "heart" ? "bg-black text-white" : "bg-white hover:bg-black hover:text-white"}`}
+                      >
+                        ❤️ <span>{Object.values(bossReactions).filter(r => r === "heart").length}</span>
+                      </button>
+                      <button
+                        onClick={() => reactToBoss("thumbsdown")}
+                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border-[3px] border-black font-bold text-sm cursor-pointer transition-all shadow-[3px_3px_0_#000] active:shadow-none active:translate-y-[2px] ${bossReactions[currentUser ?? ""] === "thumbsdown" ? "bg-black text-white" : "bg-white hover:bg-black hover:text-white"}`}
+                      >
+                        👎 <span>{Object.values(bossReactions).filter(r => r === "thumbsdown").length}</span>
+                      </button>
+                    </div>
+                  )}
+                  {currentUser === BOSS && Object.keys(bossReactions).length > 0 && (
+                    <div className="flex items-center gap-3 px-6 pb-5 flex-wrap">
+                      <span className="text-xs font-extrabold uppercase tracking-widest text-black/50">vibes:</span>
+                      <span className="flex items-center gap-1 text-sm font-bold">❤️ {Object.values(bossReactions).filter(r => r === "heart").length}</span>
+                      <span className="flex items-center gap-1 text-sm font-bold">👎 {Object.values(bossReactions).filter(r => r === "thumbsdown").length}</span>
+                    </div>
+                  )}
                 </div>
               )}
 

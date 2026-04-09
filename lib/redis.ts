@@ -432,6 +432,29 @@ export async function setBroadcast(message: string, type: BroadcastType): Promis
   }
 }
 
+const BOSS_REACTIONS_KEY = "team-busy-boss-reactions";
+
+export type BossReaction = "heart" | "thumbsdown";
+export type BossReactionsMap = Record<string, BossReaction>; // name → reaction
+
+export async function getAllBossReactions(): Promise<BossReactionsMap> {
+  const data = await redis.hgetall(BOSS_REACTIONS_KEY);
+  if (!data) return {};
+  const result: BossReactionsMap = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = value as BossReaction;
+  }
+  return result;
+}
+
+export async function setBossReaction(name: string, reaction: BossReaction | null): Promise<void> {
+  if (reaction === null) {
+    await redis.hdel(BOSS_REACTIONS_KEY, name);
+  } else {
+    await redis.hset(BOSS_REACTIONS_KEY, { [name]: reaction });
+  }
+}
+
 const METCALF_KEY = "team-busy-metcalf";
 
 export type MetcalfStatus = Record<string, boolean>;
