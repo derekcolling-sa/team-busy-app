@@ -1,7 +1,7 @@
 import {
   getAllStatus, getAllUpdated, getAllStatusNotes,
   getAllOOO, getAllOOODetails, getAllSOS,
-  getMessages, getBroadcast, getChatMessages, getAllReactions,
+  getMessages, getBroadcast,
   getGoHomeRequests, getReloadSignal, getBanner, getAllPokes,
   getTimeOffRequests, getAllMetcalf, getAllBossReactions,
   getAllNeedWork, getAllSessionTime, getAllAdhd,
@@ -13,7 +13,7 @@ export async function GET() {
   const [
     status, updated, notes,
     ooo, oooDetails, sos,
-    messages, urgent, chat, reactions,
+    messages, urgent,
     goHome, reload, banner, pokes,
     timeOff, metcalf, bossReactions,
     needWork, sessionTime, adhd,
@@ -26,8 +26,6 @@ export async function GET() {
     getAllSOS(),
     getMessages(),
     getBroadcast(),
-    getChatMessages(),
-    getAllReactions(),
     getGoHomeRequests(),
     getReloadSignal(),
     getBanner(),
@@ -43,7 +41,7 @@ export async function GET() {
   return Response.json({
     status, updated, notes,
     ooo, oooDetails, sos,
-    messages, urgent, chat, reactions,
+    messages, urgent,
     goHome, reload, banner, pokes,
     timeOff, metcalf, bossReactions,
     needWork, sessionTime, adhd,

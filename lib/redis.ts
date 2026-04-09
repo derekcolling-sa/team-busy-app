@@ -230,22 +230,6 @@ export async function getHistory(days = 14): Promise<HistoryData> {
   return result;
 }
 
-const CHAT_KEY = "team-busy-chat";
-
-export type ChatEntry = { name: string; message: string; ts: number };
-
-export async function addChatMessage(name: string, message: string): Promise<void> {
-  const entry: ChatEntry = { name, message, ts: Date.now() };
-  await redis.lpush(CHAT_KEY, JSON.stringify(entry));
-  await redis.ltrim(CHAT_KEY, 0, 99); // keep last 100
-}
-
-export async function getChatMessages(): Promise<ChatEntry[]> {
-  const items = await redis.lrange(CHAT_KEY, 0, 99);
-  return items
-    .map((item) => (typeof item === "string" ? JSON.parse(item) : item))
-    .reverse(); // oldest first
-}
 
 const GO_HOME_KEY = "team-busy-go-home";
 
@@ -309,45 +293,6 @@ export async function getAllPokes(): Promise<PokeEntry[]> {
   });
 }
 
-const REACTIONS_KEY = "team-busy-reactions";
-
-// reactions stored as hash: field = "{ts}:{emoji}", value = JSON array of names
-export type ReactionsMap = Record<string, Record<string, string[]>>; // ts → emoji → names[]
-
-export async function getAllReactions(): Promise<ReactionsMap> {
-  const data = await redis.hgetall(REACTIONS_KEY);
-  if (!data) return {};
-  const result: ReactionsMap = {};
-  for (const [field, value] of Object.entries(data)) {
-    const colonIdx = field.lastIndexOf(":");
-    const ts = field.slice(0, colonIdx);
-    const emoji = field.slice(colonIdx + 1);
-    if (!result[ts]) result[ts] = {};
-    try {
-      result[ts][emoji] = typeof value === "string" ? JSON.parse(value) : (value as string[]);
-    } catch { result[ts][emoji] = []; }
-  }
-  return result;
-}
-
-export async function toggleReaction(ts: number, emoji: string, name: string): Promise<void> {
-  const field = `${ts}:${emoji}`;
-  const raw = await redis.hget(REACTIONS_KEY, field);
-  let names: string[] = [];
-  if (raw) {
-    try { names = typeof raw === "string" ? JSON.parse(raw) : (raw as string[]); } catch { names = []; }
-  }
-  if (names.includes(name)) {
-    names = names.filter((n) => n !== name);
-  } else {
-    names = [...names, name];
-  }
-  if (names.length === 0) {
-    await redis.hdel(REACTIONS_KEY, field);
-  } else {
-    await redis.hset(REACTIONS_KEY, { [field]: JSON.stringify(names) });
-  }
-}
 
 const BUDDIES_KEY = "team-busy-buddies";
 

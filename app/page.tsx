@@ -167,11 +167,7 @@ export default function Home() {
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const adhdDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const sortTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [chatMessages, setChatMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const chatTopRef = useRef<HTMLDivElement>(null);
-  const [reactions, setReactions] = useState<Record<string, Record<string, string[]>>>({});
-  const [hoveredMsg, setHoveredMsg] = useState<number | null>(null);
+
   const [goHomeRequested, setGoHomeRequested] = useState(false);
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number; count: number }[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
@@ -216,8 +212,6 @@ export default function Home() {
       setSosStatuses(poll.sos ?? {});
       setMessages(poll.messages ?? []);
       setBroadcast(poll.urgent?.message ? { message: poll.urgent.message, type: poll.urgent.type ?? "broadcast" } : null);
-      setChatMessages(poll.chat ?? []);
-      setReactions(poll.reactions ?? {});
       setGoHomeRequests(poll.goHome ?? []);
       setTimeOffRequests(poll.timeOff ?? []);
       setMetcalfStatuses(poll.metcalf ?? {});
@@ -528,40 +522,6 @@ export default function Home() {
     });
   };
 
-  const sendChat = async () => {
-    if (!chatInput.trim() || !currentUser) return;
-    const msg = { name: currentUser, message: chatInput.trim(), ts: Date.now() };
-    setChatMessages((prev) => [...prev, msg]);
-    setChatInput("");
-    setTimeout(() => chatTopRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-    await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: currentUser, message: msg.message }),
-    });
-  };
-
-  const REACTION_EMOJIS = ["👍", "❤️", "😂", "🔥", "💀", "👀"];
-
-  const toggleReaction = async (ts: number, emoji: string) => {
-    if (!currentUser) return;
-    const key = String(ts);
-    // optimistic update
-    setReactions((prev) => {
-      const msgReactions = { ...(prev[key] ?? {}) };
-      const names = msgReactions[emoji] ?? [];
-      msgReactions[emoji] = names.includes(currentUser)
-        ? names.filter((n) => n !== currentUser)
-        : [...names, currentUser];
-      if (msgReactions[emoji].length === 0) delete msgReactions[emoji];
-      return { ...prev, [key]: msgReactions };
-    });
-    await fetch("/api/chat/reactions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ts, emoji, name: currentUser }),
-    });
-  };
 
   const rateUser = async (ratee: string, stars: number) => {
     if (!currentUser || currentUser === ratee) return;
@@ -1486,119 +1446,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Team Chat */}
-              {currentUser && (
-                <div className="mt-8 border-[3px] border-black rounded-[1.4rem] bg-white shadow-[5px_5px_0_#000] overflow-hidden">
-                  {/* Chat header */}
-                  <div className="flex items-center gap-2 px-5 py-3 bg-[#3D52F0] border-b-[3px] border-black">
-                    <span className="text-lg font-extrabold text-white" style={{ fontFamily: "var(--font-display)" }}>team chat 💬</span>
-                    <span className="ml-auto text-xs font-bold text-white/70">{chatMessages.length} messages</span>
-                  </div>
-
-                  {/* Messages */}
-                  <div className="h-[400px] overflow-y-auto p-5 flex flex-col gap-3 bg-[#f7f7f5]">
-                    <div ref={chatTopRef} />
-                    {chatMessages.length === 0 && (
-                      <div className="flex-1 flex flex-col items-center justify-center text-center py-16">
-                        <div className="text-4xl mb-2">💬</div>
-                        <p className="text-sm font-bold text-[#888]">no messages yet. break the ice.</p>
-                      </div>
-                    )}
-                    {[...chatMessages].reverse().map((msg, i, arr) => {
-                      const isMe = msg.name === currentUser;
-                      const member = MEMBERS.find((m) => m.name === msg.name);
-                      const photo = photoOverrides[msg.name] ?? member?.photo ?? "";
-                      const showName = i === 0 || arr[i - 1]?.name !== msg.name;
-                      const msgReactions = reactions[String(msg.ts)] ?? {};
-                      const hasReactions = Object.keys(msgReactions).length > 0;
-                      const isHovered = hoveredMsg === msg.ts;
-                      return (
-                        <div key={i}
-                          className={`flex items-end gap-2 ${isMe ? "flex-row-reverse" : "flex-row"}`}
-                          onMouseEnter={() => setHoveredMsg(msg.ts)}
-                          onMouseLeave={() => setHoveredMsg(null)}
-                        >
-                          <div className="w-8 h-8 shrink-0">
-                            {photo && (
-                              <Image src={photo} alt={msg.name} width={32} height={32}
-                                className="rounded-full object-cover w-8 h-8 border-2 border-black" />
-                            )}
-                          </div>
-                          <div className={`flex flex-col gap-0.5 max-w-[70%] ${isMe ? "items-end" : "items-start"}`}>
-                            {showName && (
-                              <span className="text-[10px] font-black uppercase tracking-wider text-[#888] px-1">{msg.name}</span>
-                            )}
-                            <div className="relative">
-                              <div className={`px-3 py-2 rounded-2xl border-[2px] border-black text-sm font-medium leading-snug ${
-                                isMe
-                                  ? "bg-[#FFE234] rounded-br-sm shadow-[2px_2px_0_#000]"
-                                  : "bg-white rounded-bl-sm shadow-[2px_2px_0_#000]"
-                              }`}>
-                                {msg.message}
-                              </div>
-                              {/* Emoji picker on hover */}
-                              {isHovered && currentUser && (
-                                <div className={`absolute top-[-32px] ${isMe ? "right-0" : "left-0"} flex gap-1 bg-white border-[2px] border-black rounded-xl px-1.5 py-1 shadow-[2px_2px_0_#000] z-10`}>
-                                  {REACTION_EMOJIS.map((e) => (
-                                    <button key={e} onClick={() => toggleReaction(msg.ts, e)}
-                                      className={`text-base leading-none hover:scale-125 transition-transform cursor-pointer rounded px-0.5 ${(msgReactions[e] ?? []).includes(currentUser) ? "bg-[#FFE234]" : ""}`}
-                                    >{e}</button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            {/* Reaction pills */}
-                            {hasReactions && (
-                              <div className={`flex flex-wrap gap-1 px-1 ${isMe ? "justify-end" : "justify-start"}`}>
-                                {Object.entries(msgReactions).map(([emoji, names]) => (
-                                  <button key={emoji} onClick={() => toggleReaction(msg.ts, emoji)}
-                                    className={`flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full border-[2px] border-black cursor-pointer transition-colors ${
-                                      names.includes(currentUser ?? "") ? "bg-[#FFE234]" : "bg-white hover:bg-[#f5f2ee]"
-                                    }`}
-                                    title={names.join(", ")}
-                                  >
-                                    <span>{emoji}</span>
-                                    {names.length > 1 && <span className="font-bold text-[10px]">{names.length}</span>}
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                            <span className="text-[9px] text-[#aaa] px-1">{timeAgo(msg.ts)}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Input */}
-                  {isGuest ? (
-                    <div className="px-4 py-3 border-t-[3px] border-black bg-[#f7f7f5] text-center text-xs font-bold text-[#b5b0a8] uppercase tracking-widest">
-                      👀 viewing as guest — pick yourself to chat
-                    </div>
-                  ) : (
-                  <div className="px-4 py-3 border-t-[3px] border-black bg-white">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter") sendChat(); }}
-                        placeholder="say something…"
-                        maxLength={300}
-                        className="flex-1 bg-[#f7f7f5] border-[2px] border-black rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none placeholder:text-[#bbb] shadow-[2px_2px_0_#000]"
-                      />
-                      <button
-                        onClick={sendChat}
-                        disabled={!chatInput.trim()}
-                        className="px-5 py-2.5 rounded-xl bg-[#3D52F0] border-[2px] border-black text-white text-sm font-bold shadow-[2px_2px_0_#000] disabled:opacity-30 hover:bg-[#2a3fd0] active:translate-y-[1px] active:shadow-none transition-all"
-                      >
-                        send
-                      </button>
-                    </div>
-                  </div>
-                  )}
-                </div>
-              )}
             </>
           )}
         </div>
