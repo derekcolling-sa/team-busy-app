@@ -116,7 +116,7 @@ export default function Home() {
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
-  const [banner, setBanner] = useState<string | null>(null);
+  const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -218,7 +218,7 @@ export default function Home() {
       setBuddies(buddiesData.buddies ?? {});
       setReactions(reactionsData.reactions ?? {});
       setGoHomeRequests(goHomeData.requests ?? []);
-      if (bannerData.banner?.message) setBanner(bannerData.banner.message);
+      if (bannerData.banner?.message) setBanner({ message: bannerData.banner.message, type: bannerData.banner.type ?? "daily" });
       const allPokes: { from: string; to: string; ts: number }[] = pokeData.pokes ?? [];
       setPokes(allPokes);
     } catch {
@@ -813,7 +813,7 @@ export default function Home() {
           </div>
         </div>
       )}
-      {!broadcast && messages.length > 0 && (
+      {!broadcast && (messages.length > 0 || banner?.type === "feature") && (
         <div style={{ width: "100%", overflow: "hidden", background: "#FFE234", borderBottom: "4px solid #000", height: "50px", position: "relative", zIndex: 10 }}>
           <div style={{
             display: "flex",
@@ -826,12 +826,26 @@ export default function Home() {
             willChange: "transform",
           }}>
             <div ref={tickerTextRef} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
+              {banner?.type === "feature" && (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: "16px" }}>✨</span>
+                  <span style={{ fontSize: "18px", fontWeight: 900, color: "#000", fontFamily: "var(--font-display)", letterSpacing: "0.05em" }}>{banner.message}</span>
+                  <span style={{ fontSize: "16px" }}>✨</span>
+                </div>
+              )}
               {messages.map((msg, i) => (
                 <TickerItem key={i} msg={msg} photo={photoOverrides[msg.name] ?? (MEMBERS.find(m => m.name === msg.name)?.photo ?? "")} />
               ))}
             </div>
             {Array.from({ length: tickerCopies }).map((_, ci) => (
               <div key={ci} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
+                {banner?.type === "feature" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: "16px" }}>✨</span>
+                    <span style={{ fontSize: "18px", fontWeight: 900, color: "#000", fontFamily: "var(--font-display)", letterSpacing: "0.05em" }}>{banner.message}</span>
+                    <span style={{ fontSize: "16px" }}>✨</span>
+                  </div>
+                )}
                 {messages.map((msg, i) => (
                   <TickerItem key={i} msg={msg} photo={photoOverrides[msg.name] ?? (MEMBERS.find(m => m.name === msg.name)?.photo ?? "")} />
                 ))}
@@ -849,11 +863,6 @@ export default function Home() {
               <span className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>
                 Vibe Check 👁️👄👁️
               </span>
-              {banner && (
-                <div className="inline-flex items-center gap-2 bg-[#FFE234] border-[3px] border-black rounded-xl px-3 py-1.5 shadow-[3px_3px_0_#000] self-start">
-                  <span className="text-sm font-extrabold text-black">{banner}</span>
-                </div>
-              )}
             </div>
             {/* Home button — only shown when user is selected */}
             {loaded && currentUser && (
