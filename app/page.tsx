@@ -383,7 +383,7 @@ export default function Home() {
 
   // Measure ticker text width and calculate copies needed to fill viewport
   useEffect(() => {
-    if (!messages.length) return;
+    if (!messages.length && !banner) return;
     let attempts = 0;
     let t: ReturnType<typeof setTimeout>;
     const calculate = () => {
@@ -401,7 +401,7 @@ export default function Home() {
     t = setTimeout(calculate, 50);
     window.addEventListener("resize", calculate);
     return () => { clearTimeout(t); window.removeEventListener("resize", calculate); };
-  }, [messages]);
+  }, [messages, banner]);
 
   // Measure urgent ticker
   useEffect(() => {
@@ -1104,6 +1104,21 @@ export default function Home() {
     );
   };
 
+  const OFFLINE = true;
+  if (OFFLINE) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#1a1a1a", padding: "40px 20px", textAlign: "center" }}>
+        <div style={{ fontSize: "64px", marginBottom: "24px" }}>🔧</div>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(2rem, 6vw, 4rem)", fontWeight: 900, color: "#fff", marginBottom: "12px", letterSpacing: "-0.02em" }}>
+          we&apos;ll be right back
+        </h1>
+        <p style={{ fontSize: "18px", color: "rgba(255,255,255,0.5)", fontWeight: 500, maxWidth: "400px", lineHeight: 1.5 }}>
+          vibe check is down for maintenance. check back soon bestie.
+        </p>
+      </div>
+    );
+  }
+
   const tickerSpeed = 120;
   const tickerDuration = tickerTextWidth ? tickerTextWidth / tickerSpeed : 0;
   const urgentDuration = urgentTickerWidth ? urgentTickerWidth / tickerSpeed : 0;
@@ -1137,7 +1152,7 @@ export default function Home() {
           </div>
         </div>
       )}
-      {!broadcast && (messages.length > 0 || banner?.type === "feature") && (
+      {!broadcast && (messages.length > 0 || banner !== null) && (
         <div style={{ width: "100%", overflow: "hidden", background: "#FFE234", borderBottom: "4px solid #000", height: "50px", position: "relative", zIndex: 10 }}>
           <div style={{
             display: "flex",
@@ -1150,7 +1165,7 @@ export default function Home() {
             willChange: "transform",
           }}>
             <div ref={tickerTextRef} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
-              {banner?.type === "feature" && (
+              {banner && (
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
                   <span style={{ display: "flex", alignItems: "center", gap: "8px", background: "#000", color: "#FFE234", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.08em" }}>
                     ✨ {banner.message} ✨
@@ -1163,7 +1178,7 @@ export default function Home() {
             </div>
             {Array.from({ length: tickerCopies }).map((_, ci) => (
               <div key={ci} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
-                {banner?.type === "feature" && (
+                {banner && (
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
                     <span style={{ fontSize: "16px" }}>✨</span>
                     <span style={{ fontSize: "18px", fontWeight: 900, color: "#000", fontFamily: "var(--font-display)", letterSpacing: "0.05em" }}>{banner.message}</span>
