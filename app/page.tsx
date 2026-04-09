@@ -142,6 +142,7 @@ export default function Home() {
   const [oooDetails, setOooDetails] = useState<Record<string, { note?: string; backDate?: string }>>({});
   const [sosStatuses, setSosStatuses] = useState<Record<string, boolean>>({});
   const [metcalfStatuses, setMetcalfStatuses] = useState<Record<string, boolean>>({});
+  const [cardFlipped, setCardFlipped] = useState(false);
   const [bossReactions, setBossReactions] = useState<Record<string, "heart" | "thumbsdown">>({});
   const [showGhostModal, setShowGhostModal] = useState(false);
   const [ghostNote, setGhostNote] = useState("");
@@ -664,12 +665,13 @@ export default function Home() {
 
     return (
       <div
-        className={`rounded-[1.4rem] px-6 py-6 border-[4px] transition-all ${
+        onClick={() => setCardFlipped((f) => !f)}
+        className={`rounded-[1.4rem] px-6 py-6 border-[4px] transition-all cursor-pointer select-none ${
           isOOO ? "border-black opacity-50"
           : isSOS ? "border-black shadow-[6px_6px_0_#e74c3c] hover:-translate-y-1 hover:shadow-[9px_9px_0_#e74c3c]"
           : "border-black shadow-[6px_6px_0_#000] hover:-translate-y-1 hover:shadow-[9px_9px_0_#000]"
         }`}
-        style={{ background: "#ffffff", position: "relative", overflow: "hidden" }}
+        style={{ background: "#ffffff", position: "relative", overflow: "hidden", transform: cardFlipped ? "rotate(180deg)" : undefined, transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}
       >
         {/* Staleness gradient */}
         {!isOOO && (() => { const t = getStaleness(updatedAt[member.name]); return t > 0 ? (
