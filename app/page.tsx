@@ -828,9 +828,9 @@ export default function Home() {
             <div ref={tickerTextRef} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
               {banner?.type === "feature" && (
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
-                  <span style={{ fontSize: "16px" }}>✨</span>
-                  <span style={{ fontSize: "18px", fontWeight: 900, color: "#000", fontFamily: "var(--font-display)", letterSpacing: "0.05em" }}>{banner.message}</span>
-                  <span style={{ fontSize: "16px" }}>✨</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: "8px", background: "#000", color: "#FFE234", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.08em" }}>
+                    ✨ {banner.message} ✨
+                  </span>
                 </div>
               )}
               {messages.map((msg, i) => (
