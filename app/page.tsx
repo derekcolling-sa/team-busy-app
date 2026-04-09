@@ -822,7 +822,7 @@ export default function Home() {
             <span className="text-2xl animate-pulse shrink-0">🚨</span>
           ) : isMetcalf ? (
             <span className="text-2xl animate-bounce shrink-0">🚗</span>
-          ) : BUDDIES_ENABLED && buddies[member.name] && member.name === currentUser ? (
+          ) : BUDDIES_ENABLED && buddies[member.name] ? (
             <div className="shrink-0 flex items-center gap-2">
               {renderBuddyBadge(buddies[member.name].id)}
               <span className="text-4xl emoji-hover cursor-default">{EMOJIS[level]}</span>
@@ -1013,7 +1013,7 @@ export default function Home() {
               <span className="text-xl animate-pulse shrink-0">🚨</span>
             ) : isMetcalf ? (
               <span className="text-2xl animate-bounce shrink-0">🚗</span>
-            ) : BUDDIES_ENABLED && buddies[member.name] && member.name === currentUser ? (
+            ) : BUDDIES_ENABLED && buddies[member.name] ? (
               <div className="shrink-0 flex items-center gap-2">
                 {renderBuddyBadge(buddies[member.name].id)}
                 <span className="text-4xl emoji-hover cursor-default">{EMOJIS[level]}</span>
