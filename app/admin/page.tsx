@@ -173,6 +173,7 @@ export default function AdminPage() {
   const [urgentInput, setUrgentInput] = useState("");
   const [buddies, setBuddies] = useState<Record<string, { id: string }>>({});
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number }[]>([]);
+  const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
 
   useEffect(() => {
     if (sessionStorage.getItem("admin-authed") === "true") setAuthed(true);
@@ -191,7 +192,7 @@ export default function AdminPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, historyRes, feedbackRes, photosRes, urgentRes, buddiesRes, goHomeRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, historyRes, feedbackRes, photosRes, urgentRes, buddiesRes, goHomeRes, timeOffRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -201,8 +202,9 @@ export default function AdminPage() {
         fetch("/api/urgent"),
         fetch("/api/buddies"),
         fetch("/api/go-home"),
+        fetch("/api/time-off"),
       ]);
-      const [statusData, oooData, sosData, historyData, feedbackData, photosData, urgentData, buddiesData, goHomeData] = await Promise.all([
+      const [statusData, oooData, sosData, historyData, feedbackData, photosData, urgentData, buddiesData, goHomeData, timeOffData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -212,6 +214,7 @@ export default function AdminPage() {
         urgentRes.json(),
         buddiesRes.json(),
         goHomeRes.json(),
+        timeOffRes.json(),
       ]);
       setStatuses(statusData.status);
       setUpdatedAt(statusData.updated);
@@ -225,6 +228,7 @@ export default function AdminPage() {
       setBroadcast(urgentData.message ? { message: urgentData.message, type: urgentData.type ?? "broadcast" } : null);
       setBuddies(buddiesData.buddies ?? {});
       setGoHomeRequests(goHomeData.requests ?? []);
+      setTimeOffRequests(timeOffData.requests ?? []);
     } catch {
       // retry next poll
     } finally {
@@ -260,6 +264,15 @@ export default function AdminPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, clear: true }),
+    });
+  };
+
+  const approveTimeOff = async (name: string) => {
+    setTimeOffRequests((prev) => prev.filter((r) => r.name !== name));
+    await fetch("/api/time-off", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
     });
   };
 
@@ -476,6 +489,34 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+
+          {/* Time Off Requests */}
+          {timeOffRequests.length > 0 && (
+            <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#b5f0c8] overflow-hidden">
+              <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
+                <span className="text-4xl">🏖️</span>
+                <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">Time Off Requests</h2>
+                <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{timeOffRequests.length}</span>
+              </div>
+              <div className="flex flex-wrap gap-3 px-5 py-4">
+                {timeOffRequests.map((r) => (
+                  <div key={r.name} className="flex items-center gap-2.5 bg-white border-[3px] border-black rounded-2xl px-4 py-2.5 shadow-[3px_3px_0_#000]">
+                    <Image
+                      src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
+                      alt={r.name} width={36} height={36}
+                      className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
+                    />
+                    <span className="font-extrabold text-base">{r.name}</span>
+                    <span className="text-xs text-[#8a857d] font-semibold">{timeAgo(r.ts)}</span>
+                    <button
+                      onClick={() => approveTimeOff(r.name)}
+                      className="ml-1 px-2.5 py-1 rounded-xl bg-black text-white text-[11px] font-extrabold cursor-pointer hover:bg-[#333] transition-colors"
+                    >approved ✓</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Derek's Card */}
           {(() => {

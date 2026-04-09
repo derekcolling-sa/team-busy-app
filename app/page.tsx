@@ -1204,34 +1204,6 @@ export default function Home() {
             );
           })()}
 
-          {/* Time Off Requests — visible to Derek */}
-          {VP.includes(currentUser ?? "") && timeOffRequests.length > 0 && (
-            <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#b5f0c8] overflow-hidden">
-              <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
-                <span className="text-4xl">🏖️</span>
-                <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">Time Off Requests</h2>
-                <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{timeOffRequests.length}</span>
-              </div>
-              <div className="flex flex-wrap gap-3 px-5 py-4">
-                {timeOffRequests.map((r) => (
-                  <div key={r.name} className="flex items-center gap-2.5 bg-white border-[3px] border-black rounded-2xl px-4 py-2.5 shadow-[3px_3px_0_#000]">
-                    <Image
-                      src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
-                      alt={r.name} width={36} height={36}
-                      className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
-                    />
-                    <span className="font-extrabold text-base">{r.name}</span>
-                    <span className="text-xs text-[#8a857d] font-semibold">{timeAgo(r.ts)}</span>
-                    <button
-                      onClick={() => approveTimeOff(r.name)}
-                      className="ml-1 px-2.5 py-1 rounded-xl bg-black text-white text-[11px] font-extrabold cursor-pointer hover:bg-[#333] transition-colors"
-                    >approved ✓</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Message input strip — shown here only when go-home pod is not visible */}
           {loaded && currentUser && goHomeRequests.length === 0 && (
             <div className="mb-7">
