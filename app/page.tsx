@@ -116,6 +116,7 @@ export default function Home() {
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
+  const [banner, setBanner] = useState<string | null>(null);
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -166,7 +167,7 @@ export default function Home() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, photosRes, msgsRes, urgentRes, chatRes, buddiesRes, reactionsRes, goHomeRes, reloadRes, bannerRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -178,8 +179,9 @@ export default function Home() {
         fetch("/api/chat/reactions"),
         fetch("/api/go-home"),
         fetch("/api/reload"),
+        fetch("/api/banner"),
       ]);
-      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData] = await Promise.all([
+      const [statusData, oooData, sosData, photosData, msgsData, urgentData, chatData, buddiesData, reactionsData, goHomeData, reloadData, bannerData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -191,6 +193,7 @@ export default function Home() {
         reactionsRes.json(),
         goHomeRes.json(),
         reloadRes.json(),
+        bannerRes.json(),
       ]);
       if (reloadData.ts && reloadData.ts > pageLoadTime.current) {
         window.location.reload();
@@ -211,6 +214,7 @@ export default function Home() {
       setBuddies(buddiesData.buddies ?? {});
       setReactions(reactionsData.reactions ?? {});
       setGoHomeRequests(goHomeData.requests ?? []);
+      if (bannerData.banner?.message) setBanner(bannerData.banner.message);
     } catch {
       // retry next poll
     } finally {
@@ -783,9 +787,14 @@ export default function Home() {
         <div className="max-w-[1280px] mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-6 sm:mb-8">
-            <span className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>
-              Vibe Check 👁️👄👁️
-            </span>
+            <div className="flex flex-col gap-1">
+              <span className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>
+                Vibe Check 👁️👄👁️
+              </span>
+              {banner && (
+                <p className="text-sm sm:text-base font-bold text-white/80 tracking-tight">{banner}</p>
+              )}
+            </div>
             {/* Home button — only shown when user is selected */}
             {loaded && currentUser && (
               <button

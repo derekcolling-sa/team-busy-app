@@ -334,6 +334,19 @@ export async function clearMemberBuddy(name: string): Promise<void> {
   await redis.hdel(BUDDIES_KEY, name);
 }
 
+const BANNER_KEY = "team-busy-banner";
+
+export async function getBanner(): Promise<{ message: string; date: string } | null> {
+  const val = await redis.get(BANNER_KEY);
+  if (!val) return null;
+  if (typeof val === "object") return val as { message: string; date: string };
+  try { return JSON.parse(val as string); } catch { return null; }
+}
+
+export async function setBanner(message: string, date: string): Promise<void> {
+  await redis.set(BANNER_KEY, JSON.stringify({ message, date }));
+}
+
 const RELOAD_KEY = "team-busy-reload";
 
 export async function getReloadSignal(): Promise<number> {
