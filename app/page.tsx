@@ -734,9 +734,11 @@ export default function Home() {
   const myMember = MEMBERS.find((m) => m.name === currentUser);
   const bossMember = MEMBERS.find((m) => m.name === BOSS);
   const teamMembers = sortedMembers.filter((m) => m.name !== currentUser && m.name !== BOSS);
-  const topOnlineUser = Object.keys(sessionTimes).length > 0
-    ? Object.entries(sessionTimes).sort((a, b) => b[1] - a[1])[0][0]
-    : null;
+  const topOnlineUser = (() => {
+    const entries = Object.entries(sessionTimes).filter(([name]) => name !== BOSS);
+    if (!entries.length) return null;
+    return entries.sort((a, b) => b[1] - a[1])[0][0];
+  })();
 
   const renderBuddyBadge = (buddyId: string) => {
     const buddy = getBuddyById(buddyId);
