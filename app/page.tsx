@@ -323,13 +323,12 @@ export default function Home() {
   // Auto-show hatch modal for users who haven't hatched yet
   useEffect(() => {
     if (!BUDDIES_ENABLED) return;
-    if (loaded && currentUser && !buddies[currentUser] && !showHatchModal) {
+    if (loaded && currentUser && currentUser !== "__guest__" && Object.keys(buddies).length > 0 && !buddies[currentUser] && !showHatchModal) {
       setHatchPhase("egg");
       setHatchedBuddy(null);
       setShowHatchModal(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, currentUser]);
+  }, [loaded, currentUser, buddies, showHatchModal]);
 
   // Sort: OOO members go to the back
   useEffect(() => {
