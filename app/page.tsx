@@ -384,14 +384,21 @@ export default function Home() {
   // Measure ticker text width and calculate copies needed to fill viewport
   useEffect(() => {
     if (!messages.length) return;
+    let attempts = 0;
+    let t: ReturnType<typeof setTimeout>;
     const calculate = () => {
       if (!tickerTextRef.current) return;
       const tw = tickerTextRef.current.offsetWidth;
+      if (!tw && attempts < 5) {
+        attempts++;
+        t = setTimeout(calculate, 100 * attempts); // retry with backoff
+        return;
+      }
       if (!tw) return;
       setTickerTextWidth(tw);
       setTickerCopies(Math.ceil(window.innerWidth / tw) + 1);
     };
-    const t = setTimeout(calculate, 30);
+    t = setTimeout(calculate, 50);
     window.addEventListener("resize", calculate);
     return () => { clearTimeout(t); window.removeEventListener("resize", calculate); };
   }, [messages]);
