@@ -1040,7 +1040,6 @@ export default function Home() {
                         />
                         <span className={`font-extrabold text-base ${isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
                         <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
-                        <span className={`text-xs font-semibold ${isTop ? "text-white/60" : "text-[#8a857d]"}`}>{timeAgo(r.ts)}</span>
                       </div>
                     );
                   })}
