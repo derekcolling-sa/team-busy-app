@@ -1201,6 +1201,14 @@ export default function AdminPage() {
                             className="w-full px-2 py-1 rounded-md border-2 border-black/20 hover:border-red-400 text-[10px] text-[#b5b0a8] hover:text-red-500 transition-colors cursor-pointer font-bold"
                             title="Reject suggestion"
                           >🙅 dumb</button>
+                          <button
+                            onClick={async () => {
+                              setFeedback((prev) => prev.filter((x) => x.ts !== f.ts));
+                              await fetch("/api/feedback", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ts: f.ts }) });
+                            }}
+                            className="w-full px-2 py-1 rounded-md border-2 border-black/20 hover:border-black hover:bg-black hover:text-white text-[10px] text-[#b5b0a8] transition-colors cursor-pointer font-bold"
+                            title="Delete permanently"
+                          >🗑️ delete</button>
                         </div>
                       </div>
                     ))}

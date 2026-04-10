@@ -113,6 +113,12 @@ export async function getFeedback(): Promise<FeedbackEntry[]> {
   return items.map((item) => (typeof item === "string" ? JSON.parse(item) : item));
 }
 
+export async function deleteFeedback(ts: number): Promise<void> {
+  const items = await getFeedback();
+  const toRemove = items.find((f) => f.ts === ts);
+  if (toRemove) await redis.lrem(FEEDBACK_KEY, 1, JSON.stringify(toRemove));
+}
+
 const SHIPPED_KEY = "team-busy-shipped-features";
 export type ShippedFeature = { name: string; message: string; ts: number; shippedAt: number; status?: "shipped" | "done" | "dumb" | "soon" };
 
