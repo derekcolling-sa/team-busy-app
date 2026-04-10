@@ -640,7 +640,7 @@ export default function AdminPage() {
                   value={urgentInput}
                   onChange={(e) => setUrgentInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") sendBroadcast("broadcast"); }}
-                  maxLength={120}
+                  maxLength={200}
                   className="w-full text-sm font-medium border-[3px] border-black rounded-xl px-3 py-2.5 bg-white focus:outline-none"
                 />
                 <div className="flex gap-2">
@@ -966,7 +966,7 @@ export default function AdminPage() {
                               onKeyDown={(e) => { if (e.key === "Enter") banMember(member.name); if (e.key === "Escape") setBanningTarget(null); }}
                               autoFocus
                               className="flex-1 border-2 border-[#e74c3c] rounded-xl px-3 py-1.5 text-xs font-medium bg-white focus:outline-none"
-                              maxLength={80}
+                              maxLength={200}
                             />
                             <button
                               onClick={() => banMember(member.name)}
@@ -1005,12 +1005,12 @@ export default function AdminPage() {
                             <input type="text" placeholder="What's the vibe? (OOO, conference…)" value={ghostNote}
                               onChange={(e) => setGhostNote(e.target.value)}
                               className="w-full border-2 border-black rounded-xl px-3 py-2 text-xs font-medium bg-white focus:outline-none"
-                              maxLength={80}
+                              maxLength={200}
                             />
                             <input type="text" placeholder="Back when? (Monday, TBD…)" value={ghostBackDate}
                               onChange={(e) => setGhostBackDate(e.target.value)}
                               className="w-full border-2 border-black rounded-xl px-3 py-2 text-xs font-medium bg-white focus:outline-none"
-                              maxLength={40}
+                              maxLength={200}
                             />
                             <div className="flex gap-2">
                               <button onClick={() => toggleOOO(member.name, true, ghostNote, ghostBackDate)}

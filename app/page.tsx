@@ -1091,7 +1091,7 @@ export default function Home() {
               onBlur={() => saveNote(member.name, editingNote)}
               onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }}
               className="w-full text-xs font-medium text-black bg-white border-[3px] border-black rounded-xl px-3 py-2 focus:outline-none placeholder:text-[#b5b0a8] mb-3"
-              maxLength={80}
+              maxLength={200}
             />
             {/* Mood picker */}
             <div className="mb-3">
@@ -1229,7 +1229,7 @@ export default function Home() {
               value={newMessage[member.name] ?? ""}
               onChange={(e) => setNewMessage((prev) => ({ ...prev, [member.name]: e.target.value }))}
               onKeyDown={(e) => { if (e.key === "Enter") postMessage(member.name); }}
-              maxLength={120}
+              maxLength={200}
               className="flex-1 px-3 py-1.5 rounded-xl border-[2px] border-black bg-white text-xs font-medium placeholder:text-black/30 focus:outline-none shadow-[2px_2px_0_#000] min-w-0"
             />
             <button
@@ -2123,7 +2123,7 @@ export default function Home() {
                     value={ghostNote}
                     onChange={(e) => setGhostNote(e.target.value)}
                     className="w-full border-2 border-black rounded-xl px-3 py-2.5 text-sm font-medium bg-white focus:outline-none"
-                    maxLength={80}
+                    maxLength={200}
                   />
                 </div>
                 <div>
@@ -2134,7 +2134,7 @@ export default function Home() {
                     value={ghostBackDate}
                     onChange={(e) => setGhostBackDate(e.target.value)}
                     className="w-full border-2 border-black rounded-xl px-3 py-2.5 text-sm font-medium bg-white focus:outline-none"
-                    maxLength={40}
+                    maxLength={200}
                   />
                 </div>
               </div>
@@ -2181,6 +2181,7 @@ export default function Home() {
                     onChange={(e) => setFeedbackText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitFeedback(); }}
                     placeholder="type here..."
+                    maxLength={200}
                     rows={4}
                     className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
                   />
@@ -2273,6 +2274,7 @@ export default function Home() {
                     onChange={(e) => setBugReportText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitBugReport(); }}
                     placeholder="what broke and when..."
+                    maxLength={200}
                     rows={4}
                     className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
                   />
@@ -2365,6 +2367,7 @@ export default function Home() {
                     value={disputeText}
                     onChange={(e) => setDisputeText(e.target.value)}
                     placeholder="why should you be unbanned?"
+                    maxLength={200}
                     rows={4}
                     className="w-full border-[3px] border-[#e74c3c] focus:border-[#e74c3c] rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white mb-4"
                   />
