@@ -177,6 +177,7 @@ export default function Home() {
   const [hatchPhase, setHatchPhase] = useState<"egg" | "cracking" | "reveal">("egg");
   const [vibeMuted, setVibeMuted] = useState(true);
   const vibeIframeRef = useRef<HTMLIFrameElement>(null);
+  const [newMessage, setNewMessage] = useState("");
 
   useEffect(() => {
     const saved = localStorage.getItem("team-busy-user");
@@ -563,6 +564,24 @@ export default function Home() {
       body: JSON.stringify({ name: currentUser }),
     });
     setTimeout(() => setGoHomeRequested(false), 1500);
+  };
+
+  const getSuggestions = (): string[] => {
+    if (!currentUser) return [];
+    if (WRITERS.includes(currentUser)) return SUGGESTIONS.writer;
+    if (VP.includes(currentUser)) return SUGGESTIONS.vp;
+    return SUGGESTIONS.artDirector;
+  };
+
+  const postMessage = async () => {
+    if (!newMessage.trim() || !currentUser || currentUser === "__guest__") return;
+    const msg = newMessage.trim();
+    setNewMessage("");
+    await fetch("/api/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, message: msg }),
+    });
   };
 
   const handleTimeOffRequest = async () => {
@@ -983,23 +1002,6 @@ export default function Home() {
             </div>
           )}
           {currentUser && currentUser !== member.name && (
-            <div className="flex items-center justify-center gap-0.5 mt-2">
-              {[1, 2, 3, 4, 5].map((star) => {
-                const myRating = ratings[member.name]?.[currentUser] ?? 0;
-                return (
-                  <button
-                    key={star}
-                    onClick={() => rateUser(member.name, star)}
-                    className="text-xl leading-none cursor-pointer hover:scale-125 transition-transform active:scale-95"
-                    title={`Rate ${member.name} ${star} star${star !== 1 ? "s" : ""}`}
-                  >
-                    {star <= myRating ? "⭐" : "☆"}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {currentUser && currentUser !== member.name && (
             <button
               onClick={() => sendPoke(member.name)}
               disabled={pokes.some((p) => p.from === currentUser && p.to === member.name)}
@@ -1171,53 +1173,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Go Home Requests */}
-          {goHomeRequests.length > 0 && (() => {
-            const sorted = [...goHomeRequests].sort((a, b) => b.count - a.count || a.ts - b.ts);
-            const topScore = sorted[0].count;
-            return (
-              <div className="animate-pop-in mb-6">
-                <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
-                  <button
-                    onClick={() => setGoHomeExpanded((v) => !v)}
-                    className="w-full px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3 cursor-pointer hover:bg-[#f5d800] transition-colors"
-                  >
-                    <Image src="/home.png" alt="home" width={56} height={56} className="w-14 h-14 rounded-full" />
-                    <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1 text-left">Wants to go home</h2>
-                    <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{goHomeRequests.length}</span>
-                    <span className="text-xl ml-1">{goHomeExpanded ? "▲" : "▼"}</span>
-                  </button>
-                  {goHomeExpanded && (
-                    <div className="flex flex-wrap gap-3 px-5 py-4">
-                      {sorted.map((r, i) => {
-                        const isTop = i === 0 && topScore > 1;
-                        const isAngel = r.count >= 777;
-                        const isDevil = r.count === 666;
-                        return (
-                          <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isAngel ? "bg-sky-200 border-sky-400" : isDevil ? "bg-red-600 border-red-900" : isTop ? "bg-black border-black" : "bg-white border-black"}`}>
-                            {isTop && !isDevil && !isAngel && <span className="text-base">🏆</span>}
-                            {isAngel
-                              ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-bounce">😇</span>
-                              : isDevil
-                              ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-pulse">😈</span>
-                              : <Image
-                                  src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
-                                  alt={r.name} width={36} height={36}
-                                  className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
-                                />
-                            }
-                            <span className={`font-extrabold text-base ${isAngel ? "text-sky-800" : isDevil ? "text-white" : isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
-                            <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isAngel ? "bg-sky-400 text-white" : isDevil ? "bg-red-900 text-white" : isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
           {/* Loading */}
           {!loaded ? (
             <p className="text-center text-white/60 text-lg animate-pulse">
@@ -1225,6 +1180,53 @@ export default function Home() {
             </p>
           ) : (
             <>
+              {/* Go Home Requests */}
+              {goHomeRequests.length > 0 && (() => {
+                const sorted = [...goHomeRequests].sort((a, b) => b.count - a.count || a.ts - b.ts);
+                const topScore = sorted[0].count;
+                return (
+                  <div className="animate-pop-in mb-6">
+                    <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
+                      <button
+                        onClick={() => setGoHomeExpanded((v) => !v)}
+                        className="w-full px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3 cursor-pointer hover:bg-[#f5d800] transition-colors"
+                      >
+                        <Image src="/home.png" alt="home" width={56} height={56} className="w-14 h-14 rounded-full" />
+                        <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1 text-left">Wants to go home</h2>
+                        <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{goHomeRequests.length}</span>
+                        <span className="text-xl ml-1">{goHomeExpanded ? "▲" : "▼"}</span>
+                      </button>
+                      {goHomeExpanded && (
+                        <div className="flex flex-wrap gap-3 px-5 py-4">
+                          {sorted.map((r, i) => {
+                            const isTop = i === 0 && topScore > 1;
+                            const isAngel = r.count >= 777;
+                            const isDevil = r.count === 666;
+                            return (
+                              <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isAngel ? "bg-sky-200 border-sky-400" : isDevil ? "bg-red-600 border-red-900" : isTop ? "bg-black border-black" : "bg-white border-black"}`}>
+                                {isTop && !isDevil && !isAngel && <span className="text-base">🏆</span>}
+                                {isAngel
+                                  ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-bounce">😇</span>
+                                  : isDevil
+                                  ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-pulse">😈</span>
+                                  : <Image
+                                      src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
+                                      alt={r.name} width={36} height={36}
+                                      className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
+                                    />
+                                }
+                                <span className={`font-extrabold text-base ${isAngel ? "text-sky-800" : isDevil ? "text-white" : isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
+                                <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isAngel ? "bg-sky-400 text-white" : isDevil ? "bg-red-900 text-white" : isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
                 {/* Left: My card */}
                 {myMember && (
@@ -1239,6 +1241,34 @@ export default function Home() {
                   </div>
                 </div>
               </div>
+
+              {/* Drop the Tea */}
+              {currentUser && !isGuest && (
+                <div className="mt-6 flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      const suggestions = getSuggestions();
+                      if (suggestions.length) setNewMessage(suggestions[Math.floor(Math.random() * suggestions.length)]);
+                    }}
+                    className="shrink-0 text-xl hover:scale-125 transition-transform cursor-pointer"
+                    title="get a suggestion"
+                  >🍵</button>
+                  <input
+                    type="text"
+                    placeholder="drop the tea…"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") postMessage(); }}
+                    maxLength={120}
+                    className="flex-1 px-4 py-2.5 rounded-xl border-[3px] border-black bg-white text-sm font-medium placeholder:text-black/30 focus:outline-none shadow-[3px_3px_0_#000]"
+                  />
+                  <button
+                    onClick={postMessage}
+                    disabled={!newMessage.trim()}
+                    className="shrink-0 px-4 py-2.5 rounded-xl border-[3px] border-black bg-[#FFE234] text-sm font-extrabold shadow-[3px_3px_0_#000] hover:bg-[#FF9DC8] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                  >drop it ✦</button>
+                </div>
+              )}
 
               {/* Boss Card */}
               {bossMember && currentUser !== BOSS && (
