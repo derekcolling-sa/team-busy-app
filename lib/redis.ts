@@ -620,3 +620,21 @@ export async function getTimeOffRequests(): Promise<TimeOffEntry[]> {
     .map(([name, ts]) => ({ name, ts: Number(ts) }))
     .sort((a, b) => a.ts - b.ts);
 }
+
+const NEED_MONEY_KEY = "team-busy-need-money";
+
+export async function requestMoney(name: string): Promise<void> {
+  await redis.hset(NEED_MONEY_KEY, { [name]: Date.now() });
+}
+
+export async function clearMoneyRequest(name: string): Promise<void> {
+  await redis.hdel(NEED_MONEY_KEY, name);
+}
+
+export async function getMoneyRequests(): Promise<TimeOffEntry[]> {
+  const data = await redis.hgetall(NEED_MONEY_KEY);
+  if (!data) return [];
+  return Object.entries(data)
+    .map(([name, ts]) => ({ name, ts: Number(ts) }))
+    .sort((a, b) => a.ts - b.ts);
+}

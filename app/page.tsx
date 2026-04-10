@@ -58,6 +58,7 @@ const EMOJIS = ["😎", "🍳", "🔥", "💀"];
 const CARD_BGS = ["#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff"];
 const TRACK_COLORS = ["#5cb85c", "#4a9eff", "#f5a623", "#e8742d"];
 const ADHD_LABELS = ["locked tf in", "lowkey glazed", "brainrot szn", "absolutely feral"];
+const ADHD_EMOJIS = ["🧠", "😵‍💫", "📱", "🐿️"];
 const ADHD_COLORS = ["#a8f5c8", "#b8d4ff", "#dbb8ff", "#ffb8e0"];
 
 function timeAgo(ts: number): string {
@@ -155,6 +156,10 @@ export default function Home() {
   const [sortedMembers, setSortedMembers] = useState(MEMBERS);
   const [loaded, setLoaded] = useState(false);
   const pageLoadTime = useRef(Date.now());
+  const isDragging = useRef(false);
+  const isAdhdDragging = useRef(false);
+  const [localSlider, setLocalSlider] = useState<number | null>(null);
+  const [localAdhd, setLocalAdhd] = useState<number | null>(null);
   const [photoOverrides, setPhotoOverrides] = useState<Record<string, string>>({});
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -165,6 +170,8 @@ export default function Home() {
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number; count: number }[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
   const [timeOffSent, setTimeOffSent] = useState(false);
+  const [moneyRequests, setMoneyRequests] = useState<{ name: string; ts: number }[]>([]);
+  const [moneyRequestSent, setMoneyRequestSent] = useState(false);
   const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
   const [touchGrass, setTouchGrass] = useState<{ from: string; to: string; ts: number }[]>([]);
   const [takeover, setTakeover] = useState<string | null>(null);
@@ -208,7 +215,7 @@ export default function Home() {
         window.location.reload();
         return;
       }
-      setStatuses(poll.status ?? {});
+      if (!isDragging.current) setStatuses(poll.status ?? {});
       setUpdatedAt(poll.updated ?? {});
       const notes = poll.notes ?? {};
       setStatusNotes(notes);
@@ -220,12 +227,13 @@ export default function Home() {
       setBroadcast(poll.urgent?.message ? { message: poll.urgent.message, type: poll.urgent.type ?? "broadcast" } : null);
       setGoHomeRequests(poll.goHome ?? []);
       setTimeOffRequests(poll.timeOff ?? []);
+      setMoneyRequests(poll.moneyRequests ?? []);
       setMetcalfStatuses(poll.metcalf ?? {});
       setBossReactions(poll.bossReactions ?? {});
       setNeedWorkStatuses(poll.needWork ?? {});
       setDontTalkStatuses(poll.dontTalk ?? {});
       setSessionTimes(poll.sessionTime ?? {});
-      setAdhdLevels(poll.adhd ?? {});
+      if (!isAdhdDragging.current) setAdhdLevels(poll.adhd ?? {});
       setPokes(poll.pokes ?? []);
       setTouchGrass(poll.touchGrass ?? []);
       setTakeover(poll.takeover ?? null);
@@ -699,6 +707,17 @@ export default function Home() {
     });
   };
 
+  const handleMoneyRequest = async () => {
+    if (!currentUser || moneyRequestSent) return;
+    setMoneyRequestSent(true);
+    setMoneyRequests((prev) => prev.some((r) => r.name === currentUser) ? prev : [...prev, { name: currentUser, ts: Date.now() }]);
+    await fetch("/api/need-money", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser }),
+    });
+  };
+
   const approveTimeOff = async (name: string) => {
     setTimeOffRequests((prev) => prev.filter((r) => r.name !== name));
     await fetch("/api/time-off", {
@@ -925,20 +944,18 @@ export default function Home() {
           <>
             <div className="flex items-center gap-3 mb-3">
               <input
-                type="range" min={0} max={100} value={value}
-                onChange={(e) => handleSliderChange(member.name, Number(e.target.value))}
-                style={getTrackStyle(value, level)}
+                type="range" min={0} max={100} value={localSlider ?? value}
+                onMouseDown={() => { isDragging.current = true; setLocalSlider(value); }}
+                onTouchStart={() => { isDragging.current = true; setLocalSlider(value); }}
+                onMouseUp={() => { isDragging.current = false; if (localSlider !== null) { handleSliderChange(member.name, localSlider); setLocalSlider(null); } }}
+                onTouchEnd={() => { isDragging.current = false; if (localSlider !== null) { handleSliderChange(member.name, localSlider); setLocalSlider(null); } }}
+                onChange={(e) => setLocalSlider(Number(e.target.value))}
+                style={getTrackStyle(localSlider ?? value, getLevel(localSlider ?? value))}
                 className="flex-1"
               />
-              {value === 100 ? (
-                <button onClick={() => toggleSOS(member.name)} className="py-1.5 px-3 rounded-lg border-2 border-[#e74c3c] bg-[#e74c3c] text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap">
-                  halp
-                </button>
-              ) : (
-                <span className="text-xs font-extrabold px-2.5 py-1.5 rounded-lg bg-black text-white whitespace-nowrap min-w-[80px] text-center uppercase tracking-wide">
-                  {LABELS[level]}
-                </span>
-              )}
+              <span className="text-xs font-extrabold px-2.5 py-1.5 rounded-lg bg-black text-white whitespace-nowrap min-w-[80px] text-center uppercase tracking-wide">
+                {LABELS[getLevel(localSlider ?? value)]}
+              </span>
             </div>
             <input
               type="text"
@@ -955,34 +972,49 @@ export default function Home() {
               <p className="text-[10px] font-extrabold uppercase tracking-widest text-black/60 mb-1.5">adhd check</p>
               <div className="flex items-center gap-3">
                 <input
-                  type="range" min={0} max={100} value={adhdLevels[member.name] ?? 0}
-                  onChange={(e) => handleAdhdChange(member.name, Number(e.target.value))}
-                  style={{ background: `linear-gradient(to right, rgba(0,0,0,0.3) ${adhdLevels[member.name] ?? 0}%, rgba(0,0,0,0.1) ${adhdLevels[member.name] ?? 0}%)` }}
+                  type="range" min={0} max={100} value={localAdhd ?? adhdLevels[member.name] ?? 0}
+                  onMouseDown={() => { isAdhdDragging.current = true; setLocalAdhd(adhdLevels[member.name] ?? 0); }}
+                  onTouchStart={() => { isAdhdDragging.current = true; setLocalAdhd(adhdLevels[member.name] ?? 0); }}
+                  onMouseUp={() => { isAdhdDragging.current = false; if (localAdhd !== null) { handleAdhdChange(member.name, localAdhd); setLocalAdhd(null); } }}
+                  onTouchEnd={() => { isAdhdDragging.current = false; if (localAdhd !== null) { handleAdhdChange(member.name, localAdhd); setLocalAdhd(null); } }}
+                  onChange={(e) => setLocalAdhd(Number(e.target.value))}
+                  style={{ background: `linear-gradient(to right, rgba(0,0,0,0.3) ${localAdhd ?? adhdLevels[member.name] ?? 0}%, rgba(0,0,0,0.1) ${localAdhd ?? adhdLevels[member.name] ?? 0}%)` }}
                   className="flex-1"
                 />
-                <span className="text-xs font-extrabold text-black whitespace-nowrap">{ADHD_LABELS[getAdhdLevel(adhdLevels[member.name] ?? 0)]}</span>
+                <span className="text-xs font-extrabold text-black whitespace-nowrap">{ADHD_LABELS[getAdhdLevel(localAdhd ?? adhdLevels[member.name] ?? 0)]}</span>
               </div>
             </div>
-            <button onClick={() => toggleOOO(member.name)} className="w-full py-2 rounded-xl border-[3px] border-black bg-white text-sm text-black cursor-pointer transition-all font-bold hover:bg-[#FFE234] shadow-[3px_3px_0_#000]">
-              👻 Going ghost
-            </button>
+            <div className="flex gap-2">
+              <button onClick={() => toggleOOO(member.name)} className="flex-1 py-2 rounded-xl border-[3px] border-black bg-white text-sm text-black cursor-pointer transition-all font-bold hover:bg-[#FFE234] shadow-[3px_3px_0_#000]">
+                👻 ghost
+              </button>
+              <button
+                onClick={() => toggleMetcalf(member.name)}
+                className={`flex-1 py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all ${isMetcalf ? "bg-black text-white shadow-none" : "bg-white text-black hover:bg-black hover:text-white shadow-[3px_3px_0_#000]"}`}
+              >
+                🚗 metcalf
+              </button>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => toggleNeedWork(member.name)}
+                className={`flex-1 py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all ${isNeedWork ? "bg-[#3D52F0] text-white shadow-none" : "bg-white text-black hover:bg-[#3D52F0] hover:text-white shadow-[3px_3px_0_#000]"}`}
+              >
+                📋 {isNeedWork ? "need work ✓" : "need work"}
+              </button>
+              <button
+                onClick={() => toggleDontTalk(member.name)}
+                className={`flex-1 py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all ${isDontTalk ? "bg-[#e74c3c] text-white shadow-none" : "bg-white text-black hover:bg-[#e74c3c] hover:text-white shadow-[3px_3px_0_#000]"}`}
+              >
+                🚫 {isDontTalk ? "no talk ✓" : "no talk"}
+              </button>
+            </div>
             <button
-              onClick={() => toggleMetcalf(member.name)}
-              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${isMetcalf ? "bg-black text-white shadow-none" : "bg-white text-black hover:bg-black hover:text-white shadow-[3px_3px_0_#000]"}`}
+              onClick={handleMoneyRequest}
+              disabled={moneyRequestSent || moneyRequests.some((r) => r.name === currentUser)}
+              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${moneyRequestSent || moneyRequests.some((r) => r.name === currentUser) ? "bg-[#FFE234] text-black shadow-none opacity-70 cursor-default" : "bg-white text-black hover:bg-[#FFE234] shadow-[3px_3px_0_#000]"}`}
             >
-              🚗 {isMetcalf ? "catch me on metcalf ✓" : "catch me on metcalf"}
-            </button>
-            <button
-              onClick={() => toggleNeedWork(member.name)}
-              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${isNeedWork ? "bg-[#3D52F0] text-white shadow-none" : "bg-white text-black hover:bg-[#3D52F0] hover:text-white shadow-[3px_3px_0_#000]"}`}
-            >
-              📋 {isNeedWork ? "I need work ✓" : "I need work"}
-            </button>
-            <button
-              onClick={() => toggleDontTalk(member.name)}
-              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${isDontTalk ? "bg-[#e74c3c] text-white shadow-none" : "bg-white text-black hover:bg-[#e74c3c] hover:text-white shadow-[3px_3px_0_#000]"}`}
-            >
-              🚫 {isDontTalk ? "don't talk to me ✓" : "don't talk to me"}
+              {moneyRequestSent || moneyRequests.some((r) => r.name === currentUser) ? "sent ✓" : "i need 💰"}
             </button>
           </>
         )}
@@ -1192,7 +1224,8 @@ export default function Home() {
                 return (
                   <div className="flex items-center gap-2 rounded-xl px-3 py-2 border-[2px] border-black shadow-[2px_2px_0_#000]" style={{ background: ADHD_COLORS[adhdLvl] }}>
                     <span className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#FFE234] border-[2px] border-black shrink-0">adhd</span>
-                    <span className="text-sm font-extrabold text-black">{ADHD_LABELS[adhdLvl]}</span>
+                    <span className="text-sm font-extrabold text-black flex-1">{ADHD_LABELS[adhdLvl]}</span>
+                    <span className="text-base">{ADHD_EMOJIS[adhdLvl]}</span>
                   </div>
                 );
               })()}

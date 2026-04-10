@@ -174,6 +174,7 @@ export default function AdminPage() {
   const [buddies, setBuddies] = useState<Record<string, { id: string }>>({});
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number }[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
+  const [moneyRequests, setMoneyRequests] = useState<{ name: string; ts: number }[]>([]);
 
   useEffect(() => {
     if (sessionStorage.getItem("admin-authed") === "true") setAuthed(true);
@@ -192,7 +193,7 @@ export default function AdminPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, historyRes, feedbackRes, photosRes, urgentRes, buddiesRes, goHomeRes, timeOffRes] = await Promise.all([
+      const [statusRes, oooRes, sosRes, historyRes, feedbackRes, photosRes, urgentRes, buddiesRes, goHomeRes, timeOffRes, moneyRes] = await Promise.all([
         fetch("/api/status"),
         fetch("/api/status/ooo"),
         fetch("/api/status/sos"),
@@ -203,8 +204,9 @@ export default function AdminPage() {
         fetch("/api/buddies"),
         fetch("/api/go-home"),
         fetch("/api/time-off"),
+        fetch("/api/need-money"),
       ]);
-      const [statusData, oooData, sosData, historyData, feedbackData, photosData, urgentData, buddiesData, goHomeData, timeOffData] = await Promise.all([
+      const [statusData, oooData, sosData, historyData, feedbackData, photosData, urgentData, buddiesData, goHomeData, timeOffData, moneyData] = await Promise.all([
         statusRes.json(),
         oooRes.json(),
         sosRes.json(),
@@ -215,6 +217,7 @@ export default function AdminPage() {
         buddiesRes.json(),
         goHomeRes.json(),
         timeOffRes.json(),
+        moneyRes.json(),
       ]);
       setStatuses(statusData.status);
       setUpdatedAt(statusData.updated);
@@ -229,6 +232,7 @@ export default function AdminPage() {
       setBuddies(buddiesData.buddies ?? {});
       setGoHomeRequests(goHomeData.requests ?? []);
       setTimeOffRequests(timeOffData.requests ?? []);
+      setMoneyRequests(moneyData.requests ?? []);
     } catch {
       // retry next poll
     } finally {
@@ -264,6 +268,15 @@ export default function AdminPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, clear: true }),
+    });
+  };
+
+  const dismissMoneyRequest = async (name: string) => {
+    setMoneyRequests((prev) => prev.filter((r) => r.name !== name));
+    await fetch("/api/need-money", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
     });
   };
 
@@ -489,6 +502,34 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+
+          {/* Money Requests */}
+          {moneyRequests.length > 0 && (
+            <div className="animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
+              <div className="px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3">
+                <span className="text-4xl">💸</span>
+                <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1">I Need $</h2>
+                <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{moneyRequests.length}</span>
+              </div>
+              <div className="flex flex-wrap gap-3 px-5 py-4">
+                {moneyRequests.map((r) => (
+                  <div key={r.name} className="flex items-center gap-2.5 bg-white border-[3px] border-black rounded-2xl px-4 py-2.5 shadow-[3px_3px_0_#000]">
+                    <Image
+                      src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
+                      alt={r.name} width={36} height={36}
+                      className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
+                    />
+                    <span className="font-extrabold text-base">{r.name}</span>
+                    <span className="text-xs text-[#8a857d] font-semibold">{timeAgo(r.ts)}</span>
+                    <button
+                      onClick={() => dismissMoneyRequest(r.name)}
+                      className="ml-1 px-2.5 py-1 rounded-xl bg-black text-white text-[11px] font-extrabold cursor-pointer hover:bg-[#333] transition-colors"
+                    >handled ✓</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Time Off Requests */}
           {timeOffRequests.length > 0 && (
