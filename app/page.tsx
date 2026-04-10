@@ -132,6 +132,10 @@ export default function Home() {
   const [tattleText, setTattleText] = useState("");
   const [tattleSent, setTattleSent] = useState(false);
   const [moods, setMoods] = useState<Record<string, string>>({});
+  const [bans, setBans] = useState<Record<string, string>>({});
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [disputeText, setDisputeText] = useState("");
+  const [disputeSent, setDisputeSent] = useState(false);
   const [vibeVideoId, setVibeVideoId] = useState("vTfD20dbxho");
   const [brainRotVideoId, setBrainRotVideoId] = useState("xxfeav5MlmI");
   const [showBrainRotModal, setShowBrainRotModal] = useState(false);
@@ -245,6 +249,7 @@ export default function Home() {
       setMessages(poll.messages ?? []);
       setShippedFeatures(poll.shippedFeatures ?? []);
       setMoods(poll.moods ?? {});
+      setBans(poll.bans ?? {});
       if (poll.videos?.vibeVideoId) setVibeVideoId(poll.videos.vibeVideoId);
       if (poll.videos?.brainRotVideoId) setBrainRotVideoId(poll.videos.brainRotVideoId);
       setBroadcast(poll.urgent?.message ? { message: poll.urgent.message, type: poll.urgent.type ?? "broadcast" } : null);
@@ -1247,6 +1252,32 @@ export default function Home() {
     const isMetcalf = !!metcalfStatuses[member.name];
     const isNeedWork = !!needWorkStatuses[member.name];
     const isDontTalk = !!dontTalkStatuses[member.name];
+    const isBanned = !!bans[member.name];
+    if (isBanned) {
+      return (
+        <div
+          key={member.name}
+          className="animate-pop-in rounded-2xl border-[4px] border-[#e74c3c] shadow-[5px_5px_0_#e74c3c] overflow-hidden relative"
+          style={{ animationDelay: `${i * 50}ms`, background: "#fff0f0", minHeight: "160px" }}
+        >
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center z-10">
+            <div className="text-5xl font-black tracking-tighter text-[#e74c3c] uppercase leading-none" style={{ fontFamily: "var(--font-display)", textShadow: "3px 3px 0 #000", WebkitTextStroke: "2px #000" }}>
+              BANNED
+            </div>
+            <p className="text-sm font-bold text-[#c0392b]">{member.name} has been removed</p>
+            {bans[member.name] && <p className="text-xs text-black/50 font-medium italic">&ldquo;{bans[member.name]}&rdquo;</p>}
+            {currentUser === member.name && (
+              <button
+                onClick={() => { setShowDisputeModal(true); setDisputeSent(false); setDisputeText(""); }}
+                className="mt-1 px-4 py-2 rounded-xl border-[3px] border-black bg-[#e74c3c] text-white text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#000] cursor-pointer hover:bg-black transition-colors"
+              >
+                ✋ dispute this ban
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
     return (
       <div
         key={member.name}
@@ -2301,6 +2332,60 @@ export default function Home() {
                       disabled={!tattleText.trim()}
                       className="flex-1 py-3 rounded-2xl bg-[#ff4d4d] border-[3px] border-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
                     >send it 🫢</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Ban Dispute Modal */}
+        {showDisputeModal && currentUser && bans[currentUser] && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+            <div className="animate-bounce-in bg-white border-[4px] border-[#e74c3c] rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[400px] w-full">
+              {disputeSent ? (
+                <div className="text-center py-4">
+                  <div className="text-5xl mb-3">✋</div>
+                  <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Dispute filed.</p>
+                  <p className="text-sm text-[#b5b0a8] mt-1">Derek will review it.</p>
+                  <button
+                    onClick={() => setShowDisputeModal(false)}
+                    className="mt-5 px-6 py-2.5 rounded-2xl bg-black text-white font-bold text-sm cursor-pointer hover:opacity-80 transition-opacity"
+                  >close</button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between mb-1">
+                    <h2 className="text-2xl font-extrabold tracking-tight text-[#e74c3c]" style={{ fontFamily: "var(--font-display)" }}>Dispute Ban</h2>
+                    <button onClick={() => setShowDisputeModal(false)} className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5">✕</button>
+                  </div>
+                  <p className="text-sm text-[#b5b0a8] mb-5 font-medium">Make your case. Derek will see this.</p>
+                  <textarea
+                    autoFocus
+                    value={disputeText}
+                    onChange={(e) => setDisputeText(e.target.value)}
+                    placeholder="why should you be unbanned?"
+                    rows={4}
+                    className="w-full border-[3px] border-[#e74c3c] focus:border-[#e74c3c] rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white mb-4"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowDisputeModal(false)}
+                      className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
+                    >nevermind</button>
+                    <button
+                      onClick={async () => {
+                        if (!disputeText.trim() || !currentUser) return;
+                        await fetch("/api/ban", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ action: "dispute", name: currentUser, message: disputeText.trim() }),
+                        });
+                        setDisputeSent(true);
+                      }}
+                      disabled={!disputeText.trim()}
+                      className="flex-1 py-3 rounded-2xl bg-[#e74c3c] border-[3px] border-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
+                    >send it ✋</button>
                   </div>
                 </>
               )}

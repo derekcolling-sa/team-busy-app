@@ -196,6 +196,10 @@ export default function AdminPage() {
   const [statusNotes, setStatusNotes] = useState<Record<string, string>>({});
   const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number }[]>([]);
   const [tattles, setTattles] = useState<{ message: string; ts: number }[]>([]);
+  const [bans, setBans] = useState<Record<string, string>>({});
+  const [banDisputes, setBanDisputes] = useState<{ name: string; message: string; ts: number }[]>([]);
+  const [banReasonInput, setBanReasonInput] = useState<Record<string, string>>({});
+  const [banningTarget, setBanningTarget] = useState<string | null>(null);
   const [vibeVideoId, setVibeVideoId] = useState("vTfD20dbxho");
   const [brainRotVideoId, setBrainRotVideoId] = useState("xxfeav5MlmI");
   const [vibeVideoInput, setVibeVideoInput] = useState("");
@@ -266,6 +270,9 @@ export default function AdminPage() {
       setPhotoOverrides(photosData.photos ?? {});
       setBuddies(buddiesData.buddies ?? {});
       setTattles(tattleData.tattles ?? []);
+      setBans(poll.bans ?? {});
+      // fetch disputes separately
+      fetch("/api/ban").then(r => r.json()).then(d => setBanDisputes(d.disputes ?? [])).catch(() => {});
       if (poll.videos?.vibeVideoId) setVibeVideoId(poll.videos.vibeVideoId);
       if (poll.videos?.brainRotVideoId) setBrainRotVideoId(poll.videos.brainRotVideoId);
     } catch {
@@ -446,6 +453,35 @@ export default function AdminPage() {
     else { setBrainRotVideoId(id); setBrainRotVideoInput(""); }
     setVideoSaved(type);
     setTimeout(() => setVideoSaved(null), 2000);
+  };
+
+  const banMember = async (name: string) => {
+    const reason = banReasonInput[name] ?? "";
+    setBans((prev) => ({ ...prev, [name]: reason }));
+    setBanningTarget(null);
+    await fetch("/api/ban", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "ban", name, reason }),
+    });
+  };
+
+  const unbanMember = async (name: string) => {
+    setBans((prev) => { const n = { ...prev }; delete n[name]; return n; });
+    await fetch("/api/ban", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "unban", name }),
+    });
+  };
+
+  const clearDispute = async (ts: number) => {
+    setBanDisputes((prev) => prev.filter(d => d.ts !== ts));
+    await fetch("/api/ban", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "clear-dispute", ts }),
+    });
   };
 
   const unshipFeature = async (ts: number) => {
@@ -849,6 +885,7 @@ export default function AdminPage() {
                               {inMeeting && <span className="text-[9px] font-bold bg-[#FF9DC8] text-black px-1.5 py-0.5 rounded-full">📅 meeting</span>}
                               {memberPokes.length > 0 && <span className="text-[9px] font-bold bg-[#FFE234] text-black px-1.5 py-0.5 rounded-full">👉 {memberPokes.length}</span>}
                               {memberGrass.length > 0 && <span className="text-[9px] font-bold bg-[#a8f5c8] text-black px-1.5 py-0.5 rounded-full">🌿 {memberGrass.length}</span>}
+                              {bans[member.name] && <span className="text-[9px] font-bold bg-[#e74c3c] text-white px-1.5 py-0.5 rounded-full animate-pulse">🔨 banned</span>}
                             </div>
                             {isOOO ? (
                               <div className="flex flex-col gap-0.5 mt-0.5">
@@ -890,6 +927,18 @@ export default function AdminPage() {
                               </>
                             )}
                           </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {bans[member.name] ? (
+                            <button
+                              onClick={() => unbanMember(member.name)}
+                              className="text-[10px] text-white font-bold bg-[#e74c3c] border-[2px] border-black rounded-lg px-2 py-1 cursor-pointer hover:bg-black transition-colors"
+                            >🔓 unban</button>
+                          ) : (
+                            <button
+                              onClick={() => setBanningTarget(banningTarget === member.name ? null : member.name)}
+                              className="text-[10px] text-[#e74c3c] font-bold border-[2px] border-[#e74c3c]/40 hover:border-[#e74c3c] rounded-lg px-2 py-1 cursor-pointer transition-colors"
+                            >🔨 ban</button>
+                          )}
                           <button
                             onClick={() => {
                               if (isOOO) {
@@ -900,11 +949,31 @@ export default function AdminPage() {
                                 setInlineOOOEdit(null);
                               }
                             }}
-                            className="text-[10px] text-[#c5bfb8] hover:text-black font-bold border-[2px] border-black/20 hover:border-black rounded-lg px-2 py-1 transition-colors cursor-pointer flex-shrink-0"
+                            className="text-[10px] text-[#c5bfb8] hover:text-black font-bold border-[2px] border-black/20 hover:border-black rounded-lg px-2 py-1 transition-colors cursor-pointer"
                           >
                             {(isOverride || isEditingOOO) ? "done" : "edit"}
                           </button>
+                          </div>{/* end ban+edit button group */}
                         </div>
+
+                        {banningTarget === member.name && !bans[member.name] && (
+                          <div className="mt-2 pt-2 border-t border-[#f0ece6] flex gap-2 items-center">
+                            <input
+                              type="text"
+                              placeholder="ban reason (optional)"
+                              value={banReasonInput[member.name] ?? ""}
+                              onChange={(e) => setBanReasonInput((prev) => ({ ...prev, [member.name]: e.target.value }))}
+                              onKeyDown={(e) => { if (e.key === "Enter") banMember(member.name); if (e.key === "Escape") setBanningTarget(null); }}
+                              autoFocus
+                              className="flex-1 border-2 border-[#e74c3c] rounded-xl px-3 py-1.5 text-xs font-medium bg-white focus:outline-none"
+                              maxLength={80}
+                            />
+                            <button
+                              onClick={() => banMember(member.name)}
+                              className="px-3 py-1.5 rounded-xl bg-[#e74c3c] border-2 border-black text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap shadow-[2px_2px_0_#000]"
+                            >🔨 confirm ban</button>
+                          </div>
+                        )}
 
                         {isOverride && !isOOO && (
                           <div className="mt-2.5 pt-2.5 border-t border-[#f0ece6] flex flex-col gap-2">
@@ -1191,6 +1260,42 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
+
+              {/* Ban Disputes */}
+              {banDisputes.length > 0 && (
+                <div className="rounded-[1.4rem] border-[4px] border-[#e74c3c] shadow-[6px_6px_0_#000] bg-[#fff0f0] overflow-hidden">
+                  <div className="px-5 pt-4 pb-3 border-b-[3px] border-[#e74c3c] flex items-center gap-2">
+                    <h2 className="text-lg font-extrabold text-[#e74c3c] tracking-tight flex-1">✋ Ban Disputes</h2>
+                    <span className="text-[11px] font-bold bg-[#e74c3c] text-white px-2.5 py-1 rounded-full">{banDisputes.length}</span>
+                  </div>
+                  <div className="flex flex-col divide-y-[2px] divide-[#e74c3c]/20">
+                    {banDisputes.map((d) => (
+                      <div key={d.ts} className="px-5 py-3 flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <Image
+                            src={photoOverrides[d.name] ?? (MEMBERS.find(m => m.name === d.name)?.photo ?? "")}
+                            alt={d.name} width={28} height={28}
+                            className="rounded-full object-cover w-7 h-7 border-2 border-[#e74c3c] flex-shrink-0"
+                          />
+                          <span className="font-extrabold text-sm">{d.name}</span>
+                          <span className="text-[10px] text-[#b5b0a8] ml-auto">{new Date(d.ts).toLocaleString()}</span>
+                        </div>
+                        <p className="text-sm text-[#c0392b] font-medium italic px-1">&ldquo;{d.message}&rdquo;</p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { unbanMember(d.name); clearDispute(d.ts); }}
+                            className="flex-1 py-1.5 rounded-xl bg-[#3CB55A] border-2 border-black text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity shadow-[2px_2px_0_#000]"
+                          >✓ unban them</button>
+                          <button
+                            onClick={() => clearDispute(d.ts)}
+                            className="flex-1 py-1.5 rounded-xl bg-white border-2 border-black text-[#8a857d] text-xs font-bold cursor-pointer hover:border-[#e74c3c] hover:text-[#e74c3c] transition-colors"
+                          >✕ dismiss</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
             {/* RIGHT COLUMN — Summary + History + Danger */}
             <div className="flex flex-col gap-5">
