@@ -181,6 +181,7 @@ export default function Home() {
   const [takeoverDraft, setTakeoverDraft] = useState("");
   const [bratMode, setBratMode] = useState(false);
   const [brainRot, setBrainRot] = useState(false);
+  const [confettiOff, setConfettiOff] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; name: string }[]>([]);
   const reactionTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const [meetings, setMeetings] = useState<Record<string, number>>({});
@@ -203,6 +204,7 @@ export default function Home() {
   const [weatherEmoji, setWeatherEmoji] = useState<string | null>(null);
 
   useEffect(() => {
+    setConfettiOff(localStorage.getItem("team-busy-confetti-off") === "true");
     const saved = localStorage.getItem("team-busy-user");
     if (saved) {
       setCurrentUser(saved);
@@ -1490,6 +1492,14 @@ export default function Home() {
                 onClick={() => setBrainRot(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FF9DC8] transition-colors"
               >🧠 brain rot</button>
+              <button
+                onClick={() => {
+                  const next = !confettiOff;
+                  setConfettiOff(next);
+                  localStorage.setItem("team-busy-confetti-off", String(next));
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors"
+              >🎉 {confettiOff ? "confetti on" : "confetti off"}</button>
               {topOnlineUser && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
                   <span className="font-extrabold">{topOnlineUser}</span> is chronically online
@@ -1557,7 +1567,7 @@ export default function Home() {
               )}
 
               {/* Confetti — full screen overlay (evening + all day Friday) */}
-              {(currentHour >= 17 || nowDate.getDay() === 5) && (
+              {!confettiOff && (currentHour >= 17 || nowDate.getDay() === 5) && (
                 <div className="fixed inset-0 pointer-events-none z-[50]">
                   {["#FF9DC8","#3D52F0","#e74c3c","#b5f0c8","#FFE234","#FF9DC8","#3D52F0","#a8f5c8","#dbb8ff","#ffb8e0","#FF4444","#000","#FF9DC8","#3D52F0","#b5f0c8","#FFE234","#dbb8ff","#e74c3c","#a8f5c8","#FF9DC8"].map((color, i) => (
                     <div key={i} className="absolute rounded-sm" style={{
