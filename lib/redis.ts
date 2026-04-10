@@ -168,15 +168,15 @@ export async function addMessage(name: string, message: string): Promise<void> {
   const filtered = existing.filter((m) => m.name !== name);
   const newEntry: MessageEntry = { name, message, ts: Date.now() };
   const all = [newEntry, ...filtered].slice(0, 20);
-  await redis.del(MESSAGES_KEY);
-  for (const entry of all.reverse()) {
-    await redis.lpush(MESSAGES_KEY, JSON.stringify(entry));
-  }
+  await redis.set(MESSAGES_KEY, JSON.stringify(all));
 }
 
 export async function getMessages(): Promise<MessageEntry[]> {
-  const items = await redis.lrange(MESSAGES_KEY, 0, 19);
-  return items.map((item) => (typeof item === "string" ? JSON.parse(item) : item));
+  const data = await redis.get(MESSAGES_KEY);
+  if (!data) return [];
+  if (typeof data === "string") return JSON.parse(data);
+  if (Array.isArray(data)) return data as MessageEntry[];
+  return [];
 }
 
 // Daily history — key format: team-busy-history:YYYY-MM-DD

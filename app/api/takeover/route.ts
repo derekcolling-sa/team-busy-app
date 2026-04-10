@@ -1,5 +1,5 @@
 import { getTakeover, setTakeover } from "@/lib/redis";
-
+import { safeJson } from "@/lib/safe-json";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -8,7 +8,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { message } = await request.json();
+  const body = await safeJson(request); if (!body) return Response.json({ error: "Invalid JSON" }, { status: 400 }); const { message } = body as any;
   if (typeof message !== "string") {
     return Response.json({ error: "Invalid input" }, { status: 400 });
   }

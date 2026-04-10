@@ -1,5 +1,5 @@
 import { getTimeOffRequests, requestTimeOff, clearTimeOff } from "@/lib/redis";
-
+import { safeJson } from "@/lib/safe-json";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -8,7 +8,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { name } = await request.json();
+  const body = await safeJson(request); if (!body) return Response.json({ error: "Invalid JSON" }, { status: 400 }); const { name } = body as any;
   if (!name || typeof name !== "string") {
     return Response.json({ error: "Invalid" }, { status: 400 });
   }
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { name } = await request.json();
+  const body = await safeJson(request); if (!body) return Response.json({ error: "Invalid JSON" }, { status: 400 }); const { name } = body as any;
   if (!name || typeof name !== "string") {
     return Response.json({ error: "Invalid" }, { status: 400 });
   }

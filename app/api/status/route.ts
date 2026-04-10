@@ -1,5 +1,5 @@
 import { getAllStatus, getAllUpdated, getAllStatusNotes, setMemberStatus, setStatusNote, logDailySnapshot } from "@/lib/redis";
-
+import { safeJson } from "@/lib/safe-json";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -12,7 +12,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { name, value, note } = await request.json();
+  const body = await safeJson(request); if (!body) return Response.json({ error: "Invalid JSON" }, { status: 400 }); const { name, value, note } = body as any;
   if (typeof name !== "string") {
     return Response.json({ error: "Invalid input" }, { status: 400 });
   }

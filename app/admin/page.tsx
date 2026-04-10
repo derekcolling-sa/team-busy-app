@@ -22,6 +22,15 @@ const MEMBERS = [
 const LABELS = ["Chillin'", "Sautéed", "Cooking", "Cooked"];
 const EMOJIS = ["😎", "🍳", "🔥", "💀"];
 const LEVEL_COLORS = ["#5cb85c", "#4a9eff", "#f5a623", "#e8742d"];
+const ADHD_LABELS = ["locked tf in", "lowkey glazed", "brainrot szn", "absolutely feral"];
+const ADHD_COLORS = ["#a8f5c8", "#b8d4ff", "#dbb8ff", "#ffb8e0"];
+const ADHD_EMOJIS = ["🧠", "😵‍💫", "📱", "🐿️"];
+function getAdhdLevel(val: number) {
+  if (val <= 25) return 0;
+  if (val <= 50) return 1;
+  if (val <= 75) return 2;
+  return 3;
+}
 const MEMBER_COLORS = [
   "#f472b6", "#60a5fa", "#34d399", "#fb923c", "#a78bfa", "#facc15", "#f87171", "#4ade80",
 ];
@@ -175,6 +184,16 @@ export default function AdminPage() {
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number }[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
   const [moneyRequests, setMoneyRequests] = useState<{ name: string; ts: number }[]>([]);
+  const [dontTalkStatuses, setDontTalkStatuses] = useState<Record<string, boolean>>({});
+  const [needWorkStatuses, setNeedWorkStatuses] = useState<Record<string, boolean>>({});
+  const [metcalfStatuses, setMetcalfStatuses] = useState<Record<string, boolean>>({});
+  const [adhdLevels, setAdhdLevels] = useState<Record<string, number>>({});
+  const [meetings, setMeetings] = useState<Record<string, number>>({});
+  const [sessionTimes, setSessionTimes] = useState<Record<string, number>>({});
+  const [touchGrass, setTouchGrass] = useState<{ from: string; to: string; ts: number }[]>([]);
+  const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
+  const [lastSeen, setLastSeen] = useState<Record<string, number>>({});
+  const [statusNotes, setStatusNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (sessionStorage.getItem("admin-authed") === "true") setAuthed(true);
@@ -193,46 +212,44 @@ export default function AdminPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [statusRes, oooRes, sosRes, historyRes, feedbackRes, photosRes, urgentRes, buddiesRes, goHomeRes, timeOffRes, moneyRes] = await Promise.all([
-        fetch("/api/status"),
-        fetch("/api/status/ooo"),
-        fetch("/api/status/sos"),
+      const [pollRes, historyRes, feedbackRes, photosRes, buddiesRes] = await Promise.all([
+        fetch("/api/poll"),
         fetch("/api/history"),
         fetch("/api/feedback"),
         fetch("/api/photos"),
-        fetch("/api/urgent"),
         fetch("/api/buddies"),
-        fetch("/api/go-home"),
-        fetch("/api/time-off"),
-        fetch("/api/need-money"),
       ]);
-      const [statusData, oooData, sosData, historyData, feedbackData, photosData, urgentData, buddiesData, goHomeData, timeOffData, moneyData] = await Promise.all([
-        statusRes.json(),
-        oooRes.json(),
-        sosRes.json(),
+      const [poll, historyData, feedbackData, photosData, buddiesData] = await Promise.all([
+        pollRes.json(),
         historyRes.json(),
         feedbackRes.json(),
         photosRes.json(),
-        urgentRes.json(),
         buddiesRes.json(),
-        goHomeRes.json(),
-        timeOffRes.json(),
-        moneyRes.json(),
       ]);
-      setStatuses(statusData.status);
-      setUpdatedAt(statusData.updated);
-      setOooStatuses(oooData.ooo ?? oooData);
-      setOooDetails(oooData.details ?? {});
-      setSosStatuses(sosData);
+      setStatuses(poll.status ?? {});
+      setUpdatedAt(poll.updated ?? {});
+      setStatusNotes(poll.notes ?? {});
+      setOooStatuses(poll.ooo ?? {});
+      setOooDetails(poll.oooDetails ?? {});
+      setSosStatuses(poll.sos ?? {});
+      setBroadcast(poll.urgent?.message ? { message: poll.urgent.message, type: poll.urgent.type ?? "broadcast" } : null);
+      setGoHomeRequests(poll.goHome ?? []);
+      setTimeOffRequests(poll.timeOff ?? []);
+      setMoneyRequests(poll.moneyRequests ?? []);
+      setMetcalfStatuses(poll.metcalf ?? {});
+      setNeedWorkStatuses(poll.needWork ?? {});
+      setDontTalkStatuses(poll.dontTalk ?? {});
+      setAdhdLevels(poll.adhd ?? {});
+      setSessionTimes(poll.sessionTime ?? {});
+      setPokes(poll.pokes ?? []);
+      setTouchGrass(poll.touchGrass ?? []);
+      setMeetings(poll.meetings ?? {});
+      setLastSeen(poll.lastSeen ?? {});
       setHistory(historyData);
       setFeedback(feedbackData.items ?? feedbackData);
       setResolvedFromServer(feedbackData.resolvedTs ?? []);
       setPhotoOverrides(photosData.photos ?? {});
-      setBroadcast(urgentData.message ? { message: urgentData.message, type: urgentData.type ?? "broadcast" } : null);
       setBuddies(buddiesData.buddies ?? {});
-      setGoHomeRequests(goHomeData.requests ?? []);
-      setTimeOffRequests(timeOffData.requests ?? []);
-      setMoneyRequests(moneyData.requests ?? []);
     } catch {
       // retry next poll
     } finally {
@@ -688,23 +705,43 @@ export default function AdminPage() {
                     const level = getLevel(value);
                     const isOOO = !!oooStatuses[member.name];
                     const isSOS = !!sosStatuses[member.name];
+                    const isDontTalk = !!dontTalkStatuses[member.name];
+                    const isNeedWork = !!needWorkStatuses[member.name];
+                    const isMetcalf = !!metcalfStatuses[member.name];
+                    const adhdVal = adhdLevels[member.name] ?? 0;
+                    const adhdLvl = getAdhdLevel(adhdVal);
+                    const inMeeting = meetings[member.name] && meetings[member.name] > Date.now();
+                    const memberPokes = pokes.filter(p => p.to === member.name);
+                    const memberGrass = touchGrass.filter(p => p.to === member.name);
+                    const seenRecently = lastSeen[member.name] && lastSeen[member.name] > Date.now() - 120000;
+                    const sessionMins = Math.floor((sessionTimes[member.name] ?? 0) / 60);
                     const isOverride = overrideTarget === member.name;
                     const isEditingOOO = inlineOOOEdit === member.name;
                     const details = oooDetails[member.name];
+                    const note = statusNotes[member.name];
 
                     return (
-                      <div key={member.name} className={`px-4 py-3 ${isOOO ? "opacity-60" : ""}`}>
+                      <div key={member.name} className={`px-4 py-3 ${isOOO ? "opacity-60" : ""} ${isDontTalk ? "bg-[#ffe5e5]" : ""}`}>
                         <div className="flex items-start gap-3">
-                          <Image
-                            src={photoOverrides[member.name] ?? member.photo}
-                            alt={member.name} width={34} height={34}
-                            className={`rounded-full object-cover w-[34px] h-[34px] border-2 border-black flex-shrink-0 mt-0.5 ${isOOO ? "grayscale" : ""}`}
-                          />
+                          <div className="relative shrink-0 mt-0.5">
+                            <Image
+                              src={photoOverrides[member.name] ?? member.photo}
+                              alt={member.name} width={34} height={34}
+                              className={`rounded-full object-cover w-[34px] h-[34px] border-2 border-black ${isOOO ? "grayscale" : ""}`}
+                            />
+                            {seenRecently && <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#3CB55A] border border-white" />}
+                          </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                               <span className="text-sm font-bold leading-none">{member.name}</span>
-                              {isSOS && <span className="text-[10px] font-bold bg-[#e74c3c] text-white px-1.5 py-0.5 rounded-full animate-pulse">SOS</span>}
-                              {isOOO && <span className="text-[10px] font-bold bg-[#e5e1dc] text-[#8a857d] px-1.5 py-0.5 rounded-full">ghost</span>}
+                              {isSOS && <span className="text-[9px] font-bold bg-[#e74c3c] text-white px-1.5 py-0.5 rounded-full animate-pulse">SOS</span>}
+                              {isOOO && <span className="text-[9px] font-bold bg-[#e5e1dc] text-[#8a857d] px-1.5 py-0.5 rounded-full">ghost</span>}
+                              {isDontTalk && <span className="text-[9px] font-bold bg-[#e74c3c] text-white px-1.5 py-0.5 rounded-full">🚫 no talk</span>}
+                              {isNeedWork && <span className="text-[9px] font-bold bg-[#3D52F0] text-white px-1.5 py-0.5 rounded-full">📋 need work</span>}
+                              {isMetcalf && <span className="text-[9px] font-bold bg-black text-white px-1.5 py-0.5 rounded-full">🚗 metcalf</span>}
+                              {inMeeting && <span className="text-[9px] font-bold bg-[#FF9DC8] text-black px-1.5 py-0.5 rounded-full">📅 meeting</span>}
+                              {memberPokes.length > 0 && <span className="text-[9px] font-bold bg-[#FFE234] text-black px-1.5 py-0.5 rounded-full">👉 {memberPokes.length}</span>}
+                              {memberGrass.length > 0 && <span className="text-[9px] font-bold bg-[#a8f5c8] text-black px-1.5 py-0.5 rounded-full">🌿 {memberGrass.length}</span>}
                             </div>
                             {isOOO ? (
                               <div className="flex flex-col gap-0.5 mt-0.5">
@@ -729,8 +766,19 @@ export default function AdminPage() {
                                     {isSOS ? "🔥 Burnt af" : LABELS[level]}
                                   </span>
                                 </div>
-                                {updatedAt[member.name] && (
-                                  <p className="text-[10px] text-[#c5bfb8] mt-0.5">{timeAgo(updatedAt[member.name])}</p>
+                                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                  {updatedAt[member.name] && (
+                                    <span className="text-[10px] text-[#c5bfb8]">{timeAgo(updatedAt[member.name])}</span>
+                                  )}
+                                  {sessionMins > 0 && (
+                                    <span className="text-[10px] text-[#c5bfb8]">· {sessionMins}m online</span>
+                                  )}
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: ADHD_COLORS[adhdLvl] }}>
+                                    {ADHD_EMOJIS[adhdLvl]} {ADHD_LABELS[adhdLvl]}
+                                  </span>
+                                </div>
+                                {note && (
+                                  <p className="text-[10px] text-[#8a857d] mt-0.5 italic">💬 {note}</p>
                                 )}
                               </>
                             )}

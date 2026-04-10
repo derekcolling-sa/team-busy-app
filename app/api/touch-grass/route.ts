@@ -1,5 +1,5 @@
 import { getAllTouchGrass, sendTouchGrass, clearTouchGrass } from "@/lib/redis";
-
+import { safeJson } from "@/lib/safe-json";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -8,7 +8,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { from, to } = await request.json();
+  const body = await safeJson(request); if (!body) return Response.json({ error: "Invalid JSON" }, { status: 400 }); const { from, to } = body as any;
   if (typeof from !== "string" || typeof to !== "string" || from === to) {
     return Response.json({ error: "Invalid input" }, { status: 400 });
   }
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const { from, to } = await request.json();
+  const body = await safeJson(request); if (!body) return Response.json({ error: "Invalid JSON" }, { status: 400 }); const { from, to } = body as any;
   if (typeof from !== "string" || typeof to !== "string") {
     return Response.json({ error: "Invalid input" }, { status: 400 });
   }
