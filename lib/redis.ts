@@ -141,6 +141,28 @@ export async function removeShippedFeature(ts: number): Promise<void> {
   await redis.set(SHIPPED_KEY, JSON.stringify(filtered));
 }
 
+const TATTLE_KEY = "team-busy-tattles";
+export type TattleEntry = { message: string; ts: number };
+
+export async function addTattle(message: string): Promise<void> {
+  const entry: TattleEntry = { message, ts: Date.now() };
+  await redis.lpush(TATTLE_KEY, JSON.stringify(entry));
+}
+
+export async function getTattles(): Promise<TattleEntry[]> {
+  const items = await redis.lrange(TATTLE_KEY, 0, 49);
+  return items.map((item) => (typeof item === "string" ? JSON.parse(item) : item));
+}
+
+export async function clearTattle(ts: number): Promise<void> {
+  const existing = await getTattles();
+  const filtered = existing.filter(t => t.ts !== ts);
+  await redis.del(TATTLE_KEY);
+  if (filtered.length > 0) {
+    await redis.rpush(TATTLE_KEY, ...filtered.map(t => JSON.stringify(t)));
+  }
+}
+
 const STATUS_NOTES_KEY = "team-busy-status-notes";
 const FEEDBACK_RESOLVED_KEY = "team-busy-feedback-resolved";
 

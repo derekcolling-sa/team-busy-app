@@ -128,6 +128,9 @@ export default function Home() {
   const [showBugReport, setShowBugReport] = useState(false);
   const [bugReportText, setBugReportText] = useState("");
   const [bugReportSent, setBugReportSent] = useState(false);
+  const [showTattle, setShowTattle] = useState(false);
+  const [tattleText, setTattleText] = useState("");
+  const [tattleSent, setTattleSent] = useState(false);
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
 
@@ -774,6 +777,21 @@ export default function Home() {
     const data = await res.json();
     if (data.url) setPhotoOverrides((prev) => ({ ...prev, [currentUser]: data.url }));
     setUploadingPhoto(false);
+  };
+
+  const submitTattle = async () => {
+    if (!tattleText.trim()) return;
+    await fetch("/api/tattle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: tattleText.trim() }),
+    });
+    setTattleText("");
+    setTattleSent(true);
+    setTimeout(() => {
+      setTattleSent(false);
+      setShowTattle(false);
+    }, 2000);
   };
 
   const submitBugReport = async () => {
@@ -1479,6 +1497,12 @@ export default function Home() {
               >
                 🐛 Submit Bug
               </button>
+              <button
+                onClick={() => setShowTattle(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#ff4d4d] text-[11px] font-bold text-white hover:bg-[#FFE234] hover:text-black transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]"
+              >
+                🫢 Tattle
+              </button>
               </>}
               {currentUser && !isGuest && !VP.includes(currentUser) && (
                 <button
@@ -2152,6 +2176,52 @@ export default function Home() {
                       disabled={!bugReportText.trim()}
                       className="flex-1 py-3 rounded-2xl bg-[#FF9DC8] border-[3px] border-black text-black font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
                     >send it 🐛</button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tattle Modal */}
+        {showTattle && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
+              {tattleSent ? (
+                <div className="text-center py-4">
+                  <div className="text-5xl mb-3">🫢</div>
+                  <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Noted.</p>
+                  <p className="text-sm text-[#b5b0a8] mt-1">Derek will see this.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between mb-1">
+                    <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Tattle Box</h2>
+                    <button
+                      onClick={() => { setShowTattle(false); setTattleText(""); }}
+                      className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5"
+                    >✕</button>
+                  </div>
+                  <p className="text-sm text-[#b5b0a8] mb-5 font-medium">100% anonymous. vent freely.</p>
+                  <textarea
+                    autoFocus
+                    value={tattleText}
+                    onChange={(e) => setTattleText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitTattle(); }}
+                    placeholder="spill it..."
+                    rows={4}
+                    className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setShowTattle(false); setTattleText(""); }}
+                      className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
+                    >nevermind</button>
+                    <button
+                      onClick={submitTattle}
+                      disabled={!tattleText.trim()}
+                      className="flex-1 py-3 rounded-2xl bg-[#ff4d4d] border-[3px] border-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
+                    >send it 🫢</button>
                   </div>
                 </>
               )}

@@ -195,6 +195,7 @@ export default function AdminPage() {
   const [lastSeen, setLastSeen] = useState<Record<string, number>>({});
   const [statusNotes, setStatusNotes] = useState<Record<string, string>>({});
   const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number }[]>([]);
+  const [tattles, setTattles] = useState<{ message: string; ts: number }[]>([]);
 
   useEffect(() => {
     if (sessionStorage.getItem("admin-authed") === "true") setAuthed(true);
@@ -218,19 +219,21 @@ export default function AdminPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [pollRes, historyRes, feedbackRes, photosRes, buddiesRes] = await Promise.all([
+      const [pollRes, historyRes, feedbackRes, photosRes, buddiesRes, tattleRes] = await Promise.all([
         fetch("/api/poll"),
         fetch("/api/history"),
         fetch("/api/feedback"),
         fetch("/api/photos"),
         fetch("/api/buddies"),
+        fetch("/api/tattle"),
       ]);
-      const [poll, historyData, feedbackData, photosData, buddiesData] = await Promise.all([
+      const [poll, historyData, feedbackData, photosData, buddiesData, tattleData] = await Promise.all([
         pollRes.json(),
         historyRes.json(),
         feedbackRes.json(),
         photosRes.json(),
         buddiesRes.json(),
+        tattleRes.json(),
       ]);
       setStatuses(poll.status ?? {});
       setUpdatedAt(poll.updated ?? {});
@@ -257,6 +260,7 @@ export default function AdminPage() {
       setResolvedFromServer(feedbackData.resolvedTs ?? []);
       setPhotoOverrides(photosData.photos ?? {});
       setBuddies(buddiesData.buddies ?? {});
+      setTattles(tattleData.tattles ?? []);
     } catch {
       // retry next poll
     } finally {
@@ -1125,6 +1129,40 @@ export default function AdminPage() {
                 )}
               </div>
             </div>
+
+            {/* Tattle Box */}
+              <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-white overflow-hidden">
+                <div className="px-5 pt-4 pb-3 border-b-[3px] border-black/10 flex items-center justify-between bg-[#ff4d4d]">
+                  <h2 className="text-lg font-extrabold text-white tracking-tight">🫢 Tattle Box</h2>
+                  {tattles.length > 0 && (
+                    <span className="text-[10px] font-bold bg-white text-[#ff4d4d] px-2.5 py-1 rounded-full">
+                      {tattles.length} anonymous
+                    </span>
+                  )}
+                </div>
+                {tattles.length === 0 ? (
+                  <p className="px-5 py-4 text-sm text-[#b5b0a8] italic">Nothing to report. All good out there.</p>
+                ) : (
+                  <div className="divide-y-[2px] divide-black/10">
+                    {tattles.map((t) => (
+                      <div key={t.ts} className="px-4 py-3 flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-[#4a4540]">{t.message}</p>
+                          <span className="text-[10px] text-[#b5b0a8] mt-1 block">{timeAgo(t.ts)}</span>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            setTattles((prev) => prev.filter(x => x.ts !== t.ts));
+                            await fetch("/api/tattle", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ts: t.ts }) });
+                          }}
+                          className="shrink-0 text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-lg leading-none mt-0.5"
+                          title="Dismiss"
+                        >✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
             {/* RIGHT COLUMN — Summary + History + Danger */}
             <div className="flex flex-col gap-5">
