@@ -197,6 +197,11 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (sessionStorage.getItem("admin-authed") === "true") setAuthed(true);
+    // Auto-auth if logged in as Derek on the main app
+    if (localStorage.getItem("team-busy-user") === "Derek") {
+      sessionStorage.setItem("admin-authed", "true");
+      setAuthed(true);
+    }
   }, []);
 
   const handleLogin = () => {

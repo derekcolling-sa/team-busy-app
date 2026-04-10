@@ -423,15 +423,15 @@ export default function Home() {
       .then((d) => {
         const code: number = d?.current?.weather_code ?? -1;
         const emoji =
-          code === 0 ? "☀️" :
-          code <= 2 ? "🌤️" :
-          code === 3 ? "☁️" :
-          code <= 48 ? "🌫️" :
-          code <= 55 ? "🌦️" :
-          code <= 65 ? "🌧️" :
-          code <= 77 ? "❄️" :
-          code <= 82 ? "🌧️" :
-          code <= 99 ? "⛈️" : "🌡️";
+          code === 0 ? "🌞" :
+          code <= 2 ? "⛅" :
+          code === 3 ? "☁" :
+          code <= 48 ? "☁" :
+          code <= 55 ? "🌧" :
+          code <= 65 ? "🌧" :
+          code <= 77 ? "⛄" :
+          code <= 82 ? "🌧" :
+          code <= 99 ? "⛈" : "🌡";
         setWeatherEmoji(emoji);
       })
       .catch(() => {});
@@ -1510,6 +1510,12 @@ export default function Home() {
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#39FF14] transition-colors"
               >👁️ {viewAsTeam ? "edit my card" : "view as team"}</button>
+              {currentUser === BOSS && (
+                <a
+                  href="/admin"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-black text-[11px] font-bold text-white tracking-widest uppercase shadow-[3px_3px_0_#FFE234] cursor-pointer hover:bg-[#FFE234] hover:text-black transition-colors"
+                >⚡ admin</a>
+              )}
               {topOnlineUser && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
                   <span className="font-extrabold">{topOnlineUser}</span> is chronically online
