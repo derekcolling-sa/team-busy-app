@@ -1416,7 +1416,7 @@ export default function Home() {
           {/* Header */}
           <div className="flex flex-row items-start justify-between gap-4 mb-6 sm:mb-8">
             <div className="flex flex-col gap-2">
-              <div className="text-xs font-bold uppercase tracking-widest text-white/60">someone cooked here</div>
+              <div className="text-xs font-bold uppercase tracking-widest text-[#39FF14]">someone cooked here</div>
               <div className="flex items-center gap-3">
                 <span
                   className="text-3xl sm:text-5xl font-extrabold whitespace-nowrap transition-all"
