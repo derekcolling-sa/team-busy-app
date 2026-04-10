@@ -928,7 +928,7 @@ export default function AdminPage() {
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
-                          {bans[member.name] ? (
+                          {member.name !== "Derek" && (bans[member.name] ? (
                             <button
                               onClick={() => unbanMember(member.name)}
                               className="text-[10px] text-white font-bold bg-[#e74c3c] border-[2px] border-black rounded-lg px-2 py-1 cursor-pointer hover:bg-black transition-colors"
@@ -938,7 +938,7 @@ export default function AdminPage() {
                               onClick={() => setBanningTarget(banningTarget === member.name ? null : member.name)}
                               className="text-[10px] text-[#e74c3c] font-bold border-[2px] border-[#e74c3c]/40 hover:border-[#e74c3c] rounded-lg px-2 py-1 cursor-pointer transition-colors"
                             >🔨 ban</button>
-                          )}
+                          ))}
                           <button
                             onClick={() => {
                               if (isOOO) {
