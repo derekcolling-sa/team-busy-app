@@ -5,7 +5,7 @@ import {
   getGoHomeRequests, getReloadSignal, getBanner, getAllPokes,
   getTimeOffRequests, getAllMetcalf, getAllBossReactions,
   getAllNeedWork, getAllSessionTime, getAllAdhd, getAllTouchGrass, getTakeover,
-  getBodyDouble, getMeetings,
+  getBodyDouble, getMeetings, getAllLastSeen, getAllDontTalkToMe,
 } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export async function GET() {
     messages, urgent,
     goHome, reload, banner, pokes,
     timeOff, metcalf, bossReactions,
-    needWork, sessionTime, adhd, touchGrass, takeover, bodyDouble, meetings,
+    needWork, sessionTime, adhd, touchGrass, takeover, bodyDouble, meetings, lastSeen, dontTalk,
   ] = await Promise.all([
     getAllStatus(),
     getAllUpdated(),
@@ -41,6 +41,8 @@ export async function GET() {
     getTakeover(),
     getBodyDouble(),
     getMeetings(),
+    getAllLastSeen(),
+    getAllDontTalkToMe(),
   ]);
 
   return Response.json({
@@ -49,6 +51,6 @@ export async function GET() {
     messages, urgent,
     goHome, reload, banner, pokes,
     timeOff, metcalf, bossReactions,
-    needWork, sessionTime, adhd, touchGrass, takeover, bodyDouble, meetings,
+    needWork, sessionTime, adhd, touchGrass, takeover, bodyDouble, meetings, lastSeen, dontTalk,
   });
 }

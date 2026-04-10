@@ -145,6 +145,7 @@ export default function Home() {
   const [sosStatuses, setSosStatuses] = useState<Record<string, boolean>>({});
   const [metcalfStatuses, setMetcalfStatuses] = useState<Record<string, boolean>>({});
   const [needWorkStatuses, setNeedWorkStatuses] = useState<Record<string, boolean>>({});
+  const [dontTalkStatuses, setDontTalkStatuses] = useState<Record<string, boolean>>({});
   const [cardFlipped, setCardFlipped] = useState(false);
   const [bossReactions, setBossReactions] = useState<Record<string, "heart" | "thumbsdown">>({});
   const [showGhostModal, setShowGhostModal] = useState(false);
@@ -172,8 +173,9 @@ export default function Home() {
   const [bratMode, setBratMode] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; name: string }[]>([]);
   const [meetings, setMeetings] = useState<Record<string, number>>({});
+  const [lastSeen, setLastSeen] = useState<Record<string, number>>({});
   const [showMeetingPicker, setShowMeetingPicker] = useState(false);
-  const [, setNow] = useState(Date.now());
+  const [now, setNow] = useState(Date.now());
   const [sessionTimes, setSessionTimes] = useState<Record<string, number>>({});
   const [adhdLevels, setAdhdLevels] = useState<Record<string, number>>({});
   const sessionAccRef = useRef(0);
@@ -220,12 +222,14 @@ export default function Home() {
       setMetcalfStatuses(poll.metcalf ?? {});
       setBossReactions(poll.bossReactions ?? {});
       setNeedWorkStatuses(poll.needWork ?? {});
+      setDontTalkStatuses(poll.dontTalk ?? {});
       setSessionTimes(poll.sessionTime ?? {});
       setAdhdLevels(poll.adhd ?? {});
       setPokes(poll.pokes ?? []);
       setTouchGrass(poll.touchGrass ?? []);
       setTakeover(poll.takeover ?? null);
       setMeetings(poll.meetings ?? {});
+      setLastSeen(poll.lastSeen ?? {});
       if (poll.banner?.message) setBanner({ message: poll.banner.message, type: poll.banner.type ?? "daily" });
     } catch {
       // retry next poll
@@ -517,6 +521,16 @@ export default function Home() {
     });
   };
 
+  const toggleDontTalk = async (name: string) => {
+    const newVal = !dontTalkStatuses[name];
+    setDontTalkStatuses((prev) => ({ ...prev, [name]: newVal }));
+    await fetch("/api/status/dont-talk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, active: newVal }),
+    });
+  };
+
   const toggleSOS = async (name: string) => {
     const newVal = !sosStatuses[name];
     setSosStatuses((prev) => ({ ...prev, [name]: newVal }));
@@ -764,6 +778,15 @@ export default function Home() {
   });
 
   const isGuest = currentUser === "__guest__";
+  const nowDate = new Date(now);
+  const currentHour = nowDate.getHours();
+  const currentMin = nowDate.getMinutes();
+  const currentSec = nowDate.getSeconds();
+  const isAfter5 = currentHour >= 17 || currentHour < 9;
+  const isCountdown = currentHour === 16 && currentMin >= 45;
+  const secsUntil5 = isCountdown ? (17 * 3600) - (currentHour * 3600 + currentMin * 60 + currentSec) : 0;
+  const countdownMins = Math.floor(secsUntil5 / 60);
+  const countdownSecs = secsUntil5 % 60;
   const myMember = MEMBERS.find((m) => m.name === currentUser);
   const bossMember = MEMBERS.find((m) => m.name === BOSS);
   const teamMembers = sortedMembers.filter((m) => m.name !== currentUser && m.name !== BOSS);
@@ -795,6 +818,7 @@ export default function Home() {
     const isSOS = !!sosStatuses[member.name];
     const isMetcalf = !!metcalfStatuses[member.name];
     const isNeedWork = !!needWorkStatuses[member.name];
+    const isDontTalk = !!dontTalkStatuses[member.name];
 
     return (
       <div
@@ -936,6 +960,12 @@ export default function Home() {
             >
               📋 {isNeedWork ? "I need work ✓" : "I need work"}
             </button>
+            <button
+              onClick={() => toggleDontTalk(member.name)}
+              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${isDontTalk ? "bg-[#e74c3c] text-white shadow-none" : "bg-white text-black hover:bg-[#e74c3c] hover:text-white shadow-[3px_3px_0_#000]"}`}
+            >
+              🚫 {isDontTalk ? "don't talk to me ✓" : "don't talk to me"}
+            </button>
           </>
         )}
         {isMetcalf && member.name !== currentUser && (
@@ -1031,17 +1061,19 @@ export default function Home() {
     const isSOS = !!sosStatuses[member.name];
     const isMetcalf = !!metcalfStatuses[member.name];
     const isNeedWork = !!needWorkStatuses[member.name];
+    const isDontTalk = !!dontTalkStatuses[member.name];
     return (
       <div
         key={member.name}
         className={`animate-pop-in rounded-2xl px-4 py-4 border-[4px] transition-all flex flex-col gap-2 relative group cursor-default ${
-          isOOO ? "border-black hover:-translate-y-1"
+          isDontTalk ? "border-[#e74c3c] shadow-[5px_5px_0_#e74c3c] hover:-translate-y-1 hover:shadow-[8px_8px_0_#e74c3c]"
+          : isOOO ? "border-black hover:-translate-y-1"
           : isSOS ? "border-black shadow-[5px_5px_0_#e74c3c] hover:-translate-y-1 hover:shadow-[8px_8px_0_#e74c3c]"
           : "border-black shadow-[5px_5px_0_#000] hover:-translate-y-1 hover:shadow-[8px_8px_0_#000]"
         }`}
         style={{
           animationDelay: `${i * 50}ms`,
-          background: "#ffffff",
+          background: isDontTalk ? "#ffe5e5" : "#ffffff",
           position: "relative",
           overflow: "hidden",
         }}
@@ -1077,11 +1109,15 @@ export default function Home() {
         )}
         <div className={`flex flex-col gap-2 ${isOOO ? "opacity-30 grayscale" : ""}`}>
           <div className="flex items-center gap-3">
-            <Image
-              src={photoOverrides[member.name] ?? member.photo}
-              alt={member.name} width={44} height={44}
-              className="rounded-full object-cover border-[3px] border-black w-[44px] h-[44px] shrink-0 transition-transform group-hover:scale-110"
-            />
+            {isDontTalk ? (
+              <span className="text-[44px] w-[44px] h-[44px] shrink-0 flex items-center justify-center leading-none">😤</span>
+            ) : (
+              <Image
+                src={photoOverrides[member.name] ?? member.photo}
+                alt={member.name} width={44} height={44}
+                className="rounded-full object-cover border-[3px] border-black w-[44px] h-[44px] shrink-0 transition-transform group-hover:scale-110"
+              />
+            )}
             <div className="flex-1 min-w-0">
               <p className="font-extrabold text-xl leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</p>
               {updatedAt[member.name] && (
@@ -1096,7 +1132,9 @@ export default function Home() {
                 </>
               )}
             </div>
-            {isSOS ? (
+            {isDontTalk ? (
+              <span className="text-4xl shrink-0">🚫</span>
+            ) : isSOS ? (
               <span className="text-xl animate-pulse shrink-0">🚨</span>
             ) : isMetcalf ? (
               <span className="text-2xl animate-bounce shrink-0">🚗</span>
@@ -1110,7 +1148,13 @@ export default function Home() {
             )}
           </div>
 
-          {!isSOS && (
+          {isDontTalk && (
+            <div className="w-full rounded-xl bg-[#e74c3c] px-4 py-2.5 flex items-center gap-2">
+              <span className="text-lg">🚫</span>
+              <p className="text-sm font-bold text-white">don't talk to me</p>
+            </div>
+          )}
+          {!isDontTalk && !isSOS && (
             <div className="flex flex-col gap-1.5">
               <div className="h-3 rounded-full bg-black/10 overflow-hidden border-[2px] border-black">
                 <div
@@ -1136,26 +1180,26 @@ export default function Home() {
               })()}
             </div>
           )}
-          {meetings[member.name] && meetings[member.name] > Date.now() && (
+          {!isDontTalk && meetings[member.name] && meetings[member.name] > Date.now() && (
             <div className="w-full rounded-xl bg-[#FF9DC8] border-[2px] border-black px-4 py-2.5 flex items-center gap-2 shadow-[2px_2px_0_#000]">
               <span className="text-lg">📅</span>
               <p className="text-sm font-bold flex-1">in a meeting</p>
               <span className="text-sm font-extrabold tabular-nums">{formatCountdown(meetings[member.name])}</span>
             </div>
           )}
-          {isMetcalf && (
+          {!isDontTalk && isMetcalf && (
             <div className="w-full rounded-xl bg-black px-4 py-2.5 flex items-center gap-2">
               <span className="text-lg">🚗</span>
               <p className="text-sm font-bold text-white">catch me on metcalf</p>
             </div>
           )}
-          {isNeedWork && (
+          {!isDontTalk && isNeedWork && (
             <div className="w-full rounded-xl bg-[#3D52F0] px-4 py-2.5 flex items-center gap-2">
               <span className="text-lg">📋</span>
               <p className="text-sm font-bold text-white">I need work</p>
             </div>
           )}
-          {currentUser && currentUser !== member.name && !isGuest && (
+          {!isDontTalk && currentUser && currentUser !== member.name && !isGuest && (
             <div className="flex items-center justify-between mt-1 px-1">
               {["😬", "💀", "🔥", "😭", "🫡", "💅"].map((emoji) => (
                 <button
@@ -1166,7 +1210,7 @@ export default function Home() {
               ))}
             </div>
           )}
-          {currentUser && currentUser !== member.name && (
+          {!isDontTalk && currentUser && currentUser !== member.name && (
             <div className="flex gap-2 mt-1">
               <button
                 onClick={() => sendPoke(member.name)}
@@ -1293,12 +1337,13 @@ export default function Home() {
 
       <div
         className="min-h-screen px-4 sm:px-8 py-6 sm:py-8 transition-colors duration-300 relative"
-        style={bratMode ? { background: "#8ace00", fontFamily: "Arial, sans-serif" } : undefined}
+        style={bratMode ? { background: "#8ace00", fontFamily: "Arial, sans-serif" } : isAfter5 ? { background: "#000" } : undefined}
       >
         <div className="max-w-[1280px] mx-auto">
           {/* Header */}
           <div className="flex flex-row items-start justify-between gap-4 mb-6 sm:mb-8">
             <div className="flex flex-col gap-2">
+              <div className="text-xs font-bold uppercase tracking-widest text-white/60">someone cooked here</div>
               <div className="flex items-center gap-3">
                 <span
                   className="text-3xl sm:text-5xl font-extrabold whitespace-nowrap transition-all"
@@ -1377,6 +1422,73 @@ export default function Home() {
             </p>
           ) : (
             <>
+              {/* 4:45 Countdown */}
+              {isCountdown && (
+                <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-black shadow-[6px_6px_0_#FFE234] px-6 py-4 flex items-center gap-4">
+                  <span className="text-3xl animate-pulse">⏰</span>
+                  <div className="flex-1">
+                    <p className="text-[#FFE234] font-extrabold text-lg uppercase tracking-widest" style={{ fontFamily: "var(--font-display)" }}>freedom in</p>
+                  </div>
+                  <span className="text-5xl font-extrabold text-[#FFE234] tabular-nums" style={{ fontFamily: "var(--font-display)" }}>{countdownMins}:{String(countdownSecs).padStart(2, "0")}</span>
+                </div>
+              )}
+
+              {/* 5pm — We Survived banner */}
+              {isAfter5 && (
+                <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FFE234] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center gap-4">
+                  <span className="text-4xl">🎉</span>
+                  <div>
+                    <p className="text-3xl font-extrabold text-black tracking-tight" style={{ fontFamily: "var(--font-display)" }}>we survived</p>
+                    <p className="text-sm font-bold text-black/50 uppercase tracking-widest">another one bites the dust</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Confetti — full screen overlay */}
+              {isAfter5 && (
+                <div className="fixed inset-0 pointer-events-none z-[50]">
+                  {["#FF9DC8","#3D52F0","#e74c3c","#b5f0c8","#FFE234","#FF9DC8","#3D52F0","#a8f5c8","#dbb8ff","#ffb8e0","#FF4444","#000","#FF9DC8","#3D52F0","#b5f0c8","#FFE234","#dbb8ff","#e74c3c","#a8f5c8","#FF9DC8"].map((color, i) => (
+                    <div key={i} className="absolute rounded-sm" style={{
+                      top: "-20px",
+                      left: `${(i * 5.1) % 100}%`,
+                      width: i % 3 === 0 ? "12px" : "8px",
+                      height: i % 3 === 0 ? "12px" : "18px",
+                      background: color,
+                      borderRadius: i % 4 === 0 ? "50%" : "2px",
+                      animation: `confetti-fall ${2.5 + (i % 7) * 0.4}s ease-in ${(i * 0.18) % 2}s infinite`,
+                    }} />
+                  ))}
+                </div>
+              )}
+
+              {/* Hall of Shame — after 5pm, only currently online users */}
+              {isAfter5 && Object.keys(lastSeen).filter(n => n !== BOSS && lastSeen[n] > Date.now() - 120000).length > 0 && (
+                <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-white shadow-[6px_6px_0_#000] overflow-hidden">
+                  <div className="px-5 py-3 border-b-[3px] border-black bg-[#FF9DC8] flex items-center gap-3">
+                    <span className="text-xl">😬</span>
+                    <h2 className="text-lg font-extrabold tracking-tight flex-1" style={{ fontFamily: "var(--font-display)" }}>hall of shame — still here after 5</h2>
+                  </div>
+                  <div className="flex flex-wrap gap-3 px-5 py-4">
+                    {Object.keys(lastSeen)
+                      .filter(n => n !== BOSS && lastSeen[n] > Date.now() - 120000)
+                      .sort((a, b) => (sessionTimes[b] ?? 0) - (sessionTimes[a] ?? 0))
+                      .map(name => {
+                        const secs = sessionTimes[name] ?? 0;
+                        const hrs = Math.floor(secs / 3600);
+                        const mins = Math.floor((secs % 3600) / 60);
+                        const member = MEMBERS.find(m => m.name === name);
+                        return (
+                          <div key={name} className="flex items-center gap-2 px-3 py-2 rounded-xl border-[2px] border-black shadow-[2px_2px_0_#000] bg-white">
+                            {member && <Image src={photoOverrides[name] ?? member.photo} alt={name} width={28} height={28} className="rounded-full object-cover w-7 h-7 border border-black" />}
+                            <span className="font-extrabold text-sm">{name}</span>
+                            <span className="text-xs font-bold text-black/40">{hrs > 0 ? `${hrs}h ` : ""}{mins}m</span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
                 {/* Left: My card */}
                 {myMember && (

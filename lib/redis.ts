@@ -514,6 +514,22 @@ export async function setMemberMetcalf(name: string, active: boolean): Promise<v
   await redis.hset(METCALF_KEY, { [name]: String(active) });
 }
 
+const DONT_TALK_KEY = "team-busy-dont-talk";
+
+export async function getAllDontTalkToMe(): Promise<Record<string, boolean>> {
+  const data = await redis.hgetall(DONT_TALK_KEY);
+  if (!data) return {};
+  const result: Record<string, boolean> = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = value === "true" || value === true;
+  }
+  return result;
+}
+
+export async function setDontTalkToMe(name: string, active: boolean): Promise<void> {
+  await redis.hset(DONT_TALK_KEY, { [name]: String(active) });
+}
+
 const SESSION_TIME_KEY = "team-busy-session-time";
 
 export async function getAllSessionTime(): Promise<Record<string, number>> {
@@ -528,6 +544,22 @@ export async function getAllSessionTime(): Promise<Record<string, number>> {
 
 export async function addSessionTime(name: string, seconds: number): Promise<void> {
   await redis.hincrbyfloat(SESSION_TIME_KEY, name, seconds);
+}
+
+const LAST_SEEN_KEY = "team-busy-last-seen";
+
+export async function setLastSeen(name: string): Promise<void> {
+  await redis.hset(LAST_SEEN_KEY, { [name]: Date.now() });
+}
+
+export async function getAllLastSeen(): Promise<Record<string, number>> {
+  const data = await redis.hgetall(LAST_SEEN_KEY);
+  if (!data) return {};
+  const result: Record<string, number> = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = Number(value);
+  }
+  return result;
 }
 
 const ADHD_KEY = "team-busy-adhd";

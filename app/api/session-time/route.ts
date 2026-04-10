@@ -1,4 +1,4 @@
-import { getAllSessionTime, addSessionTime } from "@/lib/redis";
+import { getAllSessionTime, addSessionTime, setLastSeen } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +12,9 @@ export async function POST(request: Request) {
   if (typeof name !== "string" || typeof seconds !== "number" || seconds <= 0) {
     return Response.json({ error: "Invalid input" }, { status: 400 });
   }
-  await addSessionTime(name, Math.min(seconds, 300)); // cap at 5 min per flush
+  await Promise.all([
+    addSessionTime(name, Math.min(seconds, 300)),
+    setLastSeen(name),
+  ]);
   return Response.json({ ok: true });
 }
