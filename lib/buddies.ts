@@ -16,7 +16,7 @@ export const BUDDIES: Buddy[] = [
   // --- Common ---
   { id: "crumbs",  name: "Crumbs",  rarity: "common",   tagline: "ate and left no crumbs" },
   { id: "glitch",  name: "Glitch",  rarity: "common",   tagline: "currently experiencing a vibe error" },
-  { id: "beige",   name: "Beige",   rarity: "common",   tagline: "painfully mid but make it chic" },
+  { id: "beige",   name: "Beige",   rarity: "common",   tagline: "painfully mid but make it chic", ext: "gif" },
   { id: "yikes",   name: "Yikes",   rarity: "common",   tagline: "sent it before proofreading again" },
   { id: "nope",    name: "Nope",    rarity: "common",   tagline: "respectfully, no" },
   { id: "vibes",   name: "Vibes",   rarity: "common",   tagline: "checking in. not doing much else.", ext: "gif" },
