@@ -1646,7 +1646,7 @@ export default function Home() {
                       <span className="text-base">📋</span>
                       <h2 className="text-sm font-extrabold tracking-tight flex-1 text-left" style={{ fontFamily: "var(--font-display)" }}>feature updates</h2>
                       <span className="text-[10px] font-bold bg-black text-[#39FF14] px-2 py-0.5 rounded-full">{shippedFeatures.length}</span>
-                      <span className="text-xs font-bold text-black/50 ml-1">{featureUpdatesOpen ? "▴" : "▾"}</span>
+                      <span className="text-lg font-bold text-black/60 ml-1">{featureUpdatesOpen ? "▴" : "▾"}</span>
                     </button>
                     {featureUpdatesOpen && (
                       <>
