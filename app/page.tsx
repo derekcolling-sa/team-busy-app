@@ -780,6 +780,23 @@ export default function Home() {
   const isGuest = currentUser === "__guest__";
   const nowDate = new Date(now);
   const currentHour = nowDate.getHours();
+  const DAY_MESSAGES = [
+    // Sun
+    { main: "wait why are you here 💀", sub: "it's sunday bestie. log off.", tag: "go touch grass" },
+    // Mon
+    { main: "monday survived 😮‍💨", sub: "that was not it but we did it anyway.", tag: "send thoughts & prayers" },
+    // Tue
+    { main: "tuesday ate 💅", sub: "lowkey the underrated day. we cooked.", tag: "no crumbs left" },
+    // Wed
+    { main: "hump day cleared 🐪", sub: "we are so halfway there it's unreal.", tag: "understood the assignment" },
+    // Thu
+    { main: "thursday said slay 🫡", sub: "one more day. do not fumble.", tag: "almost cooked" },
+    // Fri
+    { main: "FRIDAY WE ATE 🔥", sub: "clock's out. we are so done here bestie.", tag: "left no crumbs" },
+    // Sat
+    { main: "it's saturday?? 💀", sub: "log off immediately. this is concerning.", tag: "chronically online" },
+  ];
+  const todayMsg = DAY_MESSAGES[nowDate.getDay()];
   const currentMin = nowDate.getMinutes();
   const currentSec = nowDate.getSeconds();
   const isAfter5 = currentHour >= 17 || currentHour < 9;
@@ -1435,11 +1452,14 @@ export default function Home() {
 
               {/* 5pm — We Survived banner */}
               {isAfter5 && (
-                <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FFE234] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center gap-4">
-                  <span className="text-4xl">🎉</span>
-                  <div>
-                    <p className="text-3xl font-extrabold text-black tracking-tight" style={{ fontFamily: "var(--font-display)" }}>we survived</p>
-                    <p className="text-sm font-bold text-black/50 uppercase tracking-widest">another one bites the dust</p>
+                <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FFE234] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative">
+<div className="relative z-10">
+                    <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{todayMsg.main}</p>
+                    <p className="text-sm font-bold text-black/60 mt-1">{todayMsg.sub}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 relative z-10 shrink-0">
+                    <span className="text-3xl">🫡</span>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{todayMsg.tag}</span>
                   </div>
                 </div>
               )}
