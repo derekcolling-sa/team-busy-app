@@ -170,8 +170,7 @@ export default function Home() {
   const [showTakeoverCompose, setShowTakeoverCompose] = useState(false);
   const [takeoverDraft, setTakeoverDraft] = useState("");
   const [bratMode, setBratMode] = useState(false);
-  const [warMode, setWarMode] = useState(false);
-  const [bodyDouble, setBodyDouble] = useState<string[]>([]);
+  const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; name: string }[]>([]);
   const [meetings, setMeetings] = useState<Record<string, number>>({});
   const [showMeetingPicker, setShowMeetingPicker] = useState(false);
   const [, setNow] = useState(Date.now());
@@ -226,7 +225,6 @@ export default function Home() {
       setPokes(poll.pokes ?? []);
       setTouchGrass(poll.touchGrass ?? []);
       setTakeover(poll.takeover ?? null);
-      setBodyDouble(poll.bodyDouble ?? []);
       setMeetings(poll.meetings ?? {});
       if (poll.banner?.message) setBanner({ message: poll.banner.message, type: poll.banner.type ?? "daily" });
     } catch {
@@ -634,15 +632,10 @@ export default function Home() {
     return `${m}:${String(s).padStart(2, "0")}`;
   };
 
-  const toggleBodyDouble = async () => {
-    if (!currentUser) return;
-    const active = !bodyDouble.includes(currentUser);
-    setBodyDouble((prev) => active ? [...prev, currentUser!] : prev.filter((n) => n !== currentUser));
-    await fetch("/api/body-double", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: currentUser, active }),
-    });
+  const sendReaction = (name: string, emoji: string) => {
+    const id = `${Date.now()}-${Math.random()}`;
+    setFloatingReactions((prev) => [...prev, { id, emoji, name }]);
+    setTimeout(() => setFloatingReactions((prev) => prev.filter((r) => r.id !== id)), 1200);
   };
 
   const setMeeting = async (minutes: number | null) => {
@@ -985,16 +978,12 @@ export default function Home() {
             ))}
           </div>
         )}
-        {/* Body double + Meeting buttons */}
+        {/* Meeting button */}
         {currentUser && !isGuest && (
-          <div className="mt-2 flex gap-2">
-            <button
-              onClick={toggleBodyDouble}
-              className={`flex-1 py-2 rounded-xl border-[3px] border-black text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#000] cursor-pointer transition-all ${bodyDouble.includes(currentUser) ? "bg-[#b5f0c8] hover:bg-white" : "bg-white hover:bg-[#b5f0c8]"}`}
-            >{bodyDouble.includes(currentUser) ? "🤝 doubling!" : "🤝 body double"}</button>
+          <div className="mt-2">
             <button
               onClick={() => meetings[currentUser] ? setMeeting(null) : setShowMeetingPicker(true)}
-              className={`flex-1 py-2 rounded-xl border-[3px] border-black text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#000] cursor-pointer transition-all ${meetings[currentUser] ? "bg-[#FF9DC8] hover:bg-white" : "bg-white hover:bg-[#FF9DC8]"}`}
+              className={`w-full py-2 rounded-xl border-[3px] border-black text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#000] cursor-pointer transition-all ${meetings[currentUser] ? "bg-[#FF9DC8] hover:bg-white" : "bg-white hover:bg-[#FF9DC8]"}`}
             >{meetings[currentUser] ? `📅 ${formatCountdown(meetings[currentUser])}` : "📅 in a meeting"}</button>
           </div>
         )}
@@ -1057,6 +1046,12 @@ export default function Home() {
           overflow: "hidden",
         }}
       >
+        {/* Floating reactions */}
+        {floatingReactions.filter((r) => r.name === member.name).map((r) => (
+          <div key={r.id} className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
+            <span className="float-reaction text-5xl">{r.emoji}</span>
+          </div>
+        ))}
         {/* Staleness gradient */}
         {!isOOO && (() => { const t = getStaleness(updatedAt[member.name]); return t > 0 ? (
           <div className="absolute inset-x-0 bottom-0 pointer-events-none" style={{ height: "70%", background: `linear-gradient(to top, rgba(140,90,30,${0.3 + t * 0.6}) 0%, transparent 100%)`, zIndex: 0 }} />
@@ -1148,15 +1143,6 @@ export default function Home() {
               <span className="text-sm font-extrabold tabular-nums">{formatCountdown(meetings[member.name])}</span>
             </div>
           )}
-          {bodyDouble.includes(member.name) && (
-            <div className="w-full rounded-xl bg-[#b5f0c8] border-[2px] border-black px-4 py-2.5 flex items-center gap-2 shadow-[2px_2px_0_#000]">
-              <span className="text-lg">🤝</span>
-              <p className="text-sm font-bold flex-1">body doubling</p>
-              {currentUser && currentUser !== member.name && !bodyDouble.includes(currentUser) && (
-                <button onClick={toggleBodyDouble} className="text-[10px] font-extrabold bg-white border-[2px] border-black rounded-lg px-2 py-1 cursor-pointer hover:bg-black hover:text-white transition-colors">join</button>
-              )}
-            </div>
-          )}
           {isMetcalf && (
             <div className="w-full rounded-xl bg-black px-4 py-2.5 flex items-center gap-2">
               <span className="text-lg">🚗</span>
@@ -1167,6 +1153,17 @@ export default function Home() {
             <div className="w-full rounded-xl bg-[#3D52F0] px-4 py-2.5 flex items-center gap-2">
               <span className="text-lg">📋</span>
               <p className="text-sm font-bold text-white">I need work</p>
+            </div>
+          )}
+          {currentUser && currentUser !== member.name && !isGuest && (
+            <div className="flex items-center justify-between mt-1 px-1">
+              {["😬", "💀", "🔥", "😭", "🫡", "💅"].map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => sendReaction(member.name, emoji)}
+                  className="text-xl hover:scale-150 transition-transform cursor-pointer active:scale-90"
+                >{emoji}</button>
+              ))}
             </div>
           )}
           {currentUser && currentUser !== member.name && (
@@ -1295,20 +1292,9 @@ export default function Home() {
 
 
       <div
-        className={`min-h-screen px-4 sm:px-8 py-6 sm:py-8 transition-colors duration-300 relative ${warMode ? "war-mode" : ""}`}
-        style={
-          warMode ? { background: "#000", fontFamily: "monospace", color: "#00ff00" } :
-          bratMode ? { background: "#8ace00", fontFamily: "Arial, sans-serif" } :
-          undefined
-        }
+        className="min-h-screen px-4 sm:px-8 py-6 sm:py-8 transition-colors duration-300 relative"
+        style={bratMode ? { background: "#8ace00", fontFamily: "Arial, sans-serif" } : undefined}
       >
-        {/* Scanlines overlay */}
-        {warMode && (
-          <div className="pointer-events-none fixed inset-0 z-[200]" style={{
-            background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)",
-            mixBlendMode: "multiply",
-          }} />
-        )}
         <div className="max-w-[1280px] mx-auto">
           {/* Header */}
           <div className="flex flex-row items-start justify-between gap-4 mb-6 sm:mb-8">
@@ -1317,14 +1303,12 @@ export default function Home() {
                 <span
                   className="text-3xl sm:text-5xl font-extrabold whitespace-nowrap transition-all"
                   style={{
-                    fontFamily: warMode ? "monospace" : bratMode ? "Arial, sans-serif" : "var(--font-display)",
-                    color: warMode ? "#00ff00" : bratMode ? "#000" : "#fff",
+                    fontFamily: bratMode ? "Arial, sans-serif" : "var(--font-display)",
+                    color: bratMode ? "#000" : "#fff",
                     filter: bratMode ? "blur(0.6px)" : undefined,
-                    textTransform: warMode ? "uppercase" : bratMode ? "lowercase" : undefined,
-                    textShadow: warMode ? "0 0 10px #00ff00, 0 0 20px #00ff00" : undefined,
-                    letterSpacing: warMode ? "0.05em" : undefined,
+                    textTransform: bratMode ? "lowercase" : undefined,
                   }}
-                >{warMode ? `> ${today.toUpperCase()}_` : today}</span>
+                >{today}</span>
                 {weatherEmoji && <span className="text-3xl sm:text-5xl">{weatherEmoji}</span>}
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -1366,11 +1350,6 @@ export default function Home() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black text-[11px] font-bold tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer transition-colors"
                 style={{ background: bratMode ? "#8ace00" : "#fff", color: "#000", fontFamily: bratMode ? "Arial, sans-serif" : undefined }}
               >{bratMode ? "brat" : "brat mode"}</button>
-              <button
-                onClick={() => setWarMode((v) => !v)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] text-[11px] font-bold tracking-widest uppercase cursor-pointer transition-all"
-                style={{ background: warMode ? "#00ff00" : "#000", color: warMode ? "#000" : "#00ff00", borderColor: "#00ff00", fontFamily: "monospace", boxShadow: warMode ? "0 0 8px #00ff00" : "3px 3px 0 #00ff00" }}
-              >{warMode ? "■ TERMINATE" : "► WAR MODE"}</button>
               {topOnlineUser && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
                   <span className="font-extrabold">{topOnlineUser}</span> is chronically online
