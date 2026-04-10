@@ -266,8 +266,15 @@ export default function Home() {
   useEffect(() => {
     fetchData();
     fetchSlowData();
-    const interval = setInterval(fetchData, 12000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") fetchData();
+    }, 30000);
+    const onVisible = () => { if (document.visibilityState === "visible") fetchData(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [fetchData, fetchSlowData]);
 
   // Session time tracking — accumulate visible time and flush every 30s
