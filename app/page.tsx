@@ -1089,6 +1089,7 @@ export default function Home() {
               value={editingNote}
               onChange={(e) => setEditingNote(e.target.value)}
               onBlur={() => saveNote(member.name, editingNote)}
+              onPaste={(e) => e.preventDefault()}
               onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }}
               className="w-full text-xs font-medium text-black bg-white border-[3px] border-black rounded-xl px-3 py-2 focus:outline-none placeholder:text-[#b5b0a8] mb-3"
               maxLength={200}
@@ -1228,6 +1229,7 @@ export default function Home() {
               placeholder="drop the tea… 🍵"
               value={newMessage[member.name] ?? ""}
               onChange={(e) => setNewMessage((prev) => ({ ...prev, [member.name]: e.target.value }))}
+              onPaste={(e) => e.preventDefault()}
               onKeyDown={(e) => { if (e.key === "Enter") postMessage(member.name); }}
               maxLength={200}
               className="flex-1 px-3 py-1.5 rounded-xl border-[2px] border-black bg-white text-xs font-medium placeholder:text-black/30 focus:outline-none shadow-[2px_2px_0_#000] min-w-0"
@@ -2026,6 +2028,7 @@ export default function Home() {
               <textarea
                 value={takeoverDraft}
                 onChange={(e) => setTakeoverDraft(e.target.value)}
+                onPaste={(e) => e.preventDefault()}
                 placeholder="Type your message…"
                 maxLength={200}
                 rows={3}
@@ -2179,7 +2182,7 @@ export default function Home() {
                     autoFocus
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitFeedback(); }}
+                    onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitFeedback(); }}
                     placeholder="type here..."
                     maxLength={200}
                     rows={4}
@@ -2225,7 +2228,7 @@ export default function Home() {
                     autoFocus
                     value={featureRequestText}
                     onChange={(e) => setFeatureRequestText(e.target.value.slice(0, 200))}
-                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitFeatureRequest(); }}
+                    onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitFeatureRequest(); }}
                     placeholder="what should we build..."
                     rows={4}
                     maxLength={200}
@@ -2272,7 +2275,7 @@ export default function Home() {
                     autoFocus
                     value={bugReportText}
                     onChange={(e) => setBugReportText(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitBugReport(); }}
+                    onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitBugReport(); }}
                     placeholder="what broke and when..."
                     maxLength={200}
                     rows={4}
@@ -2319,7 +2322,7 @@ export default function Home() {
                     autoFocus
                     value={tattleText}
                     onChange={(e) => setTattleText(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitTattle(); }}
+                    onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitTattle(); }}
                     placeholder="spill it..."
                     rows={4}
                     className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
@@ -2366,6 +2369,7 @@ export default function Home() {
                     autoFocus
                     value={disputeText}
                     onChange={(e) => setDisputeText(e.target.value)}
+                    onPaste={(e) => e.preventDefault()}
                     placeholder="why should you be unbanned?"
                     maxLength={200}
                     rows={4}
@@ -2457,6 +2461,7 @@ export default function Home() {
               autoFocus
               value={brainRotInput}
               onChange={(e) => setBrainRotInput(e.target.value)}
+              onPaste={(e) => e.preventDefault()}
               onKeyDown={(e) => { if (e.key === "Enter") launchBrainRot(brainRotInput); }}
               placeholder="paste a YouTube URL to change it (optional)"
               className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none bg-white transition-colors mb-4"

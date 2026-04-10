@@ -639,6 +639,7 @@ export default function AdminPage() {
                   placeholder="type a message to broadcast…"
                   value={urgentInput}
                   onChange={(e) => setUrgentInput(e.target.value)}
+                  onPaste={(e) => e.preventDefault()}
                   onKeyDown={(e) => { if (e.key === "Enter") sendBroadcast("broadcast"); }}
                   maxLength={200}
                   className="w-full text-sm font-medium border-[3px] border-black rounded-xl px-3 py-2.5 bg-white focus:outline-none"
@@ -963,6 +964,7 @@ export default function AdminPage() {
                               placeholder="ban reason (optional)"
                               value={banReasonInput[member.name] ?? ""}
                               onChange={(e) => setBanReasonInput((prev) => ({ ...prev, [member.name]: e.target.value }))}
+                              onPaste={(e) => e.preventDefault()}
                               onKeyDown={(e) => { if (e.key === "Enter") banMember(member.name); if (e.key === "Escape") setBanningTarget(null); }}
                               autoFocus
                               className="flex-1 border-2 border-[#e74c3c] rounded-xl px-3 py-1.5 text-xs font-medium bg-white focus:outline-none"
@@ -1004,11 +1006,13 @@ export default function AdminPage() {
                           <div className="mt-2.5 pt-2.5 border-t border-[#f0ece6] flex flex-col gap-2">
                             <input type="text" placeholder="What's the vibe? (OOO, conference…)" value={ghostNote}
                               onChange={(e) => setGhostNote(e.target.value)}
+                              onPaste={(e) => e.preventDefault()}
                               className="w-full border-2 border-black rounded-xl px-3 py-2 text-xs font-medium bg-white focus:outline-none"
                               maxLength={200}
                             />
                             <input type="text" placeholder="Back when? (Monday, TBD…)" value={ghostBackDate}
                               onChange={(e) => setGhostBackDate(e.target.value)}
+                              onPaste={(e) => e.preventDefault()}
                               className="w-full border-2 border-black rounded-xl px-3 py-2 text-xs font-medium bg-white focus:outline-none"
                               maxLength={200}
                             />
@@ -1381,6 +1385,7 @@ export default function AdminPage() {
                         type="text"
                         value={vibeVideoInput}
                         onChange={(e) => setVibeVideoInput(e.target.value)}
+                        onPaste={(e) => e.preventDefault()}
                         onKeyDown={(e) => { if (e.key === "Enter") saveVideo("vibe"); }}
                         placeholder="YouTube URL or video ID"
                         className="flex-1 border-[2px] border-black rounded-xl px-3 py-2 text-sm font-medium outline-none"
@@ -1401,6 +1406,7 @@ export default function AdminPage() {
                         type="text"
                         value={brainRotVideoInput}
                         onChange={(e) => setBrainRotVideoInput(e.target.value)}
+                        onPaste={(e) => e.preventDefault()}
                         onKeyDown={(e) => { if (e.key === "Enter") saveVideo("brainrot"); }}
                         placeholder="YouTube URL or video ID"
                         className="flex-1 border-[2px] border-black rounded-xl px-3 py-2 text-sm font-medium outline-none"
