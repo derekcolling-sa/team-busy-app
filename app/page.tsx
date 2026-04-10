@@ -140,7 +140,7 @@ export default function Home() {
   const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number; status?: "shipped" | "done" | "dumb" | "soon" }[]>([]);
   const [featureUpdatesOpen, setFeatureUpdatesOpen] = useState(true);
   const [featureUpdatesPage, setFeatureUpdatesPage] = useState(0);
-  const [goHomeExpanded, setGoHomeExpanded] = useState(false);
+  const [goHomeExpanded, setGoHomeExpanded] = useState(true);
   const [tickerCopies, setTickerCopies] = useState(0);
   const [tickerTextWidth, setTickerTextWidth] = useState(0);
   const tickerTextRef = useRef<HTMLDivElement>(null);
