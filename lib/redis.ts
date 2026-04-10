@@ -141,6 +141,24 @@ export async function removeShippedFeature(ts: number): Promise<void> {
   await redis.set(SHIPPED_KEY, JSON.stringify(filtered));
 }
 
+const VIDEOS_KEY = "team-busy-videos";
+export type VideoConfig = { vibeVideoId: string; brainRotVideoId: string };
+const DEFAULT_VIDEOS: VideoConfig = { vibeVideoId: "vTfD20dbxho", brainRotVideoId: "xxfeav5MlmI" };
+
+export async function getVideos(): Promise<VideoConfig> {
+  try {
+    const data = await redis.get(VIDEOS_KEY);
+    if (!data) return DEFAULT_VIDEOS;
+    const parsed = typeof data === "string" ? JSON.parse(data) : data;
+    return { ...DEFAULT_VIDEOS, ...parsed };
+  } catch { return DEFAULT_VIDEOS; }
+}
+
+export async function setVideos(config: Partial<VideoConfig>): Promise<void> {
+  const current = await getVideos();
+  await redis.set(VIDEOS_KEY, JSON.stringify({ ...current, ...config }));
+}
+
 const TATTLE_KEY = "team-busy-tattles";
 export type TattleEntry = { message: string; ts: number };
 

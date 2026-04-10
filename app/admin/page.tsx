@@ -196,6 +196,11 @@ export default function AdminPage() {
   const [statusNotes, setStatusNotes] = useState<Record<string, string>>({});
   const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number }[]>([]);
   const [tattles, setTattles] = useState<{ message: string; ts: number }[]>([]);
+  const [vibeVideoId, setVibeVideoId] = useState("vTfD20dbxho");
+  const [brainRotVideoId, setBrainRotVideoId] = useState("xxfeav5MlmI");
+  const [vibeVideoInput, setVibeVideoInput] = useState("");
+  const [brainRotVideoInput, setBrainRotVideoInput] = useState("");
+  const [videoSaved, setVideoSaved] = useState<"vibe" | "brainrot" | null>(null);
 
   useEffect(() => {
     if (sessionStorage.getItem("admin-authed") === "true") setAuthed(true);
@@ -261,6 +266,8 @@ export default function AdminPage() {
       setPhotoOverrides(photosData.photos ?? {});
       setBuddies(buddiesData.buddies ?? {});
       setTattles(tattleData.tattles ?? []);
+      if (poll.videos?.vibeVideoId) setVibeVideoId(poll.videos.vibeVideoId);
+      if (poll.videos?.brainRotVideoId) setBrainRotVideoId(poll.videos.brainRotVideoId);
     } catch {
       // retry next poll
     } finally {
@@ -418,6 +425,27 @@ export default function AdminPage() {
         body: JSON.stringify({ ts }),
       }),
     ]);
+  };
+
+  const extractYouTubeId = (input: string): string => {
+    const match = input.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : input.trim();
+  };
+
+  const saveVideo = async (type: "vibe" | "brainrot") => {
+    const raw = type === "vibe" ? vibeVideoInput : brainRotVideoInput;
+    const id = extractYouTubeId(raw);
+    if (!id) return;
+    const key = type === "vibe" ? "vibeVideoId" : "brainRotVideoId";
+    await fetch("/api/videos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [key]: id }),
+    });
+    if (type === "vibe") { setVibeVideoId(id); setVibeVideoInput(""); }
+    else { setBrainRotVideoId(id); setBrainRotVideoInput(""); }
+    setVideoSaved(type);
+    setTimeout(() => setVideoSaved(null), 2000);
   };
 
   const unshipFeature = async (ts: number) => {
@@ -1224,6 +1252,55 @@ export default function AdminPage() {
                   <TeamHistoryChart history={history} />
                 </div>
               )}
+
+              {/* Video Management */}
+              <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-white overflow-hidden">
+                <div className="px-5 py-3 border-b-[3px] border-black/10 bg-black flex items-center gap-3">
+                  <h2 className="text-lg font-extrabold text-white tracking-tight flex-1">🎬 Videos</h2>
+                </div>
+                <div className="px-5 py-4 flex flex-col gap-5">
+                  {/* Vibe video */}
+                  <div>
+                    <p className="text-xs font-extrabold uppercase tracking-widest text-[#b5b0a8] mb-1">Vibe Video (bottom of page)</p>
+                    <p className="text-[11px] text-[#b5b0a8] mb-2">Current ID: <span className="font-mono font-bold text-black">{vibeVideoId}</span></p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={vibeVideoInput}
+                        onChange={(e) => setVibeVideoInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") saveVideo("vibe"); }}
+                        placeholder="YouTube URL or video ID"
+                        className="flex-1 border-[2px] border-black rounded-xl px-3 py-2 text-sm font-medium outline-none"
+                      />
+                      <button
+                        onClick={() => saveVideo("vibe")}
+                        disabled={!vibeVideoInput.trim()}
+                        className="px-4 py-2 rounded-xl bg-black text-white text-xs font-extrabold cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-30 disabled:cursor-default"
+                      >{videoSaved === "vibe" ? "✓ saved!" : "save"}</button>
+                    </div>
+                  </div>
+                  {/* Brain rot video */}
+                  <div>
+                    <p className="text-xs font-extrabold uppercase tracking-widest text-[#b5b0a8] mb-1">Brain Rot Video (overlay)</p>
+                    <p className="text-[11px] text-[#b5b0a8] mb-2">Current ID: <span className="font-mono font-bold text-black">{brainRotVideoId}</span></p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={brainRotVideoInput}
+                        onChange={(e) => setBrainRotVideoInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") saveVideo("brainrot"); }}
+                        placeholder="YouTube URL or video ID"
+                        className="flex-1 border-[2px] border-black rounded-xl px-3 py-2 text-sm font-medium outline-none"
+                      />
+                      <button
+                        onClick={() => saveVideo("brainrot")}
+                        disabled={!brainRotVideoInput.trim()}
+                        className="px-4 py-2 rounded-xl bg-black text-white text-xs font-extrabold cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-30 disabled:cursor-default"
+                      >{videoSaved === "brainrot" ? "✓ saved!" : "save"}</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
             </div>
           </div>

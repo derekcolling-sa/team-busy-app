@@ -131,6 +131,8 @@ export default function Home() {
   const [showTattle, setShowTattle] = useState(false);
   const [tattleText, setTattleText] = useState("");
   const [tattleSent, setTattleSent] = useState(false);
+  const [vibeVideoId, setVibeVideoId] = useState("vTfD20dbxho");
+  const [brainRotVideoId, setBrainRotVideoId] = useState("xxfeav5MlmI");
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
 
@@ -239,6 +241,8 @@ export default function Home() {
       setSosStatuses(poll.sos ?? {});
       setMessages(poll.messages ?? []);
       setShippedFeatures(poll.shippedFeatures ?? []);
+      if (poll.videos?.vibeVideoId) setVibeVideoId(poll.videos.vibeVideoId);
+      if (poll.videos?.brainRotVideoId) setBrainRotVideoId(poll.videos.brainRotVideoId);
       setBroadcast(poll.urgent?.message ? { message: poll.urgent.message, type: poll.urgent.type ?? "broadcast" } : null);
       setGoHomeRequests(poll.goHome ?? []);
       setTimeOffRequests(poll.timeOff ?? []);
@@ -1831,7 +1835,7 @@ export default function Home() {
                 <div className="relative w-full" style={{ height: "min(85vh, 560px)" }}>
                   <iframe
                     ref={vibeIframeRef}
-                    src="https://www.youtube.com/embed/vTfD20dbxho?autoplay=1&mute=1&loop=1&playlist=vTfD20dbxho&controls=0&modestbranding=1&rel=0&enablejsapi=1&start=4"
+                    src={`https://www.youtube.com/embed/${vibeVideoId}?autoplay=1&mute=1&loop=1&playlist=${vibeVideoId}&controls=0&modestbranding=1&rel=0&enablejsapi=1&start=4`}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     style={{
                       position: "absolute",
@@ -2277,7 +2281,7 @@ export default function Home() {
       {brainRot && (
         <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center">
           <iframe
-            src="https://www.youtube.com/embed/xxfeav5MlmI?autoplay=1&loop=1&playlist=xxfeav5MlmI&controls=0&modestbranding=1"
+            src={`https://www.youtube.com/embed/${brainRotVideoId}?autoplay=1&loop=1&playlist=${brainRotVideoId}&controls=0&modestbranding=1`}
             className="w-full h-full"
             allow="autoplay; fullscreen"
             allowFullScreen
