@@ -141,6 +141,18 @@ export async function removeShippedFeature(ts: number): Promise<void> {
   await redis.set(SHIPPED_KEY, JSON.stringify(filtered));
 }
 
+const MOOD_KEY = "team-busy-moods";
+
+export async function getAllMoods(): Promise<Record<string, string>> {
+  const data = await redis.hgetall(MOOD_KEY);
+  if (!data) return {};
+  return Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)]));
+}
+
+export async function setMood(name: string, mood: string): Promise<void> {
+  await redis.hset(MOOD_KEY, { [name]: mood });
+}
+
 const VIDEOS_KEY = "team-busy-videos";
 export type VideoConfig = { vibeVideoId: string; brainRotVideoId: string };
 const DEFAULT_VIDEOS: VideoConfig = { vibeVideoId: "vTfD20dbxho", brainRotVideoId: "xxfeav5MlmI" };

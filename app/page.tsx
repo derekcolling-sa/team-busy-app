@@ -131,6 +131,7 @@ export default function Home() {
   const [showTattle, setShowTattle] = useState(false);
   const [tattleText, setTattleText] = useState("");
   const [tattleSent, setTattleSent] = useState(false);
+  const [moods, setMoods] = useState<Record<string, string>>({});
   const [vibeVideoId, setVibeVideoId] = useState("vTfD20dbxho");
   const [brainRotVideoId, setBrainRotVideoId] = useState("xxfeav5MlmI");
   const [showBrainRotModal, setShowBrainRotModal] = useState(false);
@@ -243,6 +244,7 @@ export default function Home() {
       setSosStatuses(poll.sos ?? {});
       setMessages(poll.messages ?? []);
       setShippedFeatures(poll.shippedFeatures ?? []);
+      setMoods(poll.moods ?? {});
       if (poll.videos?.vibeVideoId) setVibeVideoId(poll.videos.vibeVideoId);
       if (poll.videos?.brainRotVideoId) setBrainRotVideoId(poll.videos.brainRotVideoId);
       setBroadcast(poll.urgent?.message ? { message: poll.urgent.message, type: poll.urgent.type ?? "broadcast" } : null);
@@ -785,6 +787,33 @@ export default function Home() {
     setUploadingPhoto(false);
   };
 
+  const MOODS = [
+    { label: "no thoughts 🫥", value: "no thoughts 🫥" },
+    { label: "main character ✨", value: "main character ✨" },
+    { label: "villain era 😈", value: "villain era 😈" },
+    { label: "in my bag 💰", value: "in my bag 💰" },
+    { label: "lowkey thriving 🌱", value: "lowkey thriving 🌱" },
+    { label: "not okay bestie 😭", value: "not okay bestie 😭" },
+    { label: "slay mode 💅", value: "slay mode 💅" },
+    { label: "delulu 🌈", value: "delulu 🌈" },
+    { label: "down bad 😔", value: "down bad 😔" },
+    { label: "ate no crumbs 🍽️", value: "ate no crumbs 🍽️" },
+    { label: "unwell 🤕", value: "unwell 🤕" },
+    { label: "it's giving 👀", value: "it's giving 👀" },
+    { label: "that girl/guy 💪", value: "that girl/guy 💪" },
+    { label: "touch grass needed 🌿", value: "touch grass needed 🌿" },
+  ];
+
+  const setMyMood = async (mood: string) => {
+    if (!currentUser) return;
+    setMoods((prev) => ({ ...prev, [currentUser]: mood }));
+    await fetch("/api/mood", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, mood }),
+    });
+  };
+
   const extractYouTubeId = (input: string): string => {
     const match = input.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
     return match ? match[1] : input.trim();
@@ -1059,6 +1088,20 @@ export default function Home() {
               className="w-full text-xs font-medium text-black bg-white border-[3px] border-black rounded-xl px-3 py-2 focus:outline-none placeholder:text-[#b5b0a8] mb-3"
               maxLength={80}
             />
+            {/* Mood picker */}
+            <div className="mb-3">
+              <select
+                value={moods[member.name] ?? ""}
+                onChange={(e) => setMyMood(e.target.value)}
+                className="w-full border-[3px] border-black rounded-xl px-3 py-2 text-xs font-extrabold bg-[#FFE234] text-black uppercase tracking-widest cursor-pointer focus:outline-none appearance-none shadow-[3px_3px_0_#000]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                <option value="" disabled>current mood...</option>
+                {MOODS.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            </div>
             {/* ADHD slider */}
             <div className="rounded-xl border-[3px] border-black px-3 py-2.5 mb-3" style={{ background: ADHD_COLORS[getAdhdLevel(adhdLevels[member.name] ?? 0)] }}>
               <p className="text-[10px] font-extrabold uppercase tracking-widest text-black/60 mb-1.5">adhd check</p>
@@ -1304,7 +1347,14 @@ export default function Home() {
                   style={{ width: `${value}%`, background: TRACK_COLORS[level] }}
                 />
               </div>
-              <p className="text-sm font-extrabold text-black uppercase tracking-widest" style={{ fontFamily: "var(--font-display)" }}>{LABELS[level]}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-extrabold text-black uppercase tracking-widest" style={{ fontFamily: "var(--font-display)" }}>{LABELS[level]}</p>
+                {moods[member.name] && (
+                  <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#FFE234] border-[2px] border-black text-black lowercase tracking-wide shadow-[2px_2px_0_#000]">
+                    {moods[member.name]}
+                  </span>
+                )}
+              </div>
               {statusNotes[member.name] && (
                 <p className="text-[12px] text-black font-medium font-mono leading-snug">
                   {statusNotes[member.name]}
