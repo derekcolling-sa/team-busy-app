@@ -382,6 +382,23 @@ export default function AdminPage() {
     ]);
   };
 
+  const markSoon = async (name: string, message: string, ts: number) => {
+    setShippedFeatures((prev) => [{ name, message, ts: Date.now(), shippedAt: Date.now(), status: "soon" as const }, ...prev.filter(f => f.message !== message)].slice(0, 10));
+    setResolvedTs((prev) => new Set([...prev, ts]));
+    await Promise.all([
+      fetch("/api/shipped", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, message, status: "soon" }),
+      }),
+      fetch("/api/feedback", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ts }),
+      }),
+    ]);
+  };
+
   const shipFeature = async (name: string, message: string, ts: number) => {
     setShippedFeatures((prev) => [{ name, message, ts: Date.now(), shippedAt: Date.now(), status: "shipped" as const }, ...prev.filter(f => f.message !== message)].slice(0, 10));
     setResolvedTs((prev) => new Set([...prev, ts]));
@@ -1073,6 +1090,11 @@ export default function AdminPage() {
                             className="w-full px-2 py-1 rounded-md border-2 border-black/20 hover:border-black text-[10px] text-[#b5b0a8] hover:text-[#5cb85c] transition-colors cursor-pointer font-bold"
                             title="Mark done"
                           >✓ done</button>
+                          <button
+                            onClick={() => markSoon(f.name, f.message, f.ts)}
+                            className="w-full px-2 py-1 rounded-md border-2 border-black/20 hover:border-yellow-400 text-[10px] text-[#b5b0a8] hover:text-yellow-600 transition-colors cursor-pointer font-bold"
+                            title="Coming soon"
+                          >⏳ soon</button>
                           <button
                             onClick={() => markDumb(f.name, f.message, f.ts)}
                             className="w-full px-2 py-1 rounded-md border-2 border-black/20 hover:border-red-400 text-[10px] text-[#b5b0a8] hover:text-red-500 transition-colors cursor-pointer font-bold"

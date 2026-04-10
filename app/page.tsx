@@ -132,7 +132,7 @@ export default function Home() {
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
 
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
-  const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number; status?: "shipped" | "done" | "dumb" }[]>([]);
+  const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number; status?: "shipped" | "done" | "dumb" | "soon" }[]>([]);
   const [featureUpdatesOpen, setFeatureUpdatesOpen] = useState(true);
   const [featureUpdatesPage, setFeatureUpdatesPage] = useState(0);
   const [goHomeExpanded, setGoHomeExpanded] = useState(false);
@@ -1653,8 +1653,8 @@ export default function Home() {
                         <div className="divide-y-[2px] divide-black/10">
                           {visible.map((f) => (
                             <div key={f.ts} className="px-4 py-2.5 flex items-center gap-3">
-                              <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-extrabold border-2 border-black ${f.status === "done" ? "bg-[#4a9eff] text-white" : f.status === "dumb" ? "bg-[#ff4d4d] text-white" : "bg-[#39FF14] text-black"}`}>
-                                {f.status === "done" ? "✓ done" : f.status === "dumb" ? "🙅 dumb" : "🚀 shipped"}
+                              <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-extrabold border-2 border-black ${f.status === "done" ? "bg-[#4a9eff] text-white" : f.status === "dumb" ? "bg-[#ff4d4d] text-white" : f.status === "soon" ? "bg-[#FFE234] text-black" : "bg-[#39FF14] text-black"}`}>
+                                {f.status === "done" ? "✓ done" : f.status === "dumb" ? "🙅 dumb" : f.status === "soon" ? "⏳ soon" : "🚀 shipped"}
                               </span>
                               <p className="flex-1 text-sm font-medium text-black min-w-0 truncate">{f.message}</p>
                               {f.name && <span className="text-[10px] text-black/40 font-bold shrink-0">{f.name}</span>}

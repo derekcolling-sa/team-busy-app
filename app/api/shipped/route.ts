@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   if (typeof name !== "string" || typeof message !== "string" || !message.trim()) {
     return Response.json({ error: "Invalid input" }, { status: 400 });
   }
-  const validStatus = status === "done" || status === "dumb" ? status : "shipped";
+  const validStatus = status === "done" || status === "dumb" || status === "soon" ? status : "shipped";
   await addShippedFeature(name, message.trim(), validStatus);
   return Response.json({ ok: true });
 }
