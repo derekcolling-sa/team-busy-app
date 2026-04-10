@@ -57,7 +57,7 @@ const LABELS = ["Chillin'", "Sautéed", "Cooking", "Cooked"];
 const EMOJIS = ["😎", "🍳", "🔥", "💀"];
 const CARD_BGS = ["#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff"];
 const TRACK_COLORS = ["#5cb85c", "#4a9eff", "#f5a623", "#e8742d"];
-const ADHD_LABELS = ["locked tf in 🎯", "lowkey glazed 🫠", "brainrot szn 🌀", "absolutely feral 🐿️"];
+const ADHD_LABELS = ["locked tf in", "lowkey glazed", "brainrot szn", "absolutely feral"];
 const ADHD_COLORS = ["#a8f5c8", "#b8d4ff", "#dbb8ff", "#ffb8e0"];
 
 function timeAgo(ts: number): string {
@@ -177,7 +177,7 @@ export default function Home() {
   const [hatchPhase, setHatchPhase] = useState<"egg" | "cracking" | "reveal">("egg");
   const [vibeMuted, setVibeMuted] = useState(true);
   const vibeIframeRef = useRef<HTMLIFrameElement>(null);
-  const [newMessage, setNewMessage] = useState("");
+  const [newMessage, setNewMessage] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const saved = localStorage.getItem("team-busy-user");
@@ -573,10 +573,10 @@ export default function Home() {
     return SUGGESTIONS.artDirector;
   };
 
-  const postMessage = async () => {
-    if (!newMessage.trim() || !currentUser || currentUser === "__guest__") return;
-    const msg = newMessage.trim();
-    setNewMessage("");
+  const postMessage = async (about: string) => {
+    const msg = (newMessage[about] ?? "").trim();
+    if (!msg || !currentUser || currentUser === "__guest__") return;
+    setNewMessage((prev) => ({ ...prev, [about]: "" }));
     await fetch("/api/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -874,6 +874,24 @@ export default function Home() {
             ))}
           </div>
         )}
+        {!isGuest && (
+          <div className="flex items-center gap-1.5 mt-2">
+            <input
+              type="text"
+              placeholder="drop the tea… 🍵"
+              value={newMessage[member.name] ?? ""}
+              onChange={(e) => setNewMessage((prev) => ({ ...prev, [member.name]: e.target.value }))}
+              onKeyDown={(e) => { if (e.key === "Enter") postMessage(member.name); }}
+              maxLength={120}
+              className="flex-1 px-3 py-1.5 rounded-xl border-[2px] border-black bg-white text-xs font-medium placeholder:text-black/30 focus:outline-none shadow-[2px_2px_0_#000] min-w-0"
+            />
+            <button
+              onClick={() => postMessage(member.name)}
+              disabled={!(newMessage[member.name] ?? "").trim()}
+              className="shrink-0 px-2.5 py-1.5 rounded-xl border-[2px] border-black bg-[#FFE234] text-xs font-extrabold shadow-[2px_2px_0_#000] hover:bg-[#FF9DC8] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
+            >✦</button>
+          </div>
+        )}
         </div>{/* end stopPropagation wrapper */}
       </div>
     );
@@ -981,9 +999,9 @@ export default function Home() {
                 const adhdVal = adhdLevels[member.name] ?? 0;
                 const adhdLvl = getAdhdLevel(adhdVal);
                 return (
-                  <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 border-[2px] border-black/20" style={{ background: ADHD_COLORS[adhdLvl] }}>
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/50">adhd</span>
-                    <span className="text-xs font-extrabold text-black">{ADHD_LABELS[adhdLvl]}</span>
+                  <div className="flex items-center gap-2 rounded-xl px-3 py-2 border-[2px] border-black shadow-[2px_2px_0_#000]" style={{ background: ADHD_COLORS[adhdLvl] }}>
+                    <span className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#FFE234] border-[2px] border-black shrink-0">adhd</span>
+                    <span className="text-sm font-extrabold text-black">{ADHD_LABELS[adhdLvl]}</span>
                   </div>
                 );
               })()}
@@ -1241,34 +1259,6 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-
-              {/* Drop the Tea */}
-              {currentUser && !isGuest && (
-                <div className="mt-6 flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      const suggestions = getSuggestions();
-                      if (suggestions.length) setNewMessage(suggestions[Math.floor(Math.random() * suggestions.length)]);
-                    }}
-                    className="shrink-0 text-xl hover:scale-125 transition-transform cursor-pointer"
-                    title="get a suggestion"
-                  >🍵</button>
-                  <input
-                    type="text"
-                    placeholder="drop the tea…"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") postMessage(); }}
-                    maxLength={120}
-                    className="flex-1 px-4 py-2.5 rounded-xl border-[3px] border-black bg-white text-sm font-medium placeholder:text-black/30 focus:outline-none shadow-[3px_3px_0_#000]"
-                  />
-                  <button
-                    onClick={postMessage}
-                    disabled={!newMessage.trim()}
-                    className="shrink-0 px-4 py-2.5 rounded-xl border-[3px] border-black bg-[#FFE234] text-sm font-extrabold shadow-[3px_3px_0_#000] hover:bg-[#FF9DC8] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
-                  >drop it ✦</button>
-                </div>
-              )}
 
               {/* Boss Card */}
               {bossMember && currentUser !== BOSS && (
