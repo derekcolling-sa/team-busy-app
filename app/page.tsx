@@ -1629,6 +1629,8 @@ export default function Home() {
             </div>
             {/* Home sticker — right side */}
             {loaded && currentUser && !isGuest && (
+            <div className="flex items-center gap-2 shrink-0">
+              <Image src="/buddies/scan.jpg" alt="Scan" width={100} height={100} className="rounded-lg border-[2px] border-black shadow-[2px_2px_0_#000]" />
               <button
                 onClick={handleGoHome}
                 disabled={goHomeRequested}
@@ -1637,6 +1639,7 @@ export default function Home() {
               >
                 <Image src="/home.png" alt="I want to go home" width={120} height={120} className="rounded-full" />
               </button>
+            </div>
             )}
           </div>
 

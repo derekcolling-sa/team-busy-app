@@ -6,7 +6,7 @@ import {
   getTimeOffRequests, getAllMetcalf, getAllBossReactions,
   getAllNeedWork, getAllSessionTime, getAllAdhd, getAllTouchGrass, getTakeover,
   getBodyDouble, getMeetings, getAllLastSeen, getAllDontTalkToMe, getMoneyRequests,
-  getShippedFeatures, getVideos, getAllMoods,
+  getShippedFeatures, getVideos, getAllMoods, getAllBans,
 } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +48,7 @@ export async function GET() {
     getShippedFeatures(),
     getVideos(),
     getAllMoods(),
+    getAllBans(),
   ]);
 
   return Response.json({

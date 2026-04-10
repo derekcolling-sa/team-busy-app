@@ -141,6 +141,41 @@ export async function removeShippedFeature(ts: number): Promise<void> {
   await redis.set(SHIPPED_KEY, JSON.stringify(filtered));
 }
 
+const BAN_KEY = "team-busy-bans";
+const BAN_DISPUTES_KEY = "team-busy-ban-disputes";
+export type BanDispute = { name: string; message: string; ts: number };
+
+export async function getAllBans(): Promise<Record<string, string>> {
+  const data = await redis.hgetall(BAN_KEY);
+  if (!data) return {};
+  return Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)]));
+}
+
+export async function banMember(name: string, reason: string): Promise<void> {
+  await redis.hset(BAN_KEY, { [name]: reason || "no reason given" });
+}
+
+export async function unbanMember(name: string): Promise<void> {
+  await redis.hdel(BAN_KEY, name);
+}
+
+export async function addBanDispute(name: string, message: string): Promise<void> {
+  const entry: BanDispute = { name, message, ts: Date.now() };
+  await redis.lpush(BAN_DISPUTES_KEY, JSON.stringify(entry));
+}
+
+export async function getBanDisputes(): Promise<BanDispute[]> {
+  const items = await redis.lrange(BAN_DISPUTES_KEY, 0, 49);
+  return items.map((item) => (typeof item === "string" ? JSON.parse(item) : item));
+}
+
+export async function clearBanDispute(ts: number): Promise<void> {
+  const existing = await getBanDisputes();
+  const filtered = existing.filter(d => d.ts !== ts);
+  await redis.del(BAN_DISPUTES_KEY);
+  if (filtered.length > 0) await redis.rpush(BAN_DISPUTES_KEY, ...filtered.map(d => JSON.stringify(d)));
+}
+
 const MOOD_KEY = "team-busy-moods";
 
 export async function getAllMoods(): Promise<Record<string, string>> {
