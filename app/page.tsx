@@ -1510,8 +1510,8 @@ export default function Home() {
                 </div>
               )}
 
-              {/* 5pm — We Survived banner */}
-              {isAfter5 && (
+              {/* 5pm — We Survived banner (evening only, not early morning) */}
+              {currentHour >= 17 && (
                 <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FFE234] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative">
 <div className="relative z-10">
                     <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{todayMsg.main}</p>
@@ -1524,8 +1524,8 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Confetti — full screen overlay */}
-              {isAfter5 && (
+              {/* Confetti — full screen overlay (evening only) */}
+              {currentHour >= 17 && (
                 <div className="fixed inset-0 pointer-events-none z-[50]">
                   {["#FF9DC8","#3D52F0","#e74c3c","#b5f0c8","#FFE234","#FF9DC8","#3D52F0","#a8f5c8","#dbb8ff","#ffb8e0","#FF4444","#000","#FF9DC8","#3D52F0","#b5f0c8","#FFE234","#dbb8ff","#e74c3c","#a8f5c8","#FF9DC8"].map((color, i) => (
                     <div key={i} className="absolute rounded-sm" style={{
@@ -1542,7 +1542,7 @@ export default function Home() {
               )}
 
               {/* Hall of Shame — after 5pm, only currently online users */}
-              {isAfter5 && Object.keys(lastSeen).filter(n => n !== BOSS && lastSeen[n] > Date.now() - 120000).length > 0 && (
+              {currentHour >= 17 && Object.keys(lastSeen).filter(n => n !== BOSS && lastSeen[n] > Date.now() - 120000).length > 0 && (
                 <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-white shadow-[6px_6px_0_#000] overflow-hidden">
                   <div className="px-5 py-3 border-b-[3px] border-black bg-[#FF9DC8] flex items-center gap-3">
                     <span className="text-xl">😬</span>
