@@ -1430,7 +1430,7 @@ export default function Home() {
 
       <div
         className="min-h-screen px-4 sm:px-8 py-6 sm:py-8 transition-colors duration-300 relative"
-        style={bratMode ? { background: "#8ace00", fontFamily: "Arial, sans-serif" } : isAfter5 ? { background: "#000" } : undefined}
+        style={bratMode ? { background: "#8ace00", fontFamily: "Arial, sans-serif" } : currentHour >= 17 ? { background: "#000" } : undefined}
       >
         <div className="max-w-[1280px] mx-auto">
           {/* Header */}
