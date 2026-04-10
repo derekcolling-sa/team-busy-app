@@ -133,6 +133,8 @@ export default function Home() {
   const [tattleSent, setTattleSent] = useState(false);
   const [vibeVideoId, setVibeVideoId] = useState("vTfD20dbxho");
   const [brainRotVideoId, setBrainRotVideoId] = useState("xxfeav5MlmI");
+  const [showBrainRotModal, setShowBrainRotModal] = useState(false);
+  const [brainRotInput, setBrainRotInput] = useState("");
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
 
@@ -781,6 +783,26 @@ export default function Home() {
     const data = await res.json();
     if (data.url) setPhotoOverrides((prev) => ({ ...prev, [currentUser]: data.url }));
     setUploadingPhoto(false);
+  };
+
+  const extractYouTubeId = (input: string): string => {
+    const match = input.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
+    return match ? match[1] : input.trim();
+  };
+
+  const launchBrainRot = async (inputVal: string) => {
+    const id = inputVal.trim() ? extractYouTubeId(inputVal) : brainRotVideoId;
+    if (inputVal.trim() && id !== brainRotVideoId) {
+      setBrainRotVideoId(id);
+      await fetch("/api/videos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brainRotVideoId: id }),
+      });
+    }
+    setShowBrainRotModal(false);
+    setBrainRotInput("");
+    setBrainRot(true);
   };
 
   const submitTattle = async () => {
@@ -1523,7 +1545,7 @@ export default function Home() {
                 style={{ background: bratMode ? "#8ace00" : "#fff", color: "#000", fontFamily: bratMode ? "Arial, sans-serif" : undefined }}
               >{bratMode ? "brat" : "brat mode"}</button>
               <button
-                onClick={() => setBrainRot(true)}
+                onClick={() => setShowBrainRotModal(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FF9DC8] transition-colors"
               >🧠 brain rot</button>
               <button
@@ -2276,6 +2298,41 @@ export default function Home() {
           <span className="text-sm font-bold text-black">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
         </div>
       </div>
+
+      {/* Brain Rot Modal */}
+      {showBrainRotModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
+            <div className="flex items-start justify-between mb-1">
+              <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>🧠 Brain Rot</h2>
+              <button
+                onClick={() => { setShowBrainRotModal(false); setBrainRotInput(""); }}
+                className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5"
+              >✕</button>
+            </div>
+            <p className="text-sm text-[#b5b0a8] mb-5 font-medium">launch the current video or swap it out for the whole team</p>
+            <input
+              type="text"
+              autoFocus
+              value={brainRotInput}
+              onChange={(e) => setBrainRotInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") launchBrainRot(brainRotInput); }}
+              placeholder="paste a YouTube URL to change it (optional)"
+              className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none bg-white transition-colors mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowBrainRotModal(false); setBrainRotInput(""); }}
+                className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
+              >nevermind</button>
+              <button
+                onClick={() => launchBrainRot(brainRotInput)}
+                className="flex-1 py-3 rounded-2xl bg-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity shadow-[3px_3px_0_#FF9DC8]"
+              >🧠 launch</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Brain Rot Overlay */}
       {brainRot && (
