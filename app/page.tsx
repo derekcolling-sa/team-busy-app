@@ -839,8 +839,26 @@ export default function Home() {
     { main: "it's saturday?? 💀", sub: "log off immediately. this is concerning.", tag: "chronically online" },
   ];
   const todayMsg = DAY_MESSAGES[nowDate.getDay()];
+  const MORNING_MESSAGES = [
+    // Sun
+    { main: "good morning bestie ☀️", sub: "it's sunday, go back to sleep.", tag: "rest mode" },
+    // Mon
+    { main: "rise and grind? 😮‍💨", sub: "monday got us in a chokehold. stay strong.", tag: "caffeinate immediately" },
+    // Tue
+    { main: "tuesday check ☕️", sub: "we're locked in today fr. let's cook.", tag: "locked tf in" },
+    // Wed
+    { main: "wake up wednesday 🐪", sub: "halfway there. the light is visible.", tag: "hump day energy" },
+    // Thu
+    { main: "thursday slay incoming 💅", sub: "tomorrow is friday. hold the line.", tag: "so close" },
+    // Fri
+    { main: "FRIDAY FINALLY 🔥", sub: "we made it. just a few hours to freedom.", tag: "energy unmatched" },
+    // Sat
+    { main: "saturday?? at work?? 😭", sub: "hope you're getting paid double bestie.", tag: "not the vibe" },
+  ];
+  const morningMsg = MORNING_MESSAGES[nowDate.getDay()];
   const currentMin = nowDate.getMinutes();
   const currentSec = nowDate.getSeconds();
+  const isMorning = (currentHour < 9) || (currentHour === 9 && currentMin < 30);
   const isAfter5 = currentHour >= 17 || currentHour < 9;
   const isCountdown = currentHour === 16 && currentMin >= 45;
   const secsUntil5 = isCountdown ? (17 * 3600) - (currentHour * 3600 + currentMin * 60 + currentSec) : 0;
@@ -1510,6 +1528,20 @@ export default function Home() {
                 </div>
               )}
 
+              {/* Morning — Gen Z welcome banner (before 9:30am) */}
+              {isMorning && (
+                <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FF9DC8] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative">
+                  <div className="relative z-10">
+                    <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{morningMsg.main}</p>
+                    <p className="text-sm font-bold text-black/60 mt-1">{morningMsg.sub}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-1 relative z-10 shrink-0">
+                    <span className="text-3xl">☕️</span>
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{morningMsg.tag}</span>
+                  </div>
+                </div>
+              )}
+
               {/* 5pm — We Survived banner (evening only, not early morning) */}
               {currentHour >= 17 && (
                 <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FFE234] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative">
@@ -1524,8 +1556,8 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Confetti — full screen overlay (evening only) */}
-              {currentHour >= 17 && (
+              {/* Confetti — full screen overlay (evening + all day Friday) */}
+              {(currentHour >= 17 || nowDate.getDay() === 5) && (
                 <div className="fixed inset-0 pointer-events-none z-[50]">
                   {["#FF9DC8","#3D52F0","#e74c3c","#b5f0c8","#FFE234","#FF9DC8","#3D52F0","#a8f5c8","#dbb8ff","#ffb8e0","#FF4444","#000","#FF9DC8","#3D52F0","#b5f0c8","#FFE234","#dbb8ff","#e74c3c","#a8f5c8","#FF9DC8"].map((color, i) => (
                     <div key={i} className="absolute rounded-sm" style={{
