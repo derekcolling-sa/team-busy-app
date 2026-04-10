@@ -114,11 +114,11 @@ export async function getFeedback(): Promise<FeedbackEntry[]> {
 }
 
 const SHIPPED_KEY = "team-busy-shipped-features";
-export type ShippedFeature = { name: string; message: string; ts: number; shippedAt: number };
+export type ShippedFeature = { name: string; message: string; ts: number; shippedAt: number; status?: "shipped" | "done" | "dumb" };
 
-export async function addShippedFeature(name: string, message: string): Promise<void> {
+export async function addShippedFeature(name: string, message: string, status: "shipped" | "done" | "dumb" = "shipped"): Promise<void> {
   const existing = await getShippedFeatures();
-  const entry: ShippedFeature = { name, message, ts: Date.now(), shippedAt: Date.now() };
+  const entry: ShippedFeature = { name, message, ts: Date.now(), shippedAt: Date.now(), status };
   const all = [entry, ...existing.filter(f => f.message !== message)].slice(0, 10);
   await redis.set(SHIPPED_KEY, JSON.stringify(all));
 }

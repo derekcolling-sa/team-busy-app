@@ -348,23 +348,48 @@ export default function AdminPage() {
     });
   };
 
-  const markDone = async (ts: number) => {
-    setResolvedTs((prev) => new Set([...prev, ts]));
-    await fetch("/api/feedback", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ts }),
-    });
-  };
-
-  const shipFeature = async (name: string, message: string, ts: number) => {
-    setShippedFeatures((prev) => [{ name, message, ts: Date.now(), shippedAt: Date.now() }, ...prev.filter(f => f.message !== message)].slice(0, 10));
+  const markDone = async (name: string, message: string, ts: number) => {
+    setShippedFeatures((prev) => [{ name, message, ts: Date.now(), shippedAt: Date.now(), status: "done" as const }, ...prev.filter(f => f.message !== message)].slice(0, 10));
     setResolvedTs((prev) => new Set([...prev, ts]));
     await Promise.all([
       fetch("/api/shipped", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, message }),
+        body: JSON.stringify({ name, message, status: "done" }),
+      }),
+      fetch("/api/feedback", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ts }),
+      }),
+    ]);
+  };
+
+  const markDumb = async (name: string, message: string, ts: number) => {
+    setShippedFeatures((prev) => [{ name, message, ts: Date.now(), shippedAt: Date.now(), status: "dumb" as const }, ...prev.filter(f => f.message !== message)].slice(0, 10));
+    setResolvedTs((prev) => new Set([...prev, ts]));
+    await Promise.all([
+      fetch("/api/shipped", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, message, status: "dumb" }),
+      }),
+      fetch("/api/feedback", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ts }),
+      }),
+    ]);
+  };
+
+  const shipFeature = async (name: string, message: string, ts: number) => {
+    setShippedFeatures((prev) => [{ name, message, ts: Date.now(), shippedAt: Date.now(), status: "shipped" as const }, ...prev.filter(f => f.message !== message)].slice(0, 10));
+    setResolvedTs((prev) => new Set([...prev, ts]));
+    await Promise.all([
+      fetch("/api/shipped", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, message, status: "shipped" }),
       }),
       fetch("/api/feedback", {
         method: "PATCH",
@@ -1044,10 +1069,15 @@ export default function AdminPage() {
                             title="Mark as shipped — announces in yellow ticker"
                           >🚀 ship</button>
                           <button
-                            onClick={() => markDone(f.ts)}
+                            onClick={() => markDone(f.name, f.message, f.ts)}
                             className="w-full px-2 py-1 rounded-md border-2 border-black/20 hover:border-black text-[10px] text-[#b5b0a8] hover:text-[#5cb85c] transition-colors cursor-pointer font-bold"
                             title="Mark done"
                           >✓ done</button>
+                          <button
+                            onClick={() => markDumb(f.name, f.message, f.ts)}
+                            className="w-full px-2 py-1 rounded-md border-2 border-black/20 hover:border-red-400 text-[10px] text-[#b5b0a8] hover:text-red-500 transition-colors cursor-pointer font-bold"
+                            title="Reject suggestion"
+                          >🙅 dumb</button>
                         </div>
                       </div>
                     ))}

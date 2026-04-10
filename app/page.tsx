@@ -1408,8 +1408,8 @@ export default function Home() {
               )}
               {shippedFeatures.map((f, i) => (
                 <div key={`s-${i}`} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: "8px", background: "#39FF14", color: "#000", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.05em", border: "2px solid #000" }}>
-                    🚀 SHIPPED: {f.message}
+                  <span style={{ display: "flex", alignItems: "center", gap: "8px", background: f.status === "done" ? "#4a9eff" : f.status === "dumb" ? "#ff4d4d" : "#39FF14", color: f.status === "done" ? "#fff" : "#000", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.05em", border: "2px solid #000" }}>
+                    {f.status === "done" ? "✓ DONE" : f.status === "dumb" ? "🙅 DUMB" : "🚀 SHIPPED"}: {f.message}{f.name ? ` (${f.name})` : ""}
                   </span>
                 </div>
               ))}
@@ -1428,8 +1428,8 @@ export default function Home() {
                 )}
                 {shippedFeatures.map((f, i) => (
                   <div key={`s-${i}`} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: "8px", background: "#39FF14", color: "#000", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.05em", border: "2px solid #000" }}>
-                      🚀 SHIPPED: {f.message}
+                    <span style={{ display: "flex", alignItems: "center", gap: "8px", background: f.status === "done" ? "#4a9eff" : f.status === "dumb" ? "#ff4d4d" : "#39FF14", color: f.status === "done" ? "#fff" : "#000", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.05em", border: "2px solid #000" }}>
+                      {f.status === "done" ? "✓ DONE" : f.status === "dumb" ? "🙅 DUMB" : "🚀 SHIPPED"}: {f.message}{f.name ? ` (${f.name})` : ""}
                     </span>
                   </div>
                 ))}
