@@ -294,6 +294,27 @@ export async function getAllPokes(): Promise<PokeEntry[]> {
 }
 
 
+const TOUCH_GRASS_KEY = "team-busy-touch-grass";
+
+export type TouchGrassEntry = { from: string; to: string; ts: number };
+
+export async function sendTouchGrass(from: string, to: string): Promise<void> {
+  await redis.hset(TOUCH_GRASS_KEY, { [`${to}:${from}`]: Date.now() });
+}
+
+export async function clearTouchGrass(from: string, to: string): Promise<void> {
+  await redis.hdel(TOUCH_GRASS_KEY, `${to}:${from}`);
+}
+
+export async function getAllTouchGrass(): Promise<TouchGrassEntry[]> {
+  const data = await redis.hgetall(TOUCH_GRASS_KEY);
+  if (!data) return [];
+  return Object.entries(data).map(([key, ts]) => {
+    const [to, from] = key.split(":");
+    return { to, from, ts: Number(ts) };
+  });
+}
+
 const BUDDIES_KEY = "team-busy-buddies";
 
 export type BuddyAssignment = { id: string; hatchedAt: number };

@@ -165,6 +165,7 @@ export default function Home() {
   const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
   const [timeOffSent, setTimeOffSent] = useState(false);
   const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
+  const [touchGrass, setTouchGrass] = useState<{ from: string; to: string; ts: number }[]>([]);
   const [sessionTimes, setSessionTimes] = useState<Record<string, number>>({});
   const [adhdLevels, setAdhdLevels] = useState<Record<string, number>>({});
   const sessionAccRef = useRef(0);
@@ -178,6 +179,7 @@ export default function Home() {
   const [vibeMuted, setVibeMuted] = useState(true);
   const vibeIframeRef = useRef<HTMLIFrameElement>(null);
   const [newMessage, setNewMessage] = useState<Record<string, string>>({});
+  const [weatherEmoji, setWeatherEmoji] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("team-busy-user");
@@ -213,6 +215,7 @@ export default function Home() {
       setSessionTimes(poll.sessionTime ?? {});
       setAdhdLevels(poll.adhd ?? {});
       setPokes(poll.pokes ?? []);
+      setTouchGrass(poll.touchGrass ?? []);
       if (poll.banner?.message) setBanner({ message: poll.banner.message, type: poll.banner.type ?? "daily" });
     } catch {
       // retry next poll
@@ -376,6 +379,26 @@ export default function Home() {
     return () => { clearTimeout(t); window.removeEventListener("resize", calculate); };
   }, [broadcast]);
 
+  useEffect(() => {
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=38.9822&longitude=-94.6708&current=weather_code&timezone=America%2FChicago")
+      .then((r) => r.json())
+      .then((d) => {
+        const code: number = d?.current?.weather_code ?? -1;
+        const emoji =
+          code === 0 ? "☀️" :
+          code <= 2 ? "🌤️" :
+          code === 3 ? "☁️" :
+          code <= 48 ? "🌫️" :
+          code <= 55 ? "🌦️" :
+          code <= 65 ? "🌧️" :
+          code <= 77 ? "❄️" :
+          code <= 82 ? "🌧️" :
+          code <= 99 ? "⛈️" : "🌡️";
+        setWeatherEmoji(emoji);
+      })
+      .catch(() => {});
+  }, []);
+
   const saveStatus = useCallback((name: string, value: number) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
@@ -538,6 +561,26 @@ export default function Home() {
     });
   };
 
+  const sendTouchGrass = async (to: string) => {
+    if (!currentUser || currentUser === to) return;
+    setTouchGrass((prev) => [...prev.filter((p) => !(p.from === currentUser && p.to === to)), { from: currentUser, to, ts: Date.now() }]);
+    await fetch("/api/touch-grass", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from: currentUser, to }),
+    });
+  };
+
+  const dismissTouchGrass = async (from: string) => {
+    if (!currentUser) return;
+    setTouchGrass((prev) => prev.filter((p) => !(p.to === currentUser && p.from === from)));
+    await fetch("/api/touch-grass", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ from, to: currentUser }),
+    });
+  };
+
   const dismissPoke = async (from: string) => {
     if (!currentUser) return;
     setPokes((prev) => prev.filter((p) => !(p.to === currentUser && p.from === from)));
@@ -679,7 +722,7 @@ export default function Home() {
   const bossMember = MEMBERS.find((m) => m.name === BOSS);
   const teamMembers = sortedMembers.filter((m) => m.name !== currentUser && m.name !== BOSS);
   const topOnlineUser = (() => {
-    const entries = Object.entries(sessionTimes);
+    const entries = Object.entries(sessionTimes).filter(([name]) => name !== BOSS);
     if (!entries.length) return null;
     const sorted = entries.sort((a, b) => b[1] - a[1]);
     if (sorted[0][1] <= 0) return null;
@@ -855,6 +898,21 @@ export default function Home() {
             <p className="text-sm font-bold text-white">catch me on metcalf</p>
           </div>
         )}
+        {/* Incoming touch grass */}
+        {touchGrass.filter((p) => p.to === member.name).length > 0 && (
+          <div className="flex flex-col gap-1.5 mt-2">
+            {touchGrass.filter((p) => p.to === member.name).map((tg) => (
+              <div key={tg.from} className="flex items-center gap-2 bg-[#a8f5c8] border-[2px] border-black rounded-xl px-3 py-2 shadow-[2px_2px_0_#000] animate-pop-in">
+                <span className="text-base">🌿</span>
+                <span className="text-xs font-bold flex-1">{tg.from} says touch grass</span>
+                <button
+                  onClick={() => dismissTouchGrass(tg.from)}
+                  className="w-5 h-5 rounded-full bg-black/10 hover:bg-black hover:text-white text-black text-[10px] font-bold flex items-center justify-center transition-colors cursor-pointer"
+                >✕</button>
+              </div>
+            ))}
+          </div>
+        )}
         {/* Incoming pokes */}
         {pokes.filter((p) => p.to === member.name).length > 0 && (
           <div className="flex flex-col gap-1.5 mt-2">
@@ -904,7 +962,6 @@ export default function Home() {
     const isSOS = !!sosStatuses[member.name];
     const isMetcalf = !!metcalfStatuses[member.name];
     const isNeedWork = !!needWorkStatuses[member.name];
-
     return (
       <div
         key={member.name}
@@ -952,9 +1009,6 @@ export default function Home() {
             />
             <div className="flex-1 min-w-0">
               <p className="font-extrabold text-xl leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</p>
-              {topOnlineUser === member.name && (
-                <span className="text-[10px] font-extrabold text-black/50 uppercase tracking-widest">🖥️ most online</span>
-              )}
               {updatedAt[member.name] && (
                 <>
                   <p className="text-[12px] text-black font-mono mt-0.5">{timeAgo(updatedAt[member.name])}</p>
@@ -1020,17 +1074,30 @@ export default function Home() {
             </div>
           )}
           {currentUser && currentUser !== member.name && (
-            <button
-              onClick={() => sendPoke(member.name)}
-              disabled={pokes.some((p) => p.from === currentUser && p.to === member.name)}
-              className={`w-full mt-1 py-1.5 rounded-xl border-[2px] border-black text-xs font-bold transition-all cursor-pointer
-                ${pokes.some((p) => p.from === currentUser && p.to === member.name)
-                  ? "bg-[#FFE234] opacity-60 cursor-default"
-                  : "bg-white hover:bg-[#FFE234] active:scale-95 shadow-[2px_2px_0_#000]"
-                }`}
-            >
-              {pokes.some((p) => p.from === currentUser && p.to === member.name) ? "👉 poked!" : "👉 poke"}
-            </button>
+            <div className="flex gap-2 mt-1">
+              <button
+                onClick={() => sendPoke(member.name)}
+                disabled={pokes.some((p) => p.from === currentUser && p.to === member.name)}
+                className={`flex-1 py-1.5 rounded-xl border-[2px] border-black text-xs font-bold transition-all cursor-pointer
+                  ${pokes.some((p) => p.from === currentUser && p.to === member.name)
+                    ? "bg-[#FFE234] opacity-60 cursor-default"
+                    : "bg-white hover:bg-[#FFE234] active:scale-95 shadow-[2px_2px_0_#000]"
+                  }`}
+              >
+                {pokes.some((p) => p.from === currentUser && p.to === member.name) ? "👉 poked!" : "👉 poke"}
+              </button>
+              <button
+                onClick={() => sendTouchGrass(member.name)}
+                disabled={touchGrass.some((p) => p.from === currentUser && p.to === member.name)}
+                className={`flex-1 py-1.5 rounded-xl border-[2px] border-black text-xs font-bold transition-all cursor-pointer
+                  ${touchGrass.some((p) => p.from === currentUser && p.to === member.name)
+                    ? "bg-[#a8f5c8] opacity-60 cursor-default"
+                    : "bg-white hover:bg-[#a8f5c8] active:scale-95 shadow-[2px_2px_0_#000]"
+                  }`}
+              >
+                {touchGrass.some((p) => p.from === currentUser && p.to === member.name) ? "🌿 sent!" : "🌿 touch grass"}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -1134,25 +1201,12 @@ export default function Home() {
       <div className="min-h-screen px-4 sm:px-8 py-6 sm:py-8">
         <div className="max-w-[1280px] mx-auto">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-6 sm:mb-8">
-            <div className="flex flex-col gap-1">
-              <span className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white" style={{ fontFamily: "var(--font-display)" }}>
-                Vibe Check <span className="whitespace-nowrap">👁️👄👁️</span>
-              </span>
-            </div>
-            {/* Home button — only shown when user is selected */}
-            {loaded && currentUser && !isGuest && (
-              <button
-                onClick={handleGoHome}
-                disabled={goHomeRequested}
-                title={goHomeRequested ? "Request sent!" : "I want to go home"}
-                className={`transition-all cursor-pointer ${goHomeRequested ? "scale-95" : "hover:scale-110 hover:rotate-6"}`}
-              >
-                <Image src="/home.png" alt="I want to go home" width={120} height={120} className="rounded-full" />
-              </button>
-            )}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-              <span className="text-lg sm:text-2xl font-extrabold text-white whitespace-nowrap" style={{ fontFamily: "var(--font-display)" }}>{today}</span>
+          <div className="flex flex-row items-start justify-between gap-4 mb-6 sm:mb-8">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl sm:text-5xl font-extrabold text-white whitespace-nowrap" style={{ fontFamily: "var(--font-display)" }}>{today}</span>
+                {weatherEmoji && <span className="text-3xl sm:text-5xl">{weatherEmoji}</span>}
+              </div>
               <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#3CB55A] animate-pulse inline-block" />
@@ -1188,7 +1242,23 @@ export default function Home() {
                 </button>
               )}
               </div>
+              {topOnlineUser && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] w-fit">
+                  <span className="font-extrabold">{topOnlineUser}</span> is chronically online
+                </div>
+              )}
             </div>
+            {/* Home sticker — right side */}
+            {loaded && currentUser && !isGuest && (
+              <button
+                onClick={handleGoHome}
+                disabled={goHomeRequested}
+                title={goHomeRequested ? "Request sent!" : "I want to go home"}
+                className={`transition-all cursor-pointer shrink-0 ${goHomeRequested ? "scale-95" : "hover:scale-110 hover:rotate-6"}`}
+              >
+                <Image src="/home.png" alt="I want to go home" width={120} height={120} className="rounded-full" />
+              </button>
+            )}
           </div>
 
           {/* Loading */}
@@ -1198,19 +1268,33 @@ export default function Home() {
             </p>
           ) : (
             <>
+              <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
+                {/* Left: My card */}
+                {myMember && (
+                  <div className="animate-pop-in w-full md:w-[320px] md:shrink-0 md:sticky md:top-8">
+                    {renderMyCard(myMember)}
+                  </div>
+                )}
+                {/* Right: Team grid */}
+                <div className="flex-1 min-w-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {teamMembers.map((member, i) => renderTeamCard(member, i))}
+                  </div>
+                </div>
+              </div>
+
               {/* Go Home Requests */}
               {goHomeRequests.length > 0 && (() => {
                 const sorted = [...goHomeRequests].sort((a, b) => b.count - a.count || a.ts - b.ts);
                 const topScore = sorted[0].count;
                 return (
-                  <div className="animate-pop-in mb-6">
+                  <div className="animate-pop-in mt-6">
                     <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
                       <button
                         onClick={() => setGoHomeExpanded((v) => !v)}
                         className="w-full px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3 cursor-pointer hover:bg-[#f5d800] transition-colors"
                       >
-                        <Image src="/home.png" alt="home" width={56} height={56} className="w-14 h-14 rounded-full" />
-                        <h2 className="text-2xl font-extrabold text-black tracking-tight flex-1 text-left">Wants to go home</h2>
+                        <h2 className="text-4xl font-extrabold text-black tracking-tight flex-1 text-left">Wants to go home</h2>
                         <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{goHomeRequests.length}</span>
                         <span className="text-xl ml-1">{goHomeExpanded ? "▲" : "▼"}</span>
                       </button>
@@ -1244,21 +1328,6 @@ export default function Home() {
                   </div>
                 );
               })()}
-
-              <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
-                {/* Left: My card */}
-                {myMember && (
-                  <div className="animate-pop-in w-full md:w-[320px] md:shrink-0 md:sticky md:top-8">
-                    {renderMyCard(myMember)}
-                  </div>
-                )}
-                {/* Right: Team grid */}
-                <div className="flex-1 min-w-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {teamMembers.map((member, i) => renderTeamCard(member, i))}
-                  </div>
-                </div>
-              </div>
 
               {/* Boss Card */}
               {bossMember && currentUser !== BOSS && (
