@@ -182,6 +182,7 @@ export default function Home() {
   const [bratMode, setBratMode] = useState(false);
   const [brainRot, setBrainRot] = useState(false);
   const [confettiOff, setConfettiOff] = useState(false);
+  const [viewAsTeam, setViewAsTeam] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; name: string }[]>([]);
   const reactionTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const [meetings, setMeetings] = useState<Record<string, number>>({});
@@ -205,6 +206,7 @@ export default function Home() {
 
   useEffect(() => {
     setConfettiOff(localStorage.getItem("team-busy-confetti-off") === "true");
+    setViewAsTeam(localStorage.getItem("team-busy-view-as-team") === "true");
     const saved = localStorage.getItem("team-busy-user");
     if (saved) {
       setCurrentUser(saved);
@@ -868,7 +870,7 @@ export default function Home() {
   const countdownSecs = secsUntil5 % 60;
   const myMember = MEMBERS.find((m) => m.name === currentUser);
   const bossMember = MEMBERS.find((m) => m.name === BOSS);
-  const teamMembers = sortedMembers.filter((m) => m.name !== currentUser && m.name !== BOSS);
+  const teamMembers = sortedMembers.filter((m) => (viewAsTeam || m.name !== currentUser) && m.name !== BOSS);
   const topOnlineUser = (() => {
     const entries = Object.entries(sessionTimes).filter(([name]) => name !== BOSS);
     if (!entries.length) return null;
@@ -1500,6 +1502,14 @@ export default function Home() {
                 }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors"
               >🎉 {confettiOff ? "confetti on" : "confetti off"}</button>
+              <button
+                onClick={() => {
+                  const next = !viewAsTeam;
+                  setViewAsTeam(next);
+                  localStorage.setItem("team-busy-view-as-team", String(next));
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#39FF14] transition-colors"
+              >👁️ {viewAsTeam ? "edit my card" : "view as team"}</button>
               {topOnlineUser && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
                   <span className="font-extrabold">{topOnlineUser}</span> is chronically online
@@ -1612,15 +1622,15 @@ export default function Home() {
               )}
 
               <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
-                {/* Left: My card */}
-                {myMember && (
+                {/* Left: My card (edit mode) */}
+                {myMember && !viewAsTeam && (
                   <div className="animate-pop-in w-full md:w-[320px] md:shrink-0 md:sticky md:top-8">
                     {renderMyCard(myMember)}
                   </div>
                 )}
                 {/* Right: Team grid */}
                 <div className="flex-1 min-w-0">
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className={`grid grid-cols-1 gap-4 ${viewAsTeam ? "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-2 xl:grid-cols-3"}`}>
                     {teamMembers.map((member, i) => renderTeamCard(member, i))}
                   </div>
                 </div>
