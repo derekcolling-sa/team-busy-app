@@ -132,6 +132,7 @@ export default function Home() {
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
 
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
+  const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number }[]>([]);
   const [goHomeExpanded, setGoHomeExpanded] = useState(false);
   const [tickerCopies, setTickerCopies] = useState(0);
   const [tickerTextWidth, setTickerTextWidth] = useState(0);
@@ -232,6 +233,7 @@ export default function Home() {
       setOooDetails(poll.oooDetails ?? {});
       setSosStatuses(poll.sos ?? {});
       setMessages(poll.messages ?? []);
+      setShippedFeatures(poll.shippedFeatures ?? []);
       setBroadcast(poll.urgent?.message ? { message: poll.urgent.message, type: poll.urgent.type ?? "broadcast" } : null);
       setGoHomeRequests(poll.goHome ?? []);
       setTimeOffRequests(poll.timeOff ?? []);
@@ -382,7 +384,7 @@ export default function Home() {
 
   // Measure ticker text width and calculate copies needed to fill viewport
   useEffect(() => {
-    if (!messages.length && !banner) return;
+    if (!messages.length && !banner && !shippedFeatures.length) return;
     let attempts = 0;
     let t: ReturnType<typeof setTimeout>;
     const calculate = () => {
@@ -400,7 +402,7 @@ export default function Home() {
     t = setTimeout(calculate, 50);
     window.addEventListener("resize", calculate);
     return () => { clearTimeout(t); window.removeEventListener("resize", calculate); };
-  }, [messages, banner]);
+  }, [messages, banner, shippedFeatures]);
 
   // Measure urgent ticker
   useEffect(() => {
@@ -1384,7 +1386,7 @@ export default function Home() {
           </div>
         </div>
       )}
-      {!broadcast && (messages.length > 0 || banner !== null) && (
+      {!broadcast && (messages.length > 0 || banner !== null || shippedFeatures.length > 0) && (
         <div style={{ width: "100%", overflow: "hidden", background: "#FFE234", borderBottom: "4px solid #000", height: "50px", position: "relative", zIndex: 10 }}>
           <div style={{
             display: "flex",
@@ -1404,6 +1406,13 @@ export default function Home() {
                   </span>
                 </div>
               )}
+              {shippedFeatures.map((f, i) => (
+                <div key={`s-${i}`} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "8px", background: "#39FF14", color: "#000", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.05em", border: "2px solid #000" }}>
+                    🚀 SHIPPED: {f.message}
+                  </span>
+                </div>
+              ))}
               {messages.map((msg, i) => (
                 <TickerItem key={i} msg={msg} photo={photoOverrides[msg.name] ?? (MEMBERS.find(m => m.name === msg.name)?.photo ?? "")} />
               ))}
@@ -1417,6 +1426,13 @@ export default function Home() {
                     <span style={{ fontSize: "16px" }}>✨</span>
                   </div>
                 )}
+                {shippedFeatures.map((f, i) => (
+                  <div key={`s-${i}`} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "8px", background: "#39FF14", color: "#000", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.05em", border: "2px solid #000" }}>
+                      🚀 SHIPPED: {f.message}
+                    </span>
+                  </div>
+                ))}
                 {messages.map((msg, i) => (
                   <TickerItem key={i} msg={msg} photo={photoOverrides[msg.name] ?? (MEMBERS.find(m => m.name === msg.name)?.photo ?? "")} />
                 ))}

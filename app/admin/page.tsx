@@ -194,6 +194,7 @@ export default function AdminPage() {
   const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
   const [lastSeen, setLastSeen] = useState<Record<string, number>>({});
   const [statusNotes, setStatusNotes] = useState<Record<string, string>>({});
+  const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number }[]>([]);
 
   useEffect(() => {
     if (sessionStorage.getItem("admin-authed") === "true") setAuthed(true);
@@ -250,6 +251,7 @@ export default function AdminPage() {
       setTouchGrass(poll.touchGrass ?? []);
       setMeetings(poll.meetings ?? {});
       setLastSeen(poll.lastSeen ?? {});
+      setShippedFeatures(poll.shippedFeatures ?? []);
       setHistory(historyData);
       setFeedback(feedbackData.items ?? feedbackData);
       setResolvedFromServer(feedbackData.resolvedTs ?? []);
@@ -350,6 +352,32 @@ export default function AdminPage() {
     setResolvedTs((prev) => new Set([...prev, ts]));
     await fetch("/api/feedback", {
       method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ts }),
+    });
+  };
+
+  const shipFeature = async (name: string, message: string, ts: number) => {
+    setShippedFeatures((prev) => [{ name, message, ts: Date.now(), shippedAt: Date.now() }, ...prev.filter(f => f.message !== message)].slice(0, 10));
+    setResolvedTs((prev) => new Set([...prev, ts]));
+    await Promise.all([
+      fetch("/api/shipped", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, message }),
+      }),
+      fetch("/api/feedback", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ts }),
+      }),
+    ]);
+  };
+
+  const unshipFeature = async (ts: number) => {
+    setShippedFeatures((prev) => prev.filter(f => f.ts !== ts));
+    await fetch("/api/shipped", {
+      method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ts }),
     });
@@ -952,6 +980,40 @@ export default function AdminPage() {
               </div>
               </>}
 
+              {/* Shipped Features */}
+              <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#39FF14] overflow-hidden">
+                <div className="px-5 pt-4 pb-3 border-b-[3px] border-black/20 flex items-center justify-between">
+                  <h2 className="text-lg font-extrabold text-black tracking-tight">🚀 Shipped Features</h2>
+                  {shippedFeatures.length > 0 && (
+                    <span className="text-[10px] font-bold bg-black text-white px-2.5 py-1 rounded-full">
+                      {shippedFeatures.length} live in ticker
+                    </span>
+                  )}
+                </div>
+                {shippedFeatures.length === 0 ? (
+                  <p className="px-5 py-4 text-sm text-black/60 italic">None shipped yet. Mark feedback as 🚀 ship to show it here.</p>
+                ) : (
+                  <div className="divide-y-[2px] divide-black/10">
+                    {shippedFeatures.map((f) => (
+                      <div key={f.ts} className="px-4 py-3 flex items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-xs font-bold">{f.name}</span>
+                            <span className="text-[10px] text-black/50">{timeAgo(f.shippedAt)}</span>
+                          </div>
+                          <p className="text-sm text-black font-medium">{f.message}</p>
+                        </div>
+                        <button
+                          onClick={() => unshipFeature(f.ts)}
+                          className="shrink-0 w-7 h-7 rounded-full border-2 border-black bg-white hover:bg-[#e74c3c] hover:text-white flex items-center justify-center transition-colors cursor-pointer mt-0.5 text-sm font-bold"
+                          title="Remove from ticker"
+                        >✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Feedback Inbox */}
               <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-white overflow-hidden">
                 <div className="px-5 pt-4 pb-3 border-b-[3px] border-black/10 flex items-center justify-between">
@@ -975,11 +1037,18 @@ export default function AdminPage() {
                           </div>
                           <p className="text-sm text-[#4a4540]">{f.message}</p>
                         </div>
-                        <button
-                          onClick={() => markDone(f.ts)}
-                          className="flex-shrink-0 w-7 h-7 rounded-full border-2 border-black/20 hover:border-black flex items-center justify-center text-[#b5b0a8] hover:text-[#5cb85c] transition-colors cursor-pointer mt-0.5 text-sm font-bold"
-                          title="Mark done"
-                        >✓</button>
+                        <div className="flex flex-col gap-1 shrink-0 mt-0.5">
+                          <button
+                            onClick={() => shipFeature(f.name, f.message, f.ts)}
+                            className="px-2 py-1 rounded-md bg-[#39FF14] border-2 border-black text-[10px] font-extrabold cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap"
+                            title="Mark as shipped — announces in yellow ticker"
+                          >🚀 ship</button>
+                          <button
+                            onClick={() => markDone(f.ts)}
+                            className="w-full px-2 py-1 rounded-md border-2 border-black/20 hover:border-black text-[10px] text-[#b5b0a8] hover:text-[#5cb85c] transition-colors cursor-pointer font-bold"
+                            title="Mark done"
+                          >✓ done</button>
+                        </div>
                       </div>
                     ))}
                   </div>

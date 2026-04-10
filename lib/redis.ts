@@ -113,6 +113,34 @@ export async function getFeedback(): Promise<FeedbackEntry[]> {
   return items.map((item) => (typeof item === "string" ? JSON.parse(item) : item));
 }
 
+const SHIPPED_KEY = "team-busy-shipped-features";
+export type ShippedFeature = { name: string; message: string; ts: number; shippedAt: number };
+
+export async function addShippedFeature(name: string, message: string): Promise<void> {
+  const existing = await getShippedFeatures();
+  const entry: ShippedFeature = { name, message, ts: Date.now(), shippedAt: Date.now() };
+  const all = [entry, ...existing.filter(f => f.message !== message)].slice(0, 10);
+  await redis.set(SHIPPED_KEY, JSON.stringify(all));
+}
+
+export async function getShippedFeatures(): Promise<ShippedFeature[]> {
+  try {
+    const data = await redis.get(SHIPPED_KEY);
+    if (!data) return [];
+    if (typeof data === "string") return JSON.parse(data);
+    if (Array.isArray(data)) return data as ShippedFeature[];
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export async function removeShippedFeature(ts: number): Promise<void> {
+  const existing = await getShippedFeatures();
+  const filtered = existing.filter(f => f.ts !== ts);
+  await redis.set(SHIPPED_KEY, JSON.stringify(filtered));
+}
+
 const STATUS_NOTES_KEY = "team-busy-status-notes";
 const FEEDBACK_RESOLVED_KEY = "team-busy-feedback-resolved";
 
