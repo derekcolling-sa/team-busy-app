@@ -166,6 +166,15 @@ export default function Home() {
   const [timeOffSent, setTimeOffSent] = useState(false);
   const [pokes, setPokes] = useState<{ from: string; to: string; ts: number }[]>([]);
   const [touchGrass, setTouchGrass] = useState<{ from: string; to: string; ts: number }[]>([]);
+  const [takeover, setTakeover] = useState<string | null>(null);
+  const [showTakeoverCompose, setShowTakeoverCompose] = useState(false);
+  const [takeoverDraft, setTakeoverDraft] = useState("");
+  const [bratMode, setBratMode] = useState(false);
+  const [warMode, setWarMode] = useState(false);
+  const [bodyDouble, setBodyDouble] = useState<string[]>([]);
+  const [meetings, setMeetings] = useState<Record<string, number>>({});
+  const [showMeetingPicker, setShowMeetingPicker] = useState(false);
+  const [, setNow] = useState(Date.now());
   const [sessionTimes, setSessionTimes] = useState<Record<string, number>>({});
   const [adhdLevels, setAdhdLevels] = useState<Record<string, number>>({});
   const sessionAccRef = useRef(0);
@@ -216,6 +225,9 @@ export default function Home() {
       setAdhdLevels(poll.adhd ?? {});
       setPokes(poll.pokes ?? []);
       setTouchGrass(poll.touchGrass ?? []);
+      setTakeover(poll.takeover ?? null);
+      setBodyDouble(poll.bodyDouble ?? []);
+      setMeetings(poll.meetings ?? {});
       if (poll.banner?.message) setBanner({ message: poll.banner.message, type: poll.banner.type ?? "daily" });
     } catch {
       // retry next poll
@@ -397,6 +409,12 @@ export default function Home() {
         setWeatherEmoji(emoji);
       })
       .catch(() => {});
+  }, []);
+
+  // Tick every second to keep meeting countdowns live
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const saveStatus = useCallback((name: string, value: number) => {
@@ -607,6 +625,41 @@ export default function Home() {
       body: JSON.stringify({ name: currentUser }),
     });
     setTimeout(() => setGoHomeRequested(false), 1500);
+  };
+
+  const formatCountdown = (endTs: number): string => {
+    const secs = Math.max(0, Math.floor((endTs - Date.now()) / 1000));
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  };
+
+  const toggleBodyDouble = async () => {
+    if (!currentUser) return;
+    const active = !bodyDouble.includes(currentUser);
+    setBodyDouble((prev) => active ? [...prev, currentUser!] : prev.filter((n) => n !== currentUser));
+    await fetch("/api/body-double", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, active }),
+    });
+  };
+
+  const setMeeting = async (minutes: number | null) => {
+    if (!currentUser) return;
+    const endTs = minutes ? Date.now() + minutes * 60 * 1000 : null;
+    setMeetings((prev) => {
+      const next = { ...prev };
+      if (endTs) next[currentUser!] = endTs;
+      else delete next[currentUser!];
+      return next;
+    });
+    setShowMeetingPicker(false);
+    await fetch("/api/meeting", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, endTs }),
+    });
   };
 
   const getSuggestions = (): string[] => {
@@ -932,6 +985,33 @@ export default function Home() {
             ))}
           </div>
         )}
+        {/* Body double + Meeting buttons */}
+        {currentUser && !isGuest && (
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={toggleBodyDouble}
+              className={`flex-1 py-2 rounded-xl border-[3px] border-black text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#000] cursor-pointer transition-all ${bodyDouble.includes(currentUser) ? "bg-[#b5f0c8] hover:bg-white" : "bg-white hover:bg-[#b5f0c8]"}`}
+            >{bodyDouble.includes(currentUser) ? "🤝 doubling!" : "🤝 body double"}</button>
+            <button
+              onClick={() => meetings[currentUser] ? setMeeting(null) : setShowMeetingPicker(true)}
+              className={`flex-1 py-2 rounded-xl border-[3px] border-black text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#000] cursor-pointer transition-all ${meetings[currentUser] ? "bg-[#FF9DC8] hover:bg-white" : "bg-white hover:bg-[#FF9DC8]"}`}
+            >{meetings[currentUser] ? `📅 ${formatCountdown(meetings[currentUser])}` : "📅 in a meeting"}</button>
+          </div>
+        )}
+        {currentUser === BOSS && (
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() => { setTakeoverDraft(takeover ?? ""); setShowTakeoverCompose(true); }}
+              className="flex-1 py-2 rounded-xl border-[3px] border-black bg-black text-white text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#FFE234] hover:bg-[#FFE234] hover:text-black transition-all cursor-pointer"
+            >📣 screen takeover</button>
+            {takeover && (
+              <button
+                onClick={async () => { setTakeover(null); await fetch("/api/takeover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: "" }) }); }}
+                className="px-3 py-2 rounded-xl border-[3px] border-black bg-white text-xs font-extrabold shadow-[3px_3px_0_#000] hover:bg-red-100 transition-colors cursor-pointer"
+              >✕ end</button>
+            )}
+          </div>
+        )}
         {!isGuest && (
           <div className="flex items-center gap-1.5 mt-2">
             <input
@@ -1059,6 +1139,22 @@ export default function Home() {
                   </div>
                 );
               })()}
+            </div>
+          )}
+          {meetings[member.name] && meetings[member.name] > Date.now() && (
+            <div className="w-full rounded-xl bg-[#FF9DC8] border-[2px] border-black px-4 py-2.5 flex items-center gap-2 shadow-[2px_2px_0_#000]">
+              <span className="text-lg">📅</span>
+              <p className="text-sm font-bold flex-1">in a meeting</p>
+              <span className="text-sm font-extrabold tabular-nums">{formatCountdown(meetings[member.name])}</span>
+            </div>
+          )}
+          {bodyDouble.includes(member.name) && (
+            <div className="w-full rounded-xl bg-[#b5f0c8] border-[2px] border-black px-4 py-2.5 flex items-center gap-2 shadow-[2px_2px_0_#000]">
+              <span className="text-lg">🤝</span>
+              <p className="text-sm font-bold flex-1">body doubling</p>
+              {currentUser && currentUser !== member.name && !bodyDouble.includes(currentUser) && (
+                <button onClick={toggleBodyDouble} className="text-[10px] font-extrabold bg-white border-[2px] border-black rounded-lg px-2 py-1 cursor-pointer hover:bg-black hover:text-white transition-colors">join</button>
+              )}
             </div>
           )}
           {isMetcalf && (
@@ -1198,13 +1294,37 @@ export default function Home() {
 
 
 
-      <div className="min-h-screen px-4 sm:px-8 py-6 sm:py-8">
+      <div
+        className={`min-h-screen px-4 sm:px-8 py-6 sm:py-8 transition-colors duration-300 relative ${warMode ? "war-mode" : ""}`}
+        style={
+          warMode ? { background: "#000", fontFamily: "monospace", color: "#00ff00" } :
+          bratMode ? { background: "#8ace00", fontFamily: "Arial, sans-serif" } :
+          undefined
+        }
+      >
+        {/* Scanlines overlay */}
+        {warMode && (
+          <div className="pointer-events-none fixed inset-0 z-[200]" style={{
+            background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)",
+            mixBlendMode: "multiply",
+          }} />
+        )}
         <div className="max-w-[1280px] mx-auto">
           {/* Header */}
           <div className="flex flex-row items-start justify-between gap-4 mb-6 sm:mb-8">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
-                <span className="text-3xl sm:text-5xl font-extrabold text-white whitespace-nowrap" style={{ fontFamily: "var(--font-display)" }}>{today}</span>
+                <span
+                  className="text-3xl sm:text-5xl font-extrabold whitespace-nowrap transition-all"
+                  style={{
+                    fontFamily: warMode ? "monospace" : bratMode ? "Arial, sans-serif" : "var(--font-display)",
+                    color: warMode ? "#00ff00" : bratMode ? "#000" : "#fff",
+                    filter: bratMode ? "blur(0.6px)" : undefined,
+                    textTransform: warMode ? "uppercase" : bratMode ? "lowercase" : undefined,
+                    textShadow: warMode ? "0 0 10px #00ff00, 0 0 20px #00ff00" : undefined,
+                    letterSpacing: warMode ? "0.05em" : undefined,
+                  }}
+                >{warMode ? `> ${today.toUpperCase()}_` : today}</span>
                 {weatherEmoji && <span className="text-3xl sm:text-5xl">{weatherEmoji}</span>}
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -1241,12 +1361,22 @@ export default function Home() {
                   🏖️ {(timeOffSent || timeOffRequests.some((r) => r.name === currentUser)) ? "Request sent!" : "hey Derek, approve my time off"}
                 </button>
               )}
-              </div>
+              <button
+                onClick={() => setBratMode((v) => !v)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black text-[11px] font-bold tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer transition-colors"
+                style={{ background: bratMode ? "#8ace00" : "#fff", color: "#000", fontFamily: bratMode ? "Arial, sans-serif" : undefined }}
+              >{bratMode ? "brat" : "brat mode"}</button>
+              <button
+                onClick={() => setWarMode((v) => !v)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] text-[11px] font-bold tracking-widest uppercase cursor-pointer transition-all"
+                style={{ background: warMode ? "#00ff00" : "#000", color: warMode ? "#000" : "#00ff00", borderColor: "#00ff00", fontFamily: "monospace", boxShadow: warMode ? "0 0 8px #00ff00" : "3px 3px 0 #00ff00" }}
+              >{warMode ? "■ TERMINATE" : "► WAR MODE"}</button>
               {topOnlineUser && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] w-fit">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
                   <span className="font-extrabold">{topOnlineUser}</span> is chronically online
                 </div>
               )}
+              </div>
             </div>
             {/* Home sticker — right side */}
             {loaded && currentUser && !isGuest && (
@@ -1437,6 +1567,71 @@ export default function Home() {
             </>
           )}
         </div>
+
+        {/* Meeting Picker Modal */}
+        {showMeetingPicker && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[380px] w-[92%] flex flex-col gap-4">
+              <h2 className="text-2xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>📅 how long?</h2>
+              <div className="grid grid-cols-2 gap-3">
+                {[15, 30, 45, 60].map((min) => (
+                  <button
+                    key={min}
+                    onClick={() => setMeeting(min)}
+                    className="py-4 rounded-xl border-[3px] border-black bg-white hover:bg-[#FF9DC8] font-extrabold text-lg shadow-[3px_3px_0_#000] active:shadow-none active:translate-y-[2px] transition-all cursor-pointer"
+                  >{min} min</button>
+                ))}
+              </div>
+              <button onClick={() => setShowMeetingPicker(false)} className="text-sm text-black/40 hover:text-black transition-colors cursor-pointer">cancel</button>
+            </div>
+          </div>
+        )}
+
+        {/* Takeover Overlay — shown to everyone except Derek */}
+        {takeover && currentUser !== BOSS && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ background: "#FFE234" }}>
+            <div className="max-w-2xl w-full px-8 text-center">
+              <div className="text-6xl mb-6">📣</div>
+              <p className="text-5xl sm:text-7xl font-extrabold text-black leading-tight" style={{ fontFamily: "var(--font-display)" }}>{takeover}</p>
+              <p className="mt-8 text-sm font-bold text-black/40 uppercase tracking-widest">— Derek</p>
+            </div>
+          </div>
+        )}
+
+        {/* Takeover Compose Modal — Derek only */}
+        {showTakeoverCompose && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[480px] w-[92%] flex flex-col gap-4">
+              <h2 className="text-2xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>📣 Screen Takeover</h2>
+              <p className="text-sm text-black/50">This message will fill everyone&apos;s screen.</p>
+              <textarea
+                value={takeoverDraft}
+                onChange={(e) => setTakeoverDraft(e.target.value)}
+                placeholder="Type your message…"
+                maxLength={200}
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl border-[3px] border-black text-lg font-bold focus:outline-none resize-none"
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    if (!takeoverDraft.trim()) return;
+                    setTakeover(takeoverDraft.trim());
+                    setShowTakeoverCompose(false);
+                    await fetch("/api/takeover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: takeoverDraft.trim() }) });
+                  }}
+                  disabled={!takeoverDraft.trim()}
+                  className="flex-1 py-3 rounded-xl bg-black text-white font-extrabold text-sm border-[3px] border-black shadow-[4px_4px_0_#FFE234] hover:bg-[#FFE234] hover:text-black transition-all cursor-pointer disabled:opacity-40 disabled:cursor-default"
+                >send it 📣</button>
+                <button
+                  onClick={() => setShowTakeoverCompose(false)}
+                  className="px-4 py-3 rounded-xl border-[3px] border-black font-bold text-sm hover:bg-black hover:text-white transition-colors cursor-pointer"
+                >cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Hatch Modal */}
         {BUDDIES_ENABLED && showHatchModal && (

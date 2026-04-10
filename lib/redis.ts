@@ -398,6 +398,59 @@ export async function setBroadcast(message: string, type: BroadcastType): Promis
   }
 }
 
+const BODY_DOUBLE_KEY = "team-busy-body-double";
+const MEETINGS_KEY = "team-busy-meetings";
+
+export async function getBodyDouble(): Promise<string[]> {
+  const data = await redis.hgetall(BODY_DOUBLE_KEY);
+  if (!data) return [];
+  return Object.keys(data);
+}
+
+export async function setBodyDouble(name: string, active: boolean): Promise<void> {
+  if (active) {
+    await redis.hset(BODY_DOUBLE_KEY, { [name]: Date.now() });
+  } else {
+    await redis.hdel(BODY_DOUBLE_KEY, name);
+  }
+}
+
+export async function getMeetings(): Promise<Record<string, number>> {
+  const data = await redis.hgetall(MEETINGS_KEY);
+  if (!data) return {};
+  const now = Date.now();
+  const active: Record<string, number> = {};
+  for (const [name, end] of Object.entries(data)) {
+    if (Number(end) > now) active[name] = Number(end);
+    else await redis.hdel(MEETINGS_KEY, name);
+  }
+  return active;
+}
+
+export async function setMeeting(name: string, endTs: number | null): Promise<void> {
+  if (endTs && endTs > Date.now()) {
+    await redis.hset(MEETINGS_KEY, { [name]: endTs });
+  } else {
+    await redis.hdel(MEETINGS_KEY, name);
+  }
+}
+
+const TAKEOVER_KEY = "team-busy-takeover";
+
+export async function getTakeover(): Promise<string | null> {
+  const val = await redis.get(TAKEOVER_KEY);
+  if (!val) return null;
+  return String(val);
+}
+
+export async function setTakeover(message: string): Promise<void> {
+  if (message.trim()) {
+    await redis.set(TAKEOVER_KEY, message.trim());
+  } else {
+    await redis.del(TAKEOVER_KEY);
+  }
+}
+
 const BOSS_REACTIONS_KEY = "team-busy-boss-reactions";
 
 export type BossReaction = "heart" | "thumbsdown";

@@ -183,3 +183,27 @@ input[type="range"]:disabled::-moz-range-thumb {
   display: inline-block;
   animation: fly-buzz 0.4s ease-in-out infinite;
 }
+
+/* War mode CRT flicker */
+@keyframes crt-flicker {
+  0%   { opacity: 1; }
+  92%  { opacity: 1; }
+  93%  { opacity: 0.85; }
+  94%  { opacity: 1; }
+  96%  { opacity: 0.9; }
+  100% { opacity: 1; }
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+.war-mode {
+  animation: crt-flicker 4s infinite;
+}
+
+.war-cursor::after {
+  content: "_";
+  animation: blink-cursor 1s step-end infinite;
+}
