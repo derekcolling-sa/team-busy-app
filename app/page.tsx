@@ -384,7 +384,7 @@ export default function Home() {
 
   // Measure ticker text width and calculate copies needed to fill viewport
   useEffect(() => {
-    if (!messages.length && !banner && !shippedFeatures.length) return;
+    if (!messages.length && !banner) return;
     let attempts = 0;
     let t: ReturnType<typeof setTimeout>;
     const calculate = () => {
@@ -402,7 +402,7 @@ export default function Home() {
     t = setTimeout(calculate, 50);
     window.addEventListener("resize", calculate);
     return () => { clearTimeout(t); window.removeEventListener("resize", calculate); };
-  }, [messages, banner, shippedFeatures]);
+  }, [messages, banner]);
 
   // Measure urgent ticker
   useEffect(() => {
@@ -1386,7 +1386,7 @@ export default function Home() {
           </div>
         </div>
       )}
-      {!broadcast && (messages.length > 0 || banner !== null || shippedFeatures.length > 0) && (
+      {!broadcast && (messages.length > 0 || banner !== null) && (
         <div style={{ width: "100%", overflow: "hidden", background: "#FFE234", borderBottom: "4px solid #000", height: "50px", position: "relative", zIndex: 10 }}>
           <div style={{
             display: "flex",
@@ -1406,13 +1406,6 @@ export default function Home() {
                   </span>
                 </div>
               )}
-              {shippedFeatures.map((f, i) => (
-                <div key={`s-${i}`} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: "8px", background: f.status === "done" ? "#4a9eff" : f.status === "dumb" ? "#ff4d4d" : "#39FF14", color: f.status === "done" ? "#fff" : "#000", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.05em", border: "2px solid #000" }}>
-                    {f.status === "done" ? "✓ DONE" : f.status === "dumb" ? "🙅 DUMB" : "🚀 SHIPPED"}: {f.message}{f.name ? ` (${f.name})` : ""}
-                  </span>
-                </div>
-              ))}
               {messages.map((msg, i) => (
                 <TickerItem key={i} msg={msg} photo={photoOverrides[msg.name] ?? (MEMBERS.find(m => m.name === msg.name)?.photo ?? "")} />
               ))}
@@ -1426,13 +1419,6 @@ export default function Home() {
                     <span style={{ fontSize: "16px" }}>✨</span>
                   </div>
                 )}
-                {shippedFeatures.map((f, i) => (
-                  <div key={`s-${i}`} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "0 24px", flexShrink: 0, whiteSpace: "nowrap" }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: "8px", background: f.status === "done" ? "#4a9eff" : f.status === "dumb" ? "#ff4d4d" : "#39FF14", color: f.status === "done" ? "#fff" : "#000", padding: "4px 14px", borderRadius: "999px", fontSize: "15px", fontWeight: 900, fontFamily: "var(--font-display)", letterSpacing: "0.05em", border: "2px solid #000" }}>
-                      {f.status === "done" ? "✓ DONE" : f.status === "dumb" ? "🙅 DUMB" : "🚀 SHIPPED"}: {f.message}{f.name ? ` (${f.name})` : ""}
-                    </span>
-                  </div>
-                ))}
                 {messages.map((msg, i) => (
                   <TickerItem key={i} msg={msg} photo={photoOverrides[msg.name] ?? (MEMBERS.find(m => m.name === msg.name)?.photo ?? "")} />
                 ))}
@@ -1639,6 +1625,28 @@ export default function Home() {
                           </div>
                         );
                       })}
+                  </div>
+                </div>
+              )}
+
+              {/* Feature Updates */}
+              {shippedFeatures.length > 0 && (
+                <div className="mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-white overflow-hidden">
+                  <div className="px-5 py-3 border-b-[3px] border-black bg-[#39FF14] flex items-center gap-3">
+                    <span className="text-xl">📋</span>
+                    <h2 className="text-lg font-extrabold tracking-tight flex-1" style={{ fontFamily: "var(--font-display)" }}>feature updates</h2>
+                  </div>
+                  <div className="divide-y-[2px] divide-black/10">
+                    {shippedFeatures.map((f) => (
+                      <div key={f.ts} className="px-4 py-3 flex items-center gap-3">
+                        <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-extrabold border-2 border-black ${f.status === "done" ? "bg-[#4a9eff] text-white" : f.status === "dumb" ? "bg-[#ff4d4d] text-white" : "bg-[#39FF14] text-black"}`}>
+                          {f.status === "done" ? "✓ done" : f.status === "dumb" ? "🙅 dumb" : "🚀 shipped"}
+                        </span>
+                        <p className="flex-1 text-sm font-semibold text-black min-w-0 truncate">{f.message}</p>
+                        {f.name && <span className="text-[11px] text-black/40 font-bold shrink-0">{f.name}</span>}
+                        <span className="text-[10px] text-black/30 shrink-0">{timeAgo(f.shippedAt)}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
