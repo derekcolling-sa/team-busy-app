@@ -171,6 +171,7 @@ export default function Home() {
   const [showTakeoverCompose, setShowTakeoverCompose] = useState(false);
   const [takeoverDraft, setTakeoverDraft] = useState("");
   const [bratMode, setBratMode] = useState(false);
+  const [brainRot, setBrainRot] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; name: string }[]>([]);
   const [meetings, setMeetings] = useState<Record<string, number>>({});
   const [lastSeen, setLastSeen] = useState<Record<string, number>>({});
@@ -1412,6 +1413,10 @@ export default function Home() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black text-[11px] font-bold tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer transition-colors"
                 style={{ background: bratMode ? "#8ace00" : "#fff", color: "#000", fontFamily: bratMode ? "Arial, sans-serif" : undefined }}
               >{bratMode ? "brat" : "brat mode"}</button>
+              <button
+                onClick={() => setBrainRot(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FF9DC8] transition-colors"
+              >🧠 brain rot</button>
               {topOnlineUser && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
                   <span className="font-extrabold">{topOnlineUser}</span> is chronically online
@@ -2028,6 +2033,22 @@ export default function Home() {
           <span className="text-sm font-bold text-black">v{process.env.NEXT_PUBLIC_APP_VERSION}</span>
         </div>
       </div>
+
+      {/* Brain Rot Overlay */}
+      {brainRot && (
+        <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center">
+          <iframe
+            src="https://www.youtube.com/embed/xxfeav5MlmI?autoplay=1&loop=1&playlist=xxfeav5MlmI&controls=0&modestbranding=1"
+            className="w-full h-full"
+            allow="autoplay; fullscreen"
+            allowFullScreen
+          />
+          <button
+            onClick={() => setBrainRot(false)}
+            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/70 border-[2px] border-white text-white text-xl font-bold flex items-center justify-center hover:bg-black cursor-pointer"
+          >✕</button>
+        </div>
+      )}
     </>
   );
 }
