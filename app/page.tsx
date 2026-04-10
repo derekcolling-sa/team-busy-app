@@ -132,7 +132,7 @@ export default function Home() {
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
 
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
-  const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number }[]>([]);
+  const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number; status?: "shipped" | "done" | "dumb" }[]>([]);
   const [goHomeExpanded, setGoHomeExpanded] = useState(false);
   const [tickerCopies, setTickerCopies] = useState(0);
   const [tickerTextWidth, setTickerTextWidth] = useState(0);
