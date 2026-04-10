@@ -638,3 +638,16 @@ export async function getMoneyRequests(): Promise<TimeOffEntry[]> {
     .map(([name, ts]) => ({ name, ts: Number(ts) }))
     .sort((a, b) => a.ts - b.ts);
 }
+
+// Daily reset helpers
+export async function clearAllTouchGrass(): Promise<void> { await redis.del(TOUCH_GRASS_KEY); }
+export async function clearAllDontTalk(): Promise<void> { await redis.del(DONT_TALK_KEY); }
+export async function clearAllNeedWork(): Promise<void> { await redis.del(NEED_WORK_KEY); }
+export async function clearAllMetcalf(): Promise<void> { await redis.del(METCALF_KEY); }
+export async function clearAllSessionTime(): Promise<void> { await redis.del(SESSION_TIME_KEY); }
+export async function clearAllLastSeen(): Promise<void> { await redis.del(LAST_SEEN_KEY); }
+export async function clearAllMoneyRequests(): Promise<void> { await redis.del(NEED_MONEY_KEY); }
+export async function clearTakeover(): Promise<void> { await redis.del(TAKEOVER_KEY); }
+export async function clearAllSOS(): Promise<void> { await redis.del(SOS_KEY); }
+export async function clearAllAdhd(): Promise<void> { await redis.del(ADHD_KEY); }
+export async function clearAllMessages(): Promise<void> { await redis.del(MESSAGES_KEY); }

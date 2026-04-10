@@ -117,6 +117,7 @@ function TickerItem({ msg }: { msg: { name: string; message: string }; photo: st
 
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const currentUserRef = useRef<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
@@ -167,6 +168,7 @@ export default function Home() {
   const sortTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [goHomeRequested, setGoHomeRequested] = useState(false);
+  const goHomeLock = useRef(false);
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number; count: number }[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
   const [timeOffSent, setTimeOffSent] = useState(false);
@@ -180,6 +182,7 @@ export default function Home() {
   const [bratMode, setBratMode] = useState(false);
   const [brainRot, setBrainRot] = useState(false);
   const [floatingReactions, setFloatingReactions] = useState<{ id: string; emoji: string; name: string }[]>([]);
+  const reactionTimers = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
   const [meetings, setMeetings] = useState<Record<string, number>>({});
   const [lastSeen, setLastSeen] = useState<Record<string, number>>({});
   const [showMeetingPicker, setShowMeetingPicker] = useState(false);
@@ -203,6 +206,7 @@ export default function Home() {
     const saved = localStorage.getItem("team-busy-user");
     if (saved) {
       setCurrentUser(saved);
+      currentUserRef.current = saved;
     } else {
       setShowPicker(true);
     }
@@ -219,7 +223,7 @@ export default function Home() {
       setUpdatedAt(poll.updated ?? {});
       const notes = poll.notes ?? {};
       setStatusNotes(notes);
-      setEditingNote((prev) => prev !== "" ? prev : (currentUser && notes[currentUser]) ? notes[currentUser] : prev);
+      setEditingNote((prev) => prev !== "" ? prev : (currentUserRef.current && notes[currentUserRef.current]) ? notes[currentUserRef.current] : prev);
       setOooStatuses(poll.ooo ?? {});
       setOooDetails(poll.oooDetails ?? {});
       setSosStatuses(poll.sos ?? {});
@@ -435,6 +439,12 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // Cleanup floating reaction timers on unmount
+  useEffect(() => {
+    const timers = reactionTimers.current;
+    return () => { timers.forEach(clearTimeout); };
+  }, []);
+
   const saveStatus = useCallback((name: string, value: number) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
@@ -638,7 +648,8 @@ export default function Home() {
   };
 
   const handleGoHome = async () => {
-    if (!currentUser || goHomeRequested) return;
+    if (!currentUser || goHomeLock.current) return;
+    goHomeLock.current = true;
     setGoHomeRequested(true);
     setGoHomeRequests((prev) => {
       const existing = prev.find((r) => r.name === currentUser);
@@ -652,7 +663,6 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: currentUser }),
     });
-    setTimeout(() => setGoHomeRequested(false), 1500);
   };
 
   const formatCountdown = (endTs: number): string => {
@@ -665,7 +675,11 @@ export default function Home() {
   const sendReaction = (name: string, emoji: string) => {
     const id = `${Date.now()}-${Math.random()}`;
     setFloatingReactions((prev) => [...prev, { id, emoji, name }]);
-    setTimeout(() => setFloatingReactions((prev) => prev.filter((r) => r.id !== id)), 1200);
+    const timer = setTimeout(() => {
+      setFloatingReactions((prev) => prev.filter((r) => r.id !== id));
+      reactionTimers.current.delete(timer);
+    }, 1200);
+    reactionTimers.current.add(timer);
   };
 
   const setMeeting = async (minutes: number | null) => {
@@ -738,6 +752,7 @@ export default function Home() {
   const pickUser = (name: string) => {
     localStorage.setItem("team-busy-user", name);
     setCurrentUser(name);
+    currentUserRef.current = name;
     setShowPicker(false);
   };
 
