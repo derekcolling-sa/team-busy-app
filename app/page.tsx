@@ -55,6 +55,7 @@ export default function Home() {
   const [brainRotVideoId, setBrainRotVideoId] = useState("xxfeav5MlmI");
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
+  const [dailyVibe, setDailyVibe] = useState<string | null>(null);
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
   const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number; status?: "shipped" | "done" | "dumb" | "soon" }[]>([]);
   const [tickerCopies, setTickerCopies] = useState(0);
@@ -178,6 +179,7 @@ export default function Home() {
       setMeetings(poll.meetings ?? {});
       setLastSeen(poll.lastSeen ?? {});
       if (poll.banner?.message) setBanner({ message: poll.banner.message, type: poll.banner.type ?? "daily" });
+      if (poll.dailyVibe) setDailyVibe(poll.dailyVibe);
     } catch {
       // retry next poll
     } finally {
@@ -995,31 +997,13 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Morning banner */}
-              {isMorning && (
+              {/* Daily vibe pod — shows all day */}
+              {dailyVibe && (
                 <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FF9DC8] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative">
                   <div className="relative z-10">
-                    <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{morningMsg.main}</p>
-                    <p className="text-sm font-bold text-black/60 mt-1">{morningMsg.sub}</p>
+                    <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{dailyVibe}</p>
                   </div>
-                  <div className="flex flex-col items-end gap-1 relative z-10 shrink-0">
-                    <span className="text-3xl">☕️</span>
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{morningMsg.tag}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Evening banner */}
-              {currentHour >= 17 && (
-                <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FFE234] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative">
-                  <div className="relative z-10">
-                    <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{todayMsg.main}</p>
-                    <p className="text-sm font-bold text-black/60 mt-1">{todayMsg.sub}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 relative z-10 shrink-0">
-                    <span className="text-3xl">🫡</span>
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{todayMsg.tag}</span>
-                  </div>
+                  <span className="text-3xl shrink-0 relative z-10">✨</span>
                 </div>
               )}
 

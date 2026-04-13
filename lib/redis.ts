@@ -477,6 +477,21 @@ export async function clearMemberBuddy(name: string): Promise<void> {
   await redis.hdel(BUDDIES_KEY, name);
 }
 
+const DAILY_VIBE_KEY = "team-busy-daily-vibe";
+
+export async function getDailyVibe(): Promise<string | null> {
+  const val = await redis.get(DAILY_VIBE_KEY);
+  return val ? String(val) : null;
+}
+
+export async function setDailyVibe(message: string): Promise<void> {
+  await redis.set(DAILY_VIBE_KEY, message);
+}
+
+export async function clearDailyVibe(): Promise<void> {
+  await redis.del(DAILY_VIBE_KEY);
+}
+
 const BANNER_KEY = "team-busy-banner";
 
 export type BannerType = "daily" | "feature";

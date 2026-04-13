@@ -4,7 +4,7 @@ import {
   clearAllSessionTime, clearAllLastSeen, clearAllMoneyRequests,
   clearTakeover, clearAllSOS, clearAllMessages,
   clearAllStatusNotes, clearAllMoods, clearAllBodyDouble, clearAllMeds,
-  setMemberStatus, setMemberAdhd,
+  clearDailyVibe, setMemberStatus, setMemberAdhd,
 } from "@/lib/redis";
 import { MEMBERS } from "@/app/lib/constants";
 
@@ -41,6 +41,7 @@ export async function GET(request: Request) {
     clearAllMoods(),
     clearAllBodyDouble(),
     clearAllMeds(),
+    clearDailyVibe(),
   ]);
   return Response.json({ ok: true });
 }

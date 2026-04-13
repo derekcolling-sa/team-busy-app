@@ -42,6 +42,7 @@ const STRING_KEYS = [
   { key: "team-busy-takeover",         field: "takeover" },
   { key: "team-busy-shipped-features", field: "shippedFeatures" },
   { key: "team-busy-videos",           field: "videos" },
+  { key: "team-busy-daily-vibe",       field: "dailyVibe" },
 ] as const;
 
 const DEFAULT_VIDEOS = { vibeVideoId: "vTfD20dbxho", brainRotVideoId: "xxfeav5MlmI" };
@@ -227,6 +228,9 @@ export async function GET() {
 
   // takeover — string or null
   data.takeover = data.takeover ? String(data.takeover) : null;
+
+  // dailyVibe — string or null
+  data.dailyVibe = data.dailyVibe ? String(data.dailyVibe) : null;
 
   // shippedFeatures — JSON string → array
   {

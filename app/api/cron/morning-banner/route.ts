@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { getBanner, setBanner, addMessage } from "@/lib/redis";
+import { getBanner, setBanner, setDailyVibe } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -15,18 +15,6 @@ const WMO_CODES: Record<number, string> = {
 };
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-
-// Role context for each team member
-const MEMBER_ROLES: Record<string, string> = {
-  Kerry:   "copywriter — lives in words, hates bad briefs",
-  Erin:    "copywriter — chaotic creative energy, very online",
-  Maddie:  "copywriter — sarcastic, dry humor, overly caffeinated",
-  Brendan: "art director — pixel-perfect, suffers through revisions",
-  Callie:  "art director — color theory obsessed, InDesign warrior",
-  Chris:   "art director — vibes first, kerning second",
-  KC:      "account manager — holds everything together somehow",
-  Derek:   "VP of Creative — managing up, holding the vision, on too many calls",
-};
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -47,46 +35,22 @@ export async function GET(request: Request) {
   const isMonday = new Date().getDay() === 1;
   const meetingNote = isMonday ? " There's a company meeting this morning." : "";
 
-  // Generate banner
+  // Generate scrolling banner — "welcome to [day]" vibe for the ticker
   const existing = await getBanner();
   if (!(existing?.type === "feature" && existing.date === date)) {
-    const { text } = await generateText({
+    const { text: bannerText } = await generateText({
       model: "anthropic/claude-haiku-4.5",
-      prompt: `Write a single short Gen Z banner message (max 12 words, no quotes, no hashtags) for a team dashboard. It's ${today}, ${temp}°F and ${condition} in Overland Park KS. Make it fun, relatable, a little chaotic. Reference the day and weather naturally.${meetingNote}`,
+      prompt: `Write a short Gen Z "welcome to [day]" message (max 12 words, no quotes, no hashtags) for a creative agency team dashboard ticker. It's ${today}, ${temp}°F and ${condition} in Overland Park KS. Should feel like a hype intro to the day. Reference the day naturally.${meetingNote}`,
     });
-    await setBanner(text.trim(), date);
+    await setBanner(bannerText.trim(), date);
   }
 
-  // Generate a ticker message for each team member in one call
-  const memberList = Object.entries(MEMBER_ROLES)
-    .map(([name, role]) => `- ${name}: ${role}`)
-    .join("\n");
-
-  const { text: messagesRaw } = await generateText({
+  // Generate daily vibe — work encouragement shown in the pink pod all day
+  const { text: vibeText } = await generateText({
     model: "anthropic/claude-haiku-4.5",
-    prompt: `You are writing first-person status messages for a team dashboard ticker. It's ${today} morning, ${temp}°F and ${condition} in Overland Park KS.${meetingNote}
-
-Team members and their roles:
-${memberList}
-
-Write one short Gen Z status message (max 12 words) for EACH person. Messages should be first-person, reflect their role, the day, and the weather naturally. Keep it chaotic, relatable, and a little unhinged. No hashtags. No quotes around the message.
-
-Respond with ONLY a JSON object like:
-{"Kerry":"message here","Erin":"message here","Maddie":"message here","Brendan":"message here","Callie":"message here","Chris":"message here","KC":"message here","Derek":"message here"}`,
+    prompt: `Write a short Gen Z work encouragement message (max 14 words, no quotes, no hashtags) for a creative agency team. It's ${today}, ${temp}°F and ${condition} outside. Should feel motivating but in a chaotic, unhinged, very online way. Think: "we're built for this bestie" energy but fresh and specific to the day and weather.${meetingNote}`,
   });
-
-  // Parse and save messages
-  try {
-    const jsonMatch = messagesRaw.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const messages = JSON.parse(jsonMatch[0]) as Record<string, string>;
-      await Promise.all(
-        Object.entries(messages).map(([name, msg]) =>
-          typeof msg === "string" ? addMessage(name, msg.trim()) : Promise.resolve()
-        )
-      );
-    }
-  } catch { /* non-critical — ticker will just be empty */ }
+  await setDailyVibe(vibeText.trim());
 
   return Response.json({ ok: true });
 }
