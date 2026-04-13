@@ -983,8 +983,11 @@ export default function Home() {
                   onClick={() => { const next = !viewAsTeam; setViewAsTeam(next); localStorage.setItem("team-busy-view-as-team", String(next)); }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#39FF14] transition-colors"
                 >👁️ {viewAsTeam ? "edit my card" : "view as team"}</button>
-                {(currentUser === BOSS || currentUser === CO_ADMIN) && (
+                {currentUser === BOSS && (
                   <a href="/admin" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-black text-[11px] font-bold text-white tracking-widest uppercase shadow-[3px_3px_0_#FFE234] cursor-pointer hover:bg-[#FFE234] hover:text-black transition-colors">⚡ admin</a>
+                )}
+                {currentUser === CO_ADMIN && (
+                  <a href="/mod" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FF9DC8] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors">🫢 mod</a>
                 )}
                 {topOnlineUser && (
                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
