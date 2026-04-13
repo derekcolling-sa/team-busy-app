@@ -1089,7 +1089,7 @@ export default function Home() {
               })()}
 
               {/* Confetti */}
-              {!confettiOff && (currentHour >= 17 || nowDate.getDay() === 5) && (
+              {!confettiOff && (
                 <div className="fixed inset-0 pointer-events-none z-[50]">
                   {["#FF9DC8","#3D52F0","#e74c3c","#b5f0c8","#FFE234","#FF9DC8","#3D52F0","#a8f5c8","#dbb8ff","#ffb8e0","#FF4444","#000","#FF9DC8","#3D52F0","#b5f0c8","#FFE234","#dbb8ff","#e74c3c","#a8f5c8","#FF9DC8"].map((color, i) => (
                     <div key={i} className="absolute rounded-sm" style={{
