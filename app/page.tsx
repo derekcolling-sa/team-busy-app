@@ -120,6 +120,7 @@ export default function Home() {
   const lastVisibleRef = useRef<number | null>(null);
   const [pokedBy, setPokedBy] = useState<string[]>([]);
   const [ratings, setRatings] = useState<Record<string, Record<string, number>>>({});
+  const [appVibes, setAppVibes] = useState<Record<string, "up" | "down">>({});
   const [buddies, setBuddies] = useState<Record<string, { id: string; hatchedAt: number }>>({});
   const [showHatchModal, setShowHatchModal] = useState(false);
   const [hatchedBuddy, setHatchedBuddy] = useState<Buddy | null>(null);
@@ -187,14 +188,16 @@ export default function Home() {
 
   const fetchSlowData = useCallback(async () => {
     try {
-      const [photosData, buddiesData, ratingsData] = await Promise.all([
+      const [photosData, buddiesData, ratingsData, appVibesData] = await Promise.all([
         fetch("/api/photos").then((r) => r.json()),
         fetch("/api/buddies").then((r) => r.json()),
         fetch("/api/ratings").then((r) => r.json()),
+        fetch("/api/app-vibe").then((r) => r.json()),
       ]);
       setPhotoOverrides(photosData.photos ?? {});
       setBuddies(buddiesData.buddies ?? {});
       setRatings(ratingsData.ratings ?? {});
+      setAppVibes(appVibesData.vibes ?? {});
     } catch {
       // non-critical
     }
@@ -1012,15 +1015,69 @@ export default function Home() {
                 const bg = currentHour >= 17 ? "#FFE234" : "#FF9DC8";
                 const icon = isMorning ? "☕️" : isAfternoon ? "💻" : "🫡";
                 if (!msg) return null;
+
+                const myVote = currentUser && !isGuest ? appVibes[currentUser] : null;
+                const ups = Object.values(appVibes).filter(v => v === "up").length;
+                const downs = Object.values(appVibes).filter(v => v === "down").length;
+
+                const afterUpCopies = ["slay fr fr", "bestie said yes", "understood the assignment", "no notes", "ate and left no crumbs"];
+                const afterDownCopies = ["valid tbh", "the audacity but ok", "we felt that", "ur so real for this", "noted bestie"];
+                const afterCopy = myVote === "up"
+                  ? afterUpCopies[Math.floor(Math.abs(currentUser?.charCodeAt(0) ?? 0) % afterUpCopies.length)]
+                  : myVote === "down"
+                  ? afterDownCopies[Math.floor(Math.abs(currentUser?.charCodeAt(0) ?? 0) % afterDownCopies.length)]
+                  : null;
+
+                const submitVibe = async (vote: "up" | "down") => {
+                  if (!currentUser || isGuest || myVote) return;
+                  setAppVibes(prev => ({ ...prev, [currentUser]: vote }));
+                  await fetch("/api/app-vibe", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user: currentUser, vote }),
+                  });
+                };
+
                 return (
                   <div className="mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative" style={{ background: bg }}>
-                    <div className="relative z-10">
+                    <div className="relative z-10 flex-1 min-w-0">
                       <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{msg.main}</p>
                       <p className="text-sm font-bold text-black/60 mt-1">{msg.sub}</p>
                     </div>
-                    <div className="flex flex-col items-end gap-1 relative z-10 shrink-0">
-                      <span className="text-3xl">{icon}</span>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{msg.tag}</span>
+                    <div className="flex items-center gap-3 relative z-10 shrink-0">
+                      {/* Vibe vote */}
+                      {!isGuest && (
+                        <div className="flex items-center gap-2">
+                          {myVote ? (
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="text-[11px] font-extrabold uppercase tracking-widest text-black/50">{afterCopy}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-black/40">👍 {ups} · 👎 {downs}</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">rate the app</span>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => submitVibe("up")}
+                                  className="text-xl px-2 py-1 rounded-xl border-[2.5px] border-black bg-white/60 hover:bg-white transition-colors shadow-[2px_2px_0_#000] active:translate-y-px cursor-pointer"
+                                  title="it's giving"
+                                >👍</button>
+                                <button
+                                  onClick={() => submitVibe("down")}
+                                  className="text-xl px-2 py-1 rounded-xl border-[2.5px] border-black bg-white/60 hover:bg-white transition-colors shadow-[2px_2px_0_#000] active:translate-y-px cursor-pointer"
+                                  title="not the vibe"
+                                >👎</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-3xl">{icon}</span>
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{msg.tag}</span>
+                      </div>
                     </div>
                   </div>
                 );

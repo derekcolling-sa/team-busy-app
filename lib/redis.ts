@@ -791,6 +791,23 @@ export async function getMoneyRequests(): Promise<TimeOffEntry[]> {
     .sort((a, b) => a.ts - b.ts);
 }
 
+// App vibe votes — stored per day: hash key = "team-busy-app-vibe:{YYYY-MM-DD}", field = user, value = "up" | "down"
+export async function getAppVibes(dateStr: string): Promise<Record<string, "up" | "down">> {
+  const data = await redis.hgetall(`team-busy-app-vibe:${dateStr}`);
+  if (!data) return {};
+  const result: Record<string, "up" | "down"> = {};
+  for (const [user, vote] of Object.entries(data)) {
+    if (vote === "up" || vote === "down") result[user] = vote;
+  }
+  return result;
+}
+
+export async function setAppVibe(user: string, vote: "up" | "down", dateStr: string): Promise<void> {
+  const key = `team-busy-app-vibe:${dateStr}`;
+  await redis.hset(key, { [user]: vote });
+  await redis.expire(key, 60 * 60 * 48); // 48h TTL
+}
+
 const MEDS_KEY = "team-busy-meds";
 
 export async function getAllMeds(): Promise<Record<string, boolean>> {
