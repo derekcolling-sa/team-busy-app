@@ -207,9 +207,12 @@ export default function AdminPage() {
   const [videoSaved, setVideoSaved] = useState<"vibe" | "brainrot" | null>(null);
 
   useEffect(() => {
+    const user = localStorage.getItem("team-busy-user");
+    // Redirect Erin to her own mod page
+    if (user === "Erin") { window.location.href = "/mod"; return; }
     if (sessionStorage.getItem("admin-authed") === "true") setAuthed(true);
     // Auto-auth if logged in as Derek on the main app
-    if (localStorage.getItem("team-busy-user") === "Derek") {
+    if (user === "Derek") {
       sessionStorage.setItem("admin-authed", "true");
       setAuthed(true);
     }
