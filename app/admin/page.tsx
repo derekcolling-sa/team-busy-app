@@ -831,9 +831,9 @@ export default function AdminPage() {
           )}
 
           {/* Two-column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr_320px] gap-6 items-start">
 
-            {/* LEFT COLUMN — Roster + Feedback */}
+            {/* LEFT COLUMN — Roster + Buddies */}
             <div className="flex flex-col gap-5">
 
               {/* Team Roster */}
@@ -1123,6 +1123,11 @@ export default function AdminPage() {
               </div>
               </>}
 
+            </div>
+
+            {/* CENTER COLUMN — Inbox + Actions */}
+            <div className="flex flex-col gap-5">
+
               {/* Shipped Features */}
               <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#39FF14] overflow-hidden">
                 <div className="px-5 pt-4 pb-3 border-b-[3px] border-black/20 flex items-center justify-between">
@@ -1233,9 +1238,8 @@ export default function AdminPage() {
                   </details>
                 )}
               </div>
-            </div>
 
-            {/* Tattle Box */}
+              {/* Tattle Box */}
               <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-white overflow-hidden">
                 <div className="px-5 pt-4 pb-3 border-b-[3px] border-black/10 flex items-center justify-between bg-[#ff4d4d]">
                   <h2 className="text-lg font-extrabold text-white tracking-tight">🫢 Tattle Box</h2>
@@ -1305,7 +1309,9 @@ export default function AdminPage() {
                 </div>
               )}
 
-            {/* RIGHT COLUMN — Summary + History + Danger */}
+            </div>
+
+            {/* RIGHT COLUMN — Stats + Videos */}
             <div className="flex flex-col gap-5">
 
               {/* Team Health Summary */}
