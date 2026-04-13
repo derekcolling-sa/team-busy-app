@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { getBanner, setBanner, setDailyVibe } from "@/lib/redis";
+import { getBanner, setBanner } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -44,13 +44,6 @@ export async function GET(request: Request) {
     });
     await setBanner(bannerText.trim(), date);
   }
-
-  // Generate daily vibe — work encouragement shown in the pink pod all day
-  const { text: vibeText } = await generateText({
-    model: "anthropic/claude-haiku-4.5",
-    prompt: `Write a short Gen Z work encouragement message (max 14 words, no quotes, no hashtags) for a creative agency team. It's ${today}, ${temp}°F and ${condition} outside. Should feel motivating but in a chaotic, unhinged, very online way. Think: "we're built for this bestie" energy but fresh and specific to the day and weather.${meetingNote}`,
-  });
-  await setDailyVibe(vibeText.trim());
 
   return Response.json({ ok: true });
 }
