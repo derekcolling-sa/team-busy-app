@@ -12,6 +12,7 @@ export const MEMBERS = [
 export const WRITERS = ["Kerry", "Erin", "Maddie"];
 export const VP = ["Derek"];
 export const BOSS = "Derek";
+export const CO_ADMIN = "Erin";
 export const BUDDIES_ENABLED = true;
 
 export const SUGGESTIONS: Record<string, string[]> = {

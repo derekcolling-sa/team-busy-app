@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { rollBuddy, type Buddy } from "@/lib/buddies";
-import { MEMBERS, BOSS, BUDDIES_ENABLED, VP, SUGGESTIONS, WRITERS, getStaleness, timeAgo } from "@/app/lib/constants";
+import { MEMBERS, BOSS, CO_ADMIN, BUDDIES_ENABLED, VP, SUGGESTIONS, WRITERS, getStaleness, timeAgo } from "@/app/lib/constants";
 
 // Components
 import MyCard from "@/app/components/MyCard";
@@ -983,7 +983,7 @@ export default function Home() {
                   onClick={() => { const next = !viewAsTeam; setViewAsTeam(next); localStorage.setItem("team-busy-view-as-team", String(next)); }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#39FF14] transition-colors"
                 >👁️ {viewAsTeam ? "edit my card" : "view as team"}</button>
-                {currentUser === BOSS && (
+                {(currentUser === BOSS || currentUser === CO_ADMIN) && (
                   <a href="/admin" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-black text-[11px] font-bold text-white tracking-widest uppercase shadow-[3px_3px_0_#FFE234] cursor-pointer hover:bg-[#FFE234] hover:text-black transition-colors">⚡ admin</a>
                 )}
                 {topOnlineUser && (
