@@ -58,6 +58,8 @@ interface Props {
   uploadingPhoto: boolean;
   handlePhotoUpload: (file: File) => void;
   buddies: Record<string, { id: string }>;
+  hotColdStatuses: Record<string, "hot" | "cold">;
+  toggleHotCold: (name: string, temp: "hot" | "cold" | null) => void;
   toggleOOO: (name: string) => void;
   toggleMeds: (name: string) => void;
   toggleBodyDouble: (name: string) => void;
@@ -82,12 +84,12 @@ interface Props {
 
 export default function MyCard({
   member, statuses, oooStatuses, oooDetails, sosStatuses, metcalfStatuses, needWorkStatuses,
-  dontTalkStatuses, medsStatuses, bodyDoubles, photoOverrides, updatedAt, topOnlineUser,
+  dontTalkStatuses, medsStatuses, bodyDoubles, hotColdStatuses, photoOverrides, updatedAt, topOnlineUser,
   cardFlipped, setCardFlipped, localSlider, setLocalSlider, isDragging, localAdhd,
   setLocalAdhd, isAdhdDragging, editingNote, setEditingNote, adhdLevels, moods, meetings,
   pokes, touchGrass, moneyRequestSent, moneyRequests, currentUser, isGuest, takeover,
   setTakeover, takeoverDraft, setTakeoverDraft, setShowTakeoverCompose, newMessage,
-  setNewMessage, uploadingPhoto, handlePhotoUpload, buddies, toggleOOO, toggleMeds,
+  setNewMessage, uploadingPhoto, handlePhotoUpload, buddies, toggleHotCold, toggleOOO, toggleMeds,
   toggleBodyDouble, toggleNeedWork, toggleDontTalk, toggleMetcalf, toggleSOS,
   handleSliderChange, saveNote, handleAdhdChange, handleMoneyRequest, sendPoke,
   sendTouchGrass, dismissPoke, dismissTouchGrass, postMessage, formatCountdown,
@@ -102,6 +104,7 @@ export default function MyCard({
   const isDontTalk = !!dontTalkStatuses[member.name];
   const isMeds = !!medsStatuses[member.name];
   const isBodyDouble = bodyDoubles.includes(member.name);
+  const hotCold = hotColdStatuses[member.name] ?? null;
 
   return (
     <div
@@ -278,6 +281,18 @@ export default function MyCard({
             >
               🧠 {isBodyDouble ? "body doubling ✓" : "body doubling"}
             </button>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => toggleHotCold(member.name, hotCold === "hot" ? null : "hot")}
+                className={`flex-1 py-2 rounded-xl border-[3px] border-black text-sm font-extrabold cursor-pointer transition-all ${hotCold === "hot" ? "text-white shadow-none" : "bg-white text-black hover:opacity-90 shadow-[3px_3px_0_#000]"}`}
+                style={{ background: hotCold === "hot" ? "#FF4444" : undefined }}
+              >🔥 {hotCold === "hot" ? "running hot ✓" : "running hot"}</button>
+              <button
+                onClick={() => toggleHotCold(member.name, hotCold === "cold" ? null : "cold")}
+                className={`flex-1 py-2 rounded-xl border-[3px] border-black text-sm font-extrabold cursor-pointer transition-all ${hotCold === "cold" ? "shadow-none" : "bg-white text-black hover:opacity-90 shadow-[3px_3px_0_#000]"}`}
+                style={{ background: hotCold === "cold" ? "#b8e0ff" : undefined }}
+              >🧊 {hotCold === "cold" ? "ice cold ✓" : "ice cold"}</button>
+            </div>
           </>
         )}
         {isMetcalf && member.name !== currentUser && (

@@ -73,6 +73,7 @@ export default function Home() {
   const [needWorkStatuses, setNeedWorkStatuses] = useState<Record<string, boolean>>({});
   const [dontTalkStatuses, setDontTalkStatuses] = useState<Record<string, boolean>>({});
   const [medsStatuses, setMedsStatuses] = useState<Record<string, boolean>>({});
+  const [hotColdStatuses, setHotColdStatuses] = useState<Record<string, "hot" | "cold">>({});
   const [bodyDoubles, setBodyDoubles] = useState<string[]>([]);
   const [cardFlipped, setCardFlipped] = useState(false);
   const [bossReactions, setBossReactions] = useState<Record<string, "heart" | "thumbsdown">>({});
@@ -170,6 +171,7 @@ export default function Home() {
       setNeedWorkStatuses(poll.needWork ?? {});
       setDontTalkStatuses(poll.dontTalk ?? {});
       setMedsStatuses(poll.meds ?? {});
+      setHotColdStatuses(poll.hotCold ?? {});
       setBodyDoubles(poll.bodyDouble ?? []);
       setSessionTimes(poll.sessionTime ?? {});
       if (!isAdhdDragging.current) setAdhdLevels(poll.adhd ?? {});
@@ -502,6 +504,19 @@ export default function Home() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, active: newVal }),
+    });
+  };
+
+  const toggleHotCold = async (name: string, temp: "hot" | "cold" | null) => {
+    setHotColdStatuses((prev) => {
+      const next = { ...prev };
+      if (temp === null) delete next[name]; else next[name] = temp;
+      return next;
+    });
+    await fetch("/api/status/temp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, temp }),
     });
   };
 
@@ -1161,6 +1176,7 @@ export default function Home() {
                       toggleOOO={toggleOOO} toggleMeds={toggleMeds} toggleBodyDouble={toggleBodyDouble}
                       toggleNeedWork={toggleNeedWork} toggleDontTalk={toggleDontTalk}
                       toggleMetcalf={toggleMetcalf} toggleSOS={toggleSOS}
+                      hotColdStatuses={hotColdStatuses} toggleHotCold={toggleHotCold}
                       handleSliderChange={handleSliderChange} saveNote={saveNote}
                       handleAdhdChange={handleAdhdChange} handleMoneyRequest={handleMoneyRequest}
                       sendPoke={sendPoke} sendTouchGrass={sendTouchGrass}
@@ -1186,6 +1202,7 @@ export default function Home() {
                         moods={moods} adhdLevels={adhdLevels} meetings={meetings}
                         pokes={pokes} touchGrass={touchGrass}
                         bans={bans} floatingReactions={floatingReactions}
+                        hotColdStatuses={hotColdStatuses}
                         buddies={buddies} statusNotes={statusNotes}
                         sendReaction={sendReaction} sendPoke={sendPoke} sendTouchGrass={sendTouchGrass}
                         setShowDisputeModal={setShowDisputeModal}

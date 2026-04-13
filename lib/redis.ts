@@ -791,6 +791,26 @@ export async function getMoneyRequests(): Promise<TimeOffEntry[]> {
     .sort((a, b) => a.ts - b.ts);
 }
 
+const HOT_COLD_KEY = "team-busy-hot-cold";
+
+export async function getAllHotCold(): Promise<Record<string, "hot" | "cold">> {
+  const data = await redis.hgetall(HOT_COLD_KEY);
+  if (!data) return {};
+  const result: Record<string, "hot" | "cold"> = {};
+  for (const [name, val] of Object.entries(data)) {
+    if (val === "hot" || val === "cold") result[name] = val;
+  }
+  return result;
+}
+
+export async function setMemberHotCold(name: string, temp: "hot" | "cold" | null): Promise<void> {
+  if (temp === null) {
+    await redis.hdel(HOT_COLD_KEY, name);
+  } else {
+    await redis.hset(HOT_COLD_KEY, { [name]: temp });
+  }
+}
+
 // App vibe votes — stored per day: hash key = "team-busy-app-vibe:{YYYY-MM-DD}", field = user, value = "up" | "down"
 export async function getAppVibes(dateStr: string): Promise<Record<string, "up" | "down">> {
   const data = await redis.hgetall(`team-busy-app-vibe:${dateStr}`);

@@ -31,6 +31,7 @@ const HASH_KEYS = [
   { key: "team-busy-moods",           field: "moods" },
   { key: "team-busy-bans",            field: "bans" },
   { key: "team-busy-meds",            field: "meds" },
+  { key: "team-busy-hot-cold",        field: "hotCold" },
 ] as const;
 
 // ── String keys to fetch via mget ───────────────────────────────────────────

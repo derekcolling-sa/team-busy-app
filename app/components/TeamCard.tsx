@@ -42,6 +42,7 @@ interface Props {
   touchGrass: Poke[];
   bans: Record<string, string>;
   floatingReactions: FloatingReaction[];
+  hotColdStatuses: Record<string, "hot" | "cold">;
   buddies: Record<string, { id: string }>;
   statusNotes: Record<string, string>;
   sendReaction: (name: string, emoji: string) => void;
@@ -57,7 +58,7 @@ export default function TeamCard({
   member, i, statuses, oooStatuses, sosStatuses, metcalfStatuses, needWorkStatuses,
   dontTalkStatuses, medsStatuses, bodyDoubles, photoOverrides, updatedAt, currentUser,
   isGuest, moods, adhdLevels, meetings, pokes, touchGrass, bans, floatingReactions,
-  buddies, statusNotes, sendReaction, sendPoke, sendTouchGrass, setShowDisputeModal,
+  hotColdStatuses, buddies, statusNotes, sendReaction, sendPoke, sendTouchGrass, setShowDisputeModal,
   setDisputeSent, setDisputeText, formatCountdown,
 }: Props) {
   const value = statuses[member.name] ?? 50;
@@ -70,6 +71,7 @@ export default function TeamCard({
   const isMeds = !!medsStatuses[member.name];
   const isBodyDouble = bodyDoubles.includes(member.name);
   const isBanned = !!bans[member.name];
+  const hotCold = hotColdStatuses[member.name] ?? null;
 
   if (isBanned) {
     return (
@@ -240,6 +242,15 @@ export default function TeamCard({
           <div className="w-full rounded-xl bg-[#dbb8ff] border-[2px] border-black px-4 py-2 flex items-center gap-2 shadow-[2px_2px_0_#000]">
             <span className="text-base">🧠</span>
             <p className="text-xs font-bold text-black">body doubling</p>
+          </div>
+        )}
+        {hotCold && (
+          <div
+            className="w-full rounded-xl border-[2px] border-black px-4 py-2 flex items-center gap-2 shadow-[2px_2px_0_#000]"
+            style={{ background: hotCold === "hot" ? "#FF4444" : "#b8e0ff" }}
+          >
+            <span className="text-base">{hotCold === "hot" ? "🔥" : "🧊"}</span>
+            <p className="text-xs font-extrabold text-black uppercase tracking-widest">{hotCold === "hot" ? "running hot" : "ice cold"}</p>
           </div>
         )}
         {!isDontTalk && currentUser && currentUser !== member.name && !isGuest && (
