@@ -2,8 +2,9 @@ import {
   clearAllGoHome, clearAllPokes, clearBanner, clearAllBossReactions,
   clearAllTouchGrass, clearAllDontTalk, clearAllNeedWork, clearAllMetcalf,
   clearAllSessionTime, clearAllLastSeen, clearAllMoneyRequests,
-  clearTakeover, clearAllSOS, clearAllAdhd, clearAllMessages,
-  setMemberStatus,
+  clearTakeover, clearAllSOS, clearAllMessages,
+  clearAllStatusNotes, clearAllMoods, clearAllBodyDouble, clearAllMeds,
+  setMemberStatus, setMemberAdhd,
 } from "@/lib/redis";
 import { MEMBERS } from "@/app/lib/constants";
 
@@ -14,8 +15,12 @@ export async function GET(request: Request) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  // Reset all member statuses to 50 (Chillin')
-  await Promise.all(MEMBERS.map((m) => setMemberStatus(m.name, 50)));
+
+  // Fresh day: reset every member to Chillin' + ADHD to "locked tf in" (0)
+  await Promise.all(MEMBERS.flatMap((m) => [
+    setMemberStatus(m.name, 50),
+    setMemberAdhd(m.name, 0),
+  ]));
 
   await Promise.all([
     clearAllGoHome(),
@@ -31,8 +36,11 @@ export async function GET(request: Request) {
     clearAllMoneyRequests(),
     clearTakeover(),
     clearAllSOS(),
-    clearAllAdhd(),
     clearAllMessages(),
+    clearAllStatusNotes(),
+    clearAllMoods(),
+    clearAllBodyDouble(),
+    clearAllMeds(),
   ]);
   return Response.json({ ok: true });
 }

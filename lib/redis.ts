@@ -806,3 +806,6 @@ export async function clearAllSOS(): Promise<void> { await redis.del(SOS_KEY); }
 export async function clearAllAdhd(): Promise<void> { await redis.del(ADHD_KEY); }
 export async function clearAllMessages(): Promise<void> { await redis.del(MESSAGES_KEY); }
 export async function clearAllStatus(): Promise<void> { await redis.del(REDIS_KEY); }
+export async function clearAllStatusNotes(): Promise<void> { await redis.del(STATUS_NOTES_KEY); }
+export async function clearAllMoods(): Promise<void> { await redis.del(MOOD_KEY); }
+export async function clearAllBodyDouble(): Promise<void> { await redis.del(BODY_DOUBLE_KEY); }
