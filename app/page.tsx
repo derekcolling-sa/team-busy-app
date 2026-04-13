@@ -1039,46 +1039,43 @@ export default function Home() {
                 };
 
                 return (
-                  <div className="mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative" style={{ background: bg }}>
-                    <div className="relative z-10 flex-1 min-w-0">
-                      <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{msg.main}</p>
-                      <p className="text-sm font-bold text-black/60 mt-1">{msg.sub}</p>
-                    </div>
-                    <div className="flex items-center gap-3 relative z-10 shrink-0">
-                      {/* Vibe vote */}
-                      {!isGuest && (
-                        <div className="flex items-center gap-2">
-                          {myVote ? (
-                            <div className="flex flex-col items-end gap-0.5">
-                              <span className="text-[11px] font-extrabold uppercase tracking-widest text-black/50">{afterCopy}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-black/40">👍 {ups} · 👎 {downs}</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-end gap-1">
-                              <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">rate the app</span>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => submitVibe("up")}
-                                  className="text-xl px-2 py-1 rounded-xl border-[2.5px] border-black bg-white/60 hover:bg-white transition-colors shadow-[2px_2px_0_#000] active:translate-y-px cursor-pointer"
-                                  title="it's giving"
-                                >👍</button>
-                                <button
-                                  onClick={() => submitVibe("down")}
-                                  className="text-xl px-2 py-1 rounded-xl border-[2.5px] border-black bg-white/60 hover:bg-white transition-colors shadow-[2px_2px_0_#000] active:translate-y-px cursor-pointer"
-                                  title="not the vibe"
-                                >👎</button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <div className="flex flex-col items-end gap-1">
+                  <div className="mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] overflow-hidden" style={{ background: bg }}>
+                    {/* Message row */}
+                    <div className="px-6 py-5 flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{msg.main}</p>
+                        <p className="text-sm font-bold text-black/60 mt-1">{msg.sub}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className="text-3xl">{icon}</span>
                         <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{msg.tag}</span>
                       </div>
                     </div>
+                    {/* Vote strip */}
+                    {!isGuest && (
+                      <div className="border-t-[3px] border-black px-5 py-3 flex items-center gap-3" style={{ background: "rgba(0,0,0,0.10)" }}>
+                        {myVote ? (
+                          <>
+                            <span className="text-xl">{myVote === "up" ? "👍" : "👎"}</span>
+                            <span className="font-extrabold text-sm uppercase tracking-widest text-black">{afterCopy}</span>
+                            <span className="ml-auto text-xs font-bold text-black/50 tabular-nums">👍 {ups} &nbsp;·&nbsp; 👎 {downs}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/50 shrink-0">rate the app</span>
+                            <button
+                              onClick={() => submitVibe("up")}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white font-extrabold text-sm uppercase tracking-wide shadow-[3px_3px_0_#000] hover:translate-y-px hover:shadow-[2px_2px_0_#000] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
+                            >👍 it&apos;s giving</button>
+                            <button
+                              onClick={() => submitVibe("down")}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white font-extrabold text-sm uppercase tracking-wide shadow-[3px_3px_0_#000] hover:translate-y-px hover:shadow-[2px_2px_0_#000] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
+                            >👎 not it</button>
+                            {(ups + downs) > 0 && <span className="ml-auto text-xs font-bold text-black/40 tabular-nums shrink-0">👍 {ups} &nbsp;·&nbsp; 👎 {downs}</span>}
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
