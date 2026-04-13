@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { EMOJIS, LABELS, ADHD_LABELS, ADHD_COLORS, TRACK_COLORS, BUDDIES_ENABLED, getStaleness, getLevel, getAdhdLevel, timeAgo } from "@/app/lib/constants";
+import { EMOJIS, LABELS, ADHD_LABELS, ADHD_COLORS, TRACK_COLORS, BUDDIES_ENABLED, getLevel, getAdhdLevel, timeAgo } from "@/app/lib/constants";
 import BuddyBadge from "@/app/components/BuddyBadge";
 
 interface Member {
@@ -117,10 +117,6 @@ export default function TeamCard({
           <span className="float-reaction text-5xl">{r.emoji}</span>
         </div>
       ))}
-      {/* Staleness gradient */}
-      {!isOOO && (() => { const t = getStaleness(updatedAt[member.name]); return t > 0 ? (
-        <div className="absolute inset-x-0 bottom-0 pointer-events-none" style={{ height: "70%", background: `linear-gradient(to top, rgba(140,90,30,${0.3 + t * 0.6}) 0%, transparent 100%)`, zIndex: 0 }} />
-      ) : null; })()}
       {isOOO && (
         <>
           <div className="absolute inset-0 flex items-start justify-center pointer-events-none z-10" style={{ paddingTop: "18px" }}>

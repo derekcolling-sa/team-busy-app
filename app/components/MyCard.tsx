@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import { EMOJIS, LABELS, ADHD_LABELS, ADHD_COLORS, MOODS, BOSS, BUDDIES_ENABLED, getStaleness, getLevel, getAdhdLevel, getTrackStyle, timeAgo } from "@/app/lib/constants";
+import { EMOJIS, LABELS, ADHD_LABELS, ADHD_COLORS, MOODS, BOSS, BUDDIES_ENABLED, getLevel, getAdhdLevel, getTrackStyle, timeAgo } from "@/app/lib/constants";
 import BuddyBadge from "@/app/components/BuddyBadge";
 
 interface Member {
@@ -113,10 +113,6 @@ export default function MyCard({
       }`}
       style={{ background: "#ffffff", position: "relative", overflow: "hidden", transform: cardFlipped ? "rotate(180deg)" : undefined, transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}
     >
-      {/* Staleness gradient */}
-      {!isOOO && (() => { const t = getStaleness(updatedAt[member.name]); return t > 0 ? (
-        <div className="absolute inset-x-0 bottom-0 pointer-events-none" style={{ height: "70%", background: `linear-gradient(to top, rgba(140,90,30,${0.3 + t * 0.6}) 0%, transparent 100%)`, zIndex: 0 }} />
-      ) : null; })()}
       {/* Stop clicks on interactive content from flipping the card */}
       <div onClick={(e) => e.stopPropagation()}>
         {/* Avatar + name row */}
