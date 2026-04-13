@@ -1053,12 +1053,15 @@ export default function Home() {
                     </div>
                     {/* Vote strip */}
                     {!isGuest && (
-                      <div className="border-t-[3px] border-black px-5 py-3 flex items-center gap-3" style={{ background: "rgba(0,0,0,0.10)" }}>
+                      <div className="border-t-[3px] border-black px-5 py-3 flex items-center gap-3" style={{ background: "rgba(0,0,0,0.12)" }}>
                         {myVote ? (
                           <>
-                            <span className="text-xl">{myVote === "up" ? "👍" : "👎"}</span>
-                            <span className="font-extrabold text-sm uppercase tracking-widest text-black">{afterCopy}</span>
-                            <span className="ml-auto text-xs font-bold text-black/50 tabular-nums">👍 {ups} &nbsp;·&nbsp; 👎 {downs}</span>
+                            <span className="text-2xl">{myVote === "up" ? "👍" : "👎"}</span>
+                            <span className="font-extrabold text-base uppercase tracking-widest text-black">{afterCopy}</span>
+                            <div className="ml-auto flex items-center gap-2 shrink-0">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border-[2.5px] border-black bg-white font-extrabold text-sm shadow-[2px_2px_0_#000] tabular-nums">👍 {ups}</span>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border-[2.5px] border-black bg-white font-extrabold text-sm shadow-[2px_2px_0_#000] tabular-nums">👎 {downs}</span>
+                            </div>
                           </>
                         ) : (
                           <>
@@ -1071,7 +1074,12 @@ export default function Home() {
                               onClick={() => submitVibe("down")}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white font-extrabold text-sm uppercase tracking-wide shadow-[3px_3px_0_#000] hover:translate-y-px hover:shadow-[2px_2px_0_#000] active:translate-y-[2px] active:shadow-none transition-all cursor-pointer"
                             >👎 not it</button>
-                            {(ups + downs) > 0 && <span className="ml-auto text-xs font-bold text-black/40 tabular-nums shrink-0">👍 {ups} &nbsp;·&nbsp; 👎 {downs}</span>}
+                            {(ups + downs) > 0 && (
+                              <div className="ml-auto flex items-center gap-2 shrink-0">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border-[2.5px] border-black bg-white font-extrabold text-sm shadow-[2px_2px_0_#000] tabular-nums">👍 {ups}</span>
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border-[2.5px] border-black bg-white font-extrabold text-sm shadow-[2px_2px_0_#000] tabular-nums">👎 {downs}</span>
+                              </div>
+                            )}
                           </>
                         )}
                       </div>
