@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import { EMOJIS, LABELS, ADHD_LABELS, ADHD_COLORS, MOODS, BOSS, BUDDIES_ENABLED, getLevel, getAdhdLevel, getTrackStyle, timeAgo } from "@/app/lib/constants";
+import { EMOJIS, LABELS, ADHD_LABELS, ADHD_COLORS, MOODS, BOSS, CO_ADMIN, BUDDIES_ENABLED, getLevel, getAdhdLevel, getTrackStyle, timeAgo } from "@/app/lib/constants";
 import BuddyBadge from "@/app/components/BuddyBadge";
 
 interface Member {
@@ -344,7 +344,7 @@ export default function MyCard({
             >{meetings[currentUser] ? `📅 ${formatCountdown(meetings[currentUser])}` : "📅 in a meeting"}</button>
           </div>
         )}
-        {currentUser === BOSS && (
+        {(currentUser === BOSS || currentUser === CO_ADMIN) && (
           <div className="mt-2 flex gap-2">
             <button
               onClick={() => { setTakeoverDraft(takeover ?? ""); setShowTakeoverCompose(true); }}
