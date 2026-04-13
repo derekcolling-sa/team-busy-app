@@ -145,12 +145,6 @@ export default function MyCard({
             {updatedAt[member.name] && (
               <>
                 <p className="text-[11px] text-[#7a6f64] font-semibold mt-0.5 italic">{timeAgo(updatedAt[member.name])}</p>
-                {!isOOO && updatedAt[member.name] && (Date.now() - updatedAt[member.name]) > 48 * 60 * 60 * 1000 && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="text-3xl leading-none">💩</span>
-                    <span className="fly-buzz text-xl">🪰</span>
-                  </div>
-                )}
               </>
             )}
           </div>

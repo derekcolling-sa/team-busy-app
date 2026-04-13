@@ -156,12 +156,6 @@ export default function TeamCard({
             {updatedAt[member.name] && (
               <>
                 <p className="text-[12px] text-black font-mono mt-0.5">{timeAgo(updatedAt[member.name])}</p>
-                {!isOOO && getStaleness(updatedAt[member.name]) > 0 && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="text-3xl leading-none">💩</span>
-                    <span className="fly-buzz text-xl">🪰</span>
-                  </div>
-                )}
               </>
             )}
           </div>
