@@ -39,9 +39,12 @@ export async function GET(request: Request) {
     return Response.json({ ok: true, skipped: true, message: existing.message });
   }
 
+  const isMonday = new Date().getDay() === 1;
+  const meetingNote = isMonday ? " It's Monday so there's a company meeting this morning — work that in." : "";
+
   const { text } = await generateText({
     model: "anthropic/claude-haiku-4.5",
-    prompt: `Write a single short Gen Z banner message (max 12 words, no quotes, no hashtags) for a team dashboard. It's ${today}, ${temp}°F and ${condition} in Overland Park KS. Make it fun, relatable, a little chaotic. Reference the day and weather naturally.`,
+    prompt: `Write a single short Gen Z banner message (max 12 words, no quotes, no hashtags) for a team dashboard. It's ${today}, ${temp}°F and ${condition} in Overland Park KS. Make it fun, relatable, a little chaotic. Reference the day and weather naturally.${meetingNote}`,
   });
 
   const message = text.trim();

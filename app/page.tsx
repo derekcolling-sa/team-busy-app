@@ -2,111 +2,26 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
-import { rollBuddy, getBuddyById, getBuddyImagePath, RARITY_STYLES, type Buddy } from "@/lib/buddies";
+import { rollBuddy, type Buddy } from "@/lib/buddies";
+import { MEMBERS, BOSS, BUDDIES_ENABLED, VP, SUGGESTIONS, WRITERS, getStaleness, timeAgo } from "@/app/lib/constants";
 
-const MEMBERS = [
-  { name: "Brendan", photo: "/photos/Brendan.jpg" },
-  { name: "Callie", photo: "/photos/Callie.jpg" },
-  { name: "Chris", photo: "/photos/Chris.jpg" },
-  { name: "Derek", photo: "/photos/Derek.jpeg" },
-  { name: "Erin", photo: "/photos/Erin.jpg" },
-  { name: "KC", photo: "/photos/KC.jpeg" },
-  { name: "Kerry", photo: "/photos/Kerry.jpg" },
-  { name: "Maddie", photo: "/photos/Maddie.jpg" },
-];
+// Components
+import MyCard from "@/app/components/MyCard";
+import TeamCard from "@/app/components/TeamCard";
+import BossCard from "@/app/components/BossCard";
+import VibeMusic from "@/app/components/VibeMusic";
+import FeatureUpdates from "@/app/components/FeatureUpdates";
+import GoHomeRequests from "@/app/components/GoHomeRequests";
+import TextSubmitModal from "@/app/components/modals/TextSubmitModal";
+import GhostModal from "@/app/components/modals/GhostModal";
+import HatchModal from "@/app/components/modals/HatchModal";
+import MeetingPickerModal from "@/app/components/modals/MeetingPickerModal";
+import TakeoverModal from "@/app/components/modals/TakeoverModal";
+import DisputeModal from "@/app/components/modals/DisputeModal";
+import IdentityPicker from "@/app/components/modals/IdentityPicker";
+import BrainRotOverlay from "@/app/components/modals/BrainRotOverlay";
 
-const WRITERS = ["Kerry", "Erin", "Maddie"];
-const VP = ["Derek"];
-const BOSS = "Derek";
-
-const SUGGESTIONS: Record<string, string[]> = {
-  writer: [
-    "the brief said 'fun and irreverent.' the client meant 'safe and beige.' mid.",
-    "on my third rewrite. the first one slayed. they just couldn't see it.",
-    "if someone says 'make it punchy' one more time I'm submitting blank copy. no chill.",
-    "concept sold. now to actually write the thing. bet.",
-    "in a words hole. the vibes are bad. send help.",
-    "headlines: still making them up. it's giving chaos.",
-    "the copy is fire. now I just have to convince everyone else of that.",
-    "writing my way out of a brief with zero actual direction. it's giving improv.",
-  ],
-  artDirector: [
-    "the font is fine. the font has always been fine. it's giving slay.",
-    "making it 'more premium' for the 4th time today. the vibe keeps shifting.",
-    "moving boxes around until it looks like art. mood.",
-    "logo bigger. got it. 🙄 the client is extra today.",
-    "yes I will make it pop. no I will not explain what that means. bet.",
-    "in InDesign. the layout is fire. please do not disturb.",
-    "on my 6th version. client picks the first one. we all stan this outcome.",
-    "it's always the kerning. always.",
-  ],
-  vp: [
-    "on a call I could have been an email. no cap.",
-    "reviewing 12 concepts. one of them is actually fire.",
-    "saying 'great question' a lot today. it's a whole vibe.",
-    "the brief has changed. again. we flex and we adapt.",
-    "building decks. this is fine. everything is fine. bet.",
-    "managing up. it's a lifestyle and I'm slaying it.",
-    "holding the vision. and everyone's calendar. GOAT behavior.",
-    "my feedback on your feedback: let's discuss. it's giving layers.",
-  ],
-};
-
-
-const LABELS = ["Chillin'", "Sautéed", "Cooking", "Cooked"];
-const EMOJIS = ["😎", "🍳", "🔥", "💀"];
-const CARD_BGS = ["#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff"];
-const TRACK_COLORS = ["#5cb85c", "#4a9eff", "#f5a623", "#e8742d"];
-const ADHD_LABELS = ["locked tf in", "lowkey glazed", "brainrot szn", "absolutely feral"];
-const ADHD_EMOJIS = ["🧠", "😵‍💫", "📱", "🐿️"];
-const ADHD_COLORS = ["#a8f5c8", "#b8d4ff", "#dbb8ff", "#ffb8e0"];
-
-function timeAgo(ts: number): string {
-  const seconds = Math.floor((Date.now() - ts) / 1000);
-  if (seconds < 60) return "literally just now 👀";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes === 1) return "like a min ago";
-  if (minutes < 5) return `${minutes} mins ago no cap`;
-  if (minutes < 60) return `${minutes} mins ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours === 1) return "an hour ago bestie";
-  if (hours < 24) return `${hours}h ago (oof)`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return "yesterday… we not gonna talk about it";
-  return `${days} days ago 💀`;
-}
-
-const BUDDIES_ENABLED = true;
-
-// Returns 0–1 staleness: 0 = fresh, 1 = fully stale (16h → 48h)
-function getStaleness(ts: number | undefined): number {
-  if (!ts) return 0;
-  const hours = (Date.now() - ts) / (1000 * 60 * 60);
-  if (hours < 16) return 0;
-  return Math.min((hours - 16) / 32, 1);
-}
-
-function getLevel(val: number) {
-  if (val <= 20) return 0;
-  if (val <= 50) return 1;
-  if (val <= 77) return 2;
-  return 3;
-}
-
-function getAdhdLevel(val: number) {
-  if (val <= 25) return 0;
-  if (val <= 50) return 1;
-  if (val <= 75) return 2;
-  return 3;
-}
-
-function getTrackStyle(value: number, level: number) {
-  return {
-    background: `linear-gradient(to right, ${TRACK_COLORS[level]} ${value}%, #d9d4cc ${value}%)`,
-  };
-}
-
-function TickerItem({ msg }: { msg: { name: string; message: string }; photo: string }) {
+function TickerItem({ msg }: { msg: { name: string; message: string } }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0 12px", flexShrink: 0, whiteSpace: "nowrap" }}>
       <span style={{ fontSize: "18px", fontWeight: 800, color: "#000", fontFamily: "var(--font-display)" }}>{msg.name}</span>
@@ -140,12 +55,8 @@ export default function Home() {
   const [brainRotVideoId, setBrainRotVideoId] = useState("xxfeav5MlmI");
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [banner, setBanner] = useState<{ message: string; type: string } | null>(null);
-
   const [messages, setMessages] = useState<{ name: string; message: string; ts: number }[]>([]);
   const [shippedFeatures, setShippedFeatures] = useState<{ name: string; message: string; ts: number; shippedAt: number; status?: "shipped" | "done" | "dumb" | "soon" }[]>([]);
-  const [featureUpdatesOpen, setFeatureUpdatesOpen] = useState(true);
-  const [featureUpdatesPage, setFeatureUpdatesPage] = useState(0);
-  const [goHomeExpanded, setGoHomeExpanded] = useState(true);
   const [tickerCopies, setTickerCopies] = useState(0);
   const [tickerTextWidth, setTickerTextWidth] = useState(0);
   const tickerTextRef = useRef<HTMLDivElement>(null);
@@ -181,7 +92,6 @@ export default function Home() {
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const adhdDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const sortTimerRef = useRef<NodeJS.Timeout | null>(null);
-
   const [goHomeRequested, setGoHomeRequested] = useState(false);
   const goHomeLock = useRef(false);
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number; count: number }[]>([]);
@@ -214,8 +124,6 @@ export default function Home() {
   const [showHatchModal, setShowHatchModal] = useState(false);
   const [hatchedBuddy, setHatchedBuddy] = useState<Buddy | null>(null);
   const [hatchPhase, setHatchPhase] = useState<"egg" | "cracking" | "reveal">("egg");
-  const [vibeMuted, setVibeMuted] = useState(true);
-  const vibeIframeRef = useRef<HTMLIFrameElement>(null);
   const [newMessage, setNewMessage] = useState<Record<string, string>>({});
   const [weatherEmoji, setWeatherEmoji] = useState<string | null>(null);
 
@@ -277,7 +185,6 @@ export default function Home() {
     }
   }, []);
 
-  // Slow data — photos, buddies, ratings change rarely; fetch once on mount
   const fetchSlowData = useCallback(async () => {
     try {
       const [photosData, buddiesData, ratingsData] = await Promise.all([
@@ -307,7 +214,6 @@ export default function Home() {
     };
   }, [fetchData, fetchSlowData]);
 
-  // Session time tracking — accumulate visible time and flush every 30s
   useEffect(() => {
     if (!currentUser) return;
     const flush = () => {
@@ -357,7 +263,6 @@ export default function Home() {
     };
   }, [currentUser]);
 
-  // Auto-reload when a new version is deployed
   useEffect(() => {
     let currentBuildId: string | null = null;
     const checkVersion = async () => {
@@ -376,7 +281,6 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-show hatch modal for users who haven't hatched yet
   useEffect(() => {
     if (!BUDDIES_ENABLED) return;
     if (loaded && currentUser && currentUser !== "__guest__" && Object.keys(buddies).length > 0 && !buddies[currentUser] && !showHatchModal) {
@@ -386,7 +290,6 @@ export default function Home() {
     }
   }, [loaded, currentUser, buddies, showHatchModal]);
 
-  // Sort: OOO members go to the back
   useEffect(() => {
     if (sortTimerRef.current) clearTimeout(sortTimerRef.current);
     sortTimerRef.current = setTimeout(() => {
@@ -402,7 +305,6 @@ export default function Home() {
     return () => { if (sortTimerRef.current) clearTimeout(sortTimerRef.current); };
   }, [oooStatuses]);
 
-  // Measure ticker text width and calculate copies needed to fill viewport
   useEffect(() => {
     if (!messages.length && !banner) return;
     let attempts = 0;
@@ -412,7 +314,7 @@ export default function Home() {
       const tw = tickerTextRef.current.offsetWidth;
       if (!tw && attempts < 5) {
         attempts++;
-        t = setTimeout(calculate, 100 * attempts); // retry with backoff
+        t = setTimeout(calculate, 100 * attempts);
         return;
       }
       if (!tw) return;
@@ -424,7 +326,6 @@ export default function Home() {
     return () => { clearTimeout(t); window.removeEventListener("resize", calculate); };
   }, [messages, banner]);
 
-  // Measure urgent ticker
   useEffect(() => {
     if (!broadcast) return;
     const calculate = () => {
@@ -459,13 +360,11 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  // Tick every second to keep meeting countdowns live
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Cleanup floating reaction timers on unmount
   useEffect(() => {
     const timers = reactionTimers.current;
     return () => { timers.forEach(clearTimeout); };
@@ -531,7 +430,7 @@ export default function Home() {
     setBossReactions((prev) => {
       const updated = { ...prev };
       if (next === null) delete updated[currentUser];
-      else updated[currentUser] = next;
+      else updated[currentUser] = next as "heart" | "thumbsdown";
       return updated;
     });
     await fetch("/api/boss-reactions", {
@@ -556,7 +455,7 @@ export default function Home() {
   const toggleNeedWork = async (name: string) => {
     const newVal = !needWorkStatuses[name];
     setNeedWorkStatuses((prev) => ({ ...prev, [name]: newVal }));
-    await fetch("/api/status/need-work", {
+    await fetch("/api/status/toggle/need-work", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, active: newVal }),
@@ -566,7 +465,7 @@ export default function Home() {
   const toggleMetcalf = async (name: string) => {
     const newVal = !metcalfStatuses[name];
     setMetcalfStatuses((prev) => ({ ...prev, [name]: newVal }));
-    await fetch("/api/status/metcalf", {
+    await fetch("/api/status/toggle/metcalf", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, active: newVal }),
@@ -576,7 +475,7 @@ export default function Home() {
   const toggleDontTalk = async (name: string) => {
     const newVal = !dontTalkStatuses[name];
     setDontTalkStatuses((prev) => ({ ...prev, [name]: newVal }));
-    await fetch("/api/status/dont-talk", {
+    await fetch("/api/status/toggle/dont-talk", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, active: newVal }),
@@ -586,7 +485,7 @@ export default function Home() {
   const toggleBodyDouble = async (name: string) => {
     const newVal = !bodyDoubles.includes(name);
     setBodyDoubles((prev) => newVal ? [...prev, name] : prev.filter((n) => n !== name));
-    await fetch("/api/body-double", {
+    await fetch("/api/status/toggle/body-double", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, active: newVal }),
@@ -596,7 +495,7 @@ export default function Home() {
   const toggleMeds = async (name: string) => {
     const newVal = !medsStatuses[name];
     setMedsStatuses((prev) => ({ ...prev, [name]: newVal }));
-    await fetch("/api/status/meds", {
+    await fetch("/api/status/toggle/meds", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, active: newVal }),
@@ -606,17 +505,11 @@ export default function Home() {
   const toggleSOS = async (name: string) => {
     const newVal = !sosStatuses[name];
     setSosStatuses((prev) => ({ ...prev, [name]: newVal }));
-    await fetch("/api/status/sos", {
+    await fetch("/api/status/toggle/sos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, sos: newVal }),
     });
-  };
-
-  const handleHatch = () => {
-    setHatchPhase("egg");
-    setHatchedBuddy(null);
-    setShowHatchModal(true);
   };
 
   const crackEgg = () => {
@@ -639,7 +532,6 @@ export default function Home() {
     });
   };
 
-
   const rateUser = async (ratee: string, stars: number) => {
     if (!currentUser || currentUser === ratee) return;
     setRatings((prev) => ({
@@ -656,7 +548,7 @@ export default function Home() {
   const sendPoke = async (to: string) => {
     if (!currentUser || currentUser === to) return;
     setPokes((prev) => [...prev.filter((p) => !(p.from === currentUser && p.to === to)), { from: currentUser, to, ts: Date.now() }]);
-    await fetch("/api/poke", {
+    await fetch("/api/nudge/poke", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ from: currentUser, to }),
@@ -666,7 +558,7 @@ export default function Home() {
   const sendTouchGrass = async (to: string) => {
     if (!currentUser || currentUser === to) return;
     setTouchGrass((prev) => [...prev.filter((p) => !(p.from === currentUser && p.to === to)), { from: currentUser, to, ts: Date.now() }]);
-    await fetch("/api/touch-grass", {
+    await fetch("/api/nudge/touch-grass", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ from: currentUser, to }),
@@ -676,7 +568,7 @@ export default function Home() {
   const dismissTouchGrass = async (from: string) => {
     if (!currentUser) return;
     setTouchGrass((prev) => prev.filter((p) => !(p.to === currentUser && p.from === from)));
-    await fetch("/api/touch-grass", {
+    await fetch("/api/nudge/touch-grass", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ from, to: currentUser }),
@@ -686,7 +578,7 @@ export default function Home() {
   const dismissPoke = async (from: string) => {
     if (!currentUser) return;
     setPokes((prev) => prev.filter((p) => !(p.to === currentUser && p.from === from)));
-    await fetch("/api/poke", {
+    await fetch("/api/nudge/poke", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ from, to: currentUser }),
@@ -745,13 +637,6 @@ export default function Home() {
     });
   };
 
-  const getSuggestions = (): string[] => {
-    if (!currentUser) return [];
-    if (WRITERS.includes(currentUser)) return SUGGESTIONS.writer;
-    if (VP.includes(currentUser)) return SUGGESTIONS.vp;
-    return SUGGESTIONS.artDirector;
-  };
-
   const postMessage = async (about: string) => {
     const msg = (newMessage[about] ?? "").trim();
     if (!msg || !currentUser || currentUser === "__guest__") return;
@@ -767,7 +652,7 @@ export default function Home() {
     if (!currentUser || timeOffSent) return;
     setTimeOffSent(true);
     setTimeOffRequests((prev) => prev.some((r) => r.name === currentUser) ? prev : [...prev, { name: currentUser, ts: Date.now() }]);
-    await fetch("/api/time-off", {
+    await fetch("/api/request/time-off", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: currentUser }),
@@ -778,22 +663,12 @@ export default function Home() {
     if (!currentUser || moneyRequestSent) return;
     setMoneyRequestSent(true);
     setMoneyRequests((prev) => prev.some((r) => r.name === currentUser) ? prev : [...prev, { name: currentUser, ts: Date.now() }]);
-    await fetch("/api/need-money", {
+    await fetch("/api/request/money", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: currentUser }),
     });
   };
-
-  const approveTimeOff = async (name: string) => {
-    setTimeOffRequests((prev) => prev.filter((r) => r.name !== name));
-    await fetch("/api/time-off", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-  };
-
 
   const pickUser = (name: string) => {
     localStorage.setItem("team-busy-user", name);
@@ -814,23 +689,6 @@ export default function Home() {
     setUploadingPhoto(false);
   };
 
-  const MOODS = [
-    { label: "no thoughts 🫥", value: "no thoughts 🫥" },
-    { label: "main character ✨", value: "main character ✨" },
-    { label: "villain era 😈", value: "villain era 😈" },
-    { label: "in my bag 💰", value: "in my bag 💰" },
-    { label: "lowkey thriving 🌱", value: "lowkey thriving 🌱" },
-    { label: "not okay bestie 😭", value: "not okay bestie 😭" },
-    { label: "slay mode 💅", value: "slay mode 💅" },
-    { label: "delulu 🌈", value: "delulu 🌈" },
-    { label: "down bad 😔", value: "down bad 😔" },
-    { label: "ate no crumbs 🍽️", value: "ate no crumbs 🍽️" },
-    { label: "unwell 🤕", value: "unwell 🤕" },
-    { label: "it's giving 👀", value: "it's giving 👀" },
-    { label: "that girl/guy 💪", value: "that girl/guy 💪" },
-    { label: "touch grass needed 🌿", value: "touch grass needed 🌿" },
-  ];
-
   const setMyMood = async (mood: string) => {
     if (!currentUser) return;
     setMoods((prev) => ({ ...prev, [currentUser]: mood }));
@@ -841,12 +699,6 @@ export default function Home() {
     });
   };
 
-  const extractYouTubeId = (input: string): string => {
-    const match = input.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
-    return match ? match[1] : input.trim();
-  };
-
-
   const submitTattle = async () => {
     if (!tattleText.trim()) return;
     await fetch("/api/tattle", {
@@ -856,10 +708,7 @@ export default function Home() {
     });
     setTattleText("");
     setTattleSent(true);
-    setTimeout(() => {
-      setTattleSent(false);
-      setShowTattle(false);
-    }, 2000);
+    setTimeout(() => { setTattleSent(false); setShowTattle(false); }, 2000);
   };
 
   const submitBugReport = async () => {
@@ -871,10 +720,7 @@ export default function Home() {
     });
     setBugReportText("");
     setBugReportSent(true);
-    setTimeout(() => {
-      setBugReportSent(false);
-      setShowBugReport(false);
-    }, 2000);
+    setTimeout(() => { setBugReportSent(false); setShowBugReport(false); }, 2000);
   };
 
   const submitFeatureRequest = async () => {
@@ -886,10 +732,7 @@ export default function Home() {
     });
     setFeatureRequestText("");
     setFeatureRequestSent(true);
-    setTimeout(() => {
-      setFeatureRequestSent(false);
-      setShowFeatureRequest(false);
-    }, 2000);
+    setTimeout(() => { setFeatureRequestSent(false); setShowFeatureRequest(false); }, 2000);
   };
 
   const submitFeedback = async () => {
@@ -901,63 +744,64 @@ export default function Home() {
     });
     setFeedbackText("");
     setFeedbackSent(true);
-    setTimeout(() => {
-      setFeedbackSent(false);
-      setShowFeedback(false);
-    }, 2000);
+    setTimeout(() => { setFeedbackSent(false); setShowFeedback(false); }, 2000);
   };
 
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  // ── Computed values ──────────────────────────────────────────────────────────
 
+  const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const isGuest = currentUser === "__guest__";
   const nowDate = new Date(now);
   const currentHour = nowDate.getHours();
+
   const DAY_MESSAGES = [
-    // Sun
     { main: "wait why are you here 💀", sub: "it's sunday bestie. log off.", tag: "go touch grass" },
-    // Mon
     { main: "monday survived 😮‍💨", sub: "that was not it but we did it anyway.", tag: "send thoughts & prayers" },
-    // Tue
     { main: "tuesday ate 💅", sub: "lowkey the underrated day. we cooked.", tag: "no crumbs left" },
-    // Wed
     { main: "hump day cleared 🐪", sub: "we are so halfway there it's unreal.", tag: "understood the assignment" },
-    // Thu
     { main: "thursday said slay 🫡", sub: "one more day. do not fumble.", tag: "almost cooked" },
-    // Fri
     { main: "FRIDAY WE ATE 🔥", sub: "clock's out. we are so done here bestie.", tag: "left no crumbs" },
-    // Sat
     { main: "it's saturday?? 💀", sub: "log off immediately. this is concerning.", tag: "chronically online" },
   ];
   const todayMsg = DAY_MESSAGES[nowDate.getDay()];
   const MORNING_MESSAGES = [
-    // Sun
     { main: "good morning bestie ☀️", sub: "it's sunday, go back to sleep.", tag: "rest mode" },
-    // Mon
     { main: "rise and grind? 😮‍💨", sub: "monday got us in a chokehold. stay strong.", tag: "caffeinate immediately" },
-    // Tue
     { main: "tuesday check ☕️", sub: "we're locked in today fr. let's cook.", tag: "locked tf in" },
-    // Wed
     { main: "wake up wednesday 🐪", sub: "halfway there. the light is visible.", tag: "hump day energy" },
-    // Thu
     { main: "thursday slay incoming 💅", sub: "tomorrow is friday. hold the line.", tag: "so close" },
-    // Fri
     { main: "FRIDAY FINALLY 🔥", sub: "we made it. just a few hours to freedom.", tag: "energy unmatched" },
-    // Sat
     { main: "saturday?? at work?? 😭", sub: "hope you're getting paid double bestie.", tag: "not the vibe" },
   ];
   const morningMsg = MORNING_MESSAGES[nowDate.getDay()];
   const currentMin = nowDate.getMinutes();
   const currentSec = nowDate.getSeconds();
   const isMorning = (currentHour < 9) || (currentHour === 9 && currentMin < 30);
-  const isAfter5 = currentHour >= 17 || currentHour < 9;
   const isCountdown = currentHour === 16 && currentMin >= 45;
   const secsUntil5 = isCountdown ? (17 * 3600) - (currentHour * 3600 + currentMin * 60 + currentSec) : 0;
   const countdownMins = Math.floor(secsUntil5 / 60);
   const countdownSecs = secsUntil5 % 60;
+
+  // Lunch & clock-out countdowns
+  const totalSecs = currentHour * 3600 + currentMin * 60 + currentSec;
+  const lunchSecs = 12 * 3600; // noon
+  const clockOutSecs = 17 * 3600; // 5pm
+  const secsToLunch = lunchSecs - totalSecs;
+  const secsToClockOut = clockOutSecs - totalSecs;
+
+  const formatCountdownCompact = (secs: number) => {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  };
+
+  const LUNCH_LABELS = ["food coma in", "sustenance in", "eating szn in", "lunch arc in"];
+  const CLOCKOUT_LABELS = ["freedom in", "escape in", "logging off in", "peace out in"];
+  const lunchLabel = LUNCH_LABELS[nowDate.getDay() % LUNCH_LABELS.length];
+  const clockOutLabel = CLOCKOUT_LABELS[nowDate.getDay() % CLOCKOUT_LABELS.length];
   const myMember = MEMBERS.find((m) => m.name === currentUser);
   const bossMember = MEMBERS.find((m) => m.name === BOSS);
   const teamMembers = sortedMembers.filter((m) => (viewAsTeam || m.name !== currentUser) && m.name !== BOSS);
@@ -968,555 +812,6 @@ export default function Home() {
     if (sorted[0][1] <= 0) return null;
     return sorted[0][0];
   })();
-
-  const renderBuddyBadge = (buddyId: string) => {
-    const buddy = getBuddyById(buddyId);
-    if (!buddy) return null;
-    const styles = RARITY_STYLES[buddy.rarity];
-    return (
-      <div className="flex flex-col items-center" title={`${buddy.name} — ${buddy.tagline}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={getBuddyImagePath(buddy)} alt={buddy.name} className="w-10 h-10 object-contain" />
-        <span className="text-[9px] font-black uppercase tracking-widest mt-0.5" style={{ color: styles.text === "#ffffff" ? "#3D52F0" : "#1a1a1a" }}>{buddy.name}</span>
-      </div>
-    );
-  };
-
-  const renderMyCard = (member: typeof MEMBERS[0]) => {
-    const value = statuses[member.name] ?? 50;
-    const level = getLevel(value);
-    const isOOO = !!oooStatuses[member.name];
-    const isSOS = !!sosStatuses[member.name];
-    const isMetcalf = !!metcalfStatuses[member.name];
-    const isNeedWork = !!needWorkStatuses[member.name];
-    const isDontTalk = !!dontTalkStatuses[member.name];
-    const isMeds = !!medsStatuses[member.name];
-    const isBodyDouble = bodyDoubles.includes(member.name);
-
-    return (
-      <div
-        onClick={() => setCardFlipped((f) => !f)}
-        className={`rounded-[1.4rem] px-6 py-6 border-[4px] transition-all cursor-pointer select-none ${
-          isOOO ? "border-black opacity-50"
-          : isSOS ? "border-black shadow-[6px_6px_0_#e74c3c] hover:-translate-y-1 hover:shadow-[9px_9px_0_#e74c3c]"
-          : "border-black shadow-[6px_6px_0_#000] hover:-translate-y-1 hover:shadow-[9px_9px_0_#000]"
-        }`}
-        style={{ background: "#ffffff", position: "relative", overflow: "hidden", transform: cardFlipped ? "rotate(180deg)" : undefined, transition: "transform 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}
-      >
-        {/* Staleness gradient */}
-        {!isOOO && (() => { const t = getStaleness(updatedAt[member.name]); return t > 0 ? (
-          <div className="absolute inset-x-0 bottom-0 pointer-events-none" style={{ height: "70%", background: `linear-gradient(to top, rgba(140,90,30,${0.3 + t * 0.6}) 0%, transparent 100%)`, zIndex: 0 }} />
-        ) : null; })()}
-        {/* Stop clicks on interactive content from flipping the card */}
-        <div onClick={(e) => e.stopPropagation()}>
-        {/* Avatar + name row */}
-        <div className="flex items-center gap-4 mb-5">
-          <label className="relative cursor-pointer group shrink-0" title="Click to update photo">
-            <Image
-              src={photoOverrides[member.name] ?? member.photo}
-              alt={member.name} width={72} height={72}
-              className={`rounded-full object-cover border-[4px] border-black w-[72px] h-[72px] transition-opacity ${uploadingPhoto ? "opacity-40" : "group-hover:opacity-70"}`}
-            />
-            <span className="absolute inset-0 flex items-center justify-center text-lg opacity-0 group-hover:opacity-100 transition-opacity">
-              {uploadingPhoto ? "⏳" : "📷"}
-            </span>
-            <input type="file" accept="image/*" className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) handlePhotoUpload(f); e.target.value = ""; }}
-            />
-          </label>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-2xl font-bold leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest bg-black text-white px-2 py-0.5 rounded-full">you</span>
-            </div>
-            {topOnlineUser === member.name && (
-              <span className="text-[10px] font-extrabold text-black/50 uppercase tracking-widest">🖥️ most online</span>
-            )}
-            {updatedAt[member.name] && (
-              <>
-                <p className="text-[11px] text-[#7a6f64] font-semibold mt-0.5 italic">{timeAgo(updatedAt[member.name])}</p>
-                {!isOOO && updatedAt[member.name] && (Date.now() - updatedAt[member.name]) > 48 * 60 * 60 * 1000 && (
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="text-3xl leading-none">💩</span>
-                    <span className="fly-buzz text-xl">🪰</span>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-          {isOOO ? (
-            <span className="text-sm font-bold px-3 py-1.5 rounded-full bg-[#e5e1dc] text-[#8a857d] border-2 border-black shrink-0">👻</span>
-          ) : isSOS ? (
-            <span className="text-2xl animate-pulse shrink-0">🚨</span>
-          ) : isMetcalf ? (
-            <span className="text-2xl animate-bounce shrink-0">🚗</span>
-          ) : BUDDIES_ENABLED && buddies[member.name] ? (
-            <div className="shrink-0 flex items-center gap-2">
-              {renderBuddyBadge(buddies[member.name].id)}
-              <span className="text-4xl emoji-hover cursor-default">{EMOJIS[level]}</span>
-            </div>
-          ) : (
-            <span className="text-4xl emoji-hover cursor-default shrink-0">{EMOJIS[level]}</span>
-          )}
-        </div>
-
-
-        {isOOO ? (
-          <div className="w-full rounded-xl bg-[#e5e1dc] border-2 border-black px-3 py-3 flex flex-col gap-1.5">
-            {oooDetails[member.name]?.note && <p className="text-xs text-[#6b6560] font-medium">💬 {oooDetails[member.name].note}</p>}
-            {oooDetails[member.name]?.backDate && <p className="text-xs text-[#6b6560] font-medium">📅 Back {oooDetails[member.name].backDate}</p>}
-            <button onClick={() => toggleOOO(member.name)} className="text-sm text-black font-bold hover:underline cursor-pointer text-center mt-1">
-              I&apos;m back fr ✌️
-            </button>
-          </div>
-        ) : isSOS ? (
-          <div className="w-full rounded-xl bg-[#e74c3c]/10 border-2 border-[#e74c3c]/30 px-4 py-3 flex items-center justify-between gap-3">
-            <p className="text-sm font-bold text-[#c0392b] animate-pulse">🔥 Burnt af. Send halp.</p>
-            <button onClick={() => toggleSOS(member.name)} className="text-xs font-bold text-[#c0392b] border-2 border-[#e74c3c]/40 rounded-lg px-3 py-1.5 hover:bg-[#e74c3c]/10 cursor-pointer transition-colors whitespace-nowrap">
-              I&apos;m OK now ✌️
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center gap-3 mb-3">
-              <input
-                type="range" min={0} max={100} value={localSlider ?? value}
-                onMouseDown={() => { isDragging.current = true; setLocalSlider(value); }}
-                onTouchStart={() => { isDragging.current = true; setLocalSlider(value); }}
-                onMouseUp={() => { isDragging.current = false; if (localSlider !== null) { handleSliderChange(member.name, localSlider); setLocalSlider(null); } }}
-                onTouchEnd={() => { isDragging.current = false; if (localSlider !== null) { handleSliderChange(member.name, localSlider); setLocalSlider(null); } }}
-                onChange={(e) => setLocalSlider(Number(e.target.value))}
-                style={getTrackStyle(localSlider ?? value, getLevel(localSlider ?? value))}
-                className="flex-1"
-              />
-              <span className="text-xs font-extrabold px-2.5 py-1.5 rounded-lg bg-black text-white whitespace-nowrap min-w-[80px] text-center uppercase tracking-wide">
-                {LABELS[getLevel(localSlider ?? value)]}
-              </span>
-            </div>
-            <input
-              type="text"
-              placeholder="add a note… (heads down, in the zone, free to vibe)"
-              value={editingNote}
-              onChange={(e) => setEditingNote(e.target.value)}
-              onBlur={() => saveNote(member.name, editingNote)}
-              onPaste={(e) => e.preventDefault()}
-              onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }}
-              className="w-full text-xs font-medium text-black bg-white border-[3px] border-black rounded-xl px-3 py-2 focus:outline-none placeholder:text-[#b5b0a8] mb-3"
-              maxLength={200}
-            />
-            {/* Mood picker */}
-            <div className="mb-3">
-              <select
-                value={moods[member.name] ?? ""}
-                onChange={(e) => setMyMood(e.target.value)}
-                className="w-full border-[3px] border-black rounded-xl px-3 py-2 text-xs font-extrabold bg-[#FFE234] text-black uppercase tracking-widest cursor-pointer focus:outline-none appearance-none shadow-[3px_3px_0_#000]"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                <option value="" disabled>current mood...</option>
-                {MOODS.map((m) => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-            </div>
-            {/* ADHD slider */}
-            <div className="rounded-xl border-[3px] border-black px-3 py-2.5 mb-3" style={{ background: ADHD_COLORS[getAdhdLevel(adhdLevels[member.name] ?? 0)] }}>
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-black/60 mb-1.5">adhd check</p>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range" min={0} max={100} value={localAdhd ?? adhdLevels[member.name] ?? 0}
-                  onMouseDown={() => { isAdhdDragging.current = true; setLocalAdhd(adhdLevels[member.name] ?? 0); }}
-                  onTouchStart={() => { isAdhdDragging.current = true; setLocalAdhd(adhdLevels[member.name] ?? 0); }}
-                  onMouseUp={() => { isAdhdDragging.current = false; if (localAdhd !== null) { handleAdhdChange(member.name, localAdhd); setLocalAdhd(null); } }}
-                  onTouchEnd={() => { isAdhdDragging.current = false; if (localAdhd !== null) { handleAdhdChange(member.name, localAdhd); setLocalAdhd(null); } }}
-                  onChange={(e) => setLocalAdhd(Number(e.target.value))}
-                  style={{ background: `linear-gradient(to right, rgba(0,0,0,0.3) ${localAdhd ?? adhdLevels[member.name] ?? 0}%, rgba(0,0,0,0.1) ${localAdhd ?? adhdLevels[member.name] ?? 0}%)` }}
-                  className="flex-1"
-                />
-                <span className="text-xs font-extrabold text-black whitespace-nowrap">{ADHD_LABELS[getAdhdLevel(localAdhd ?? adhdLevels[member.name] ?? 0)]}</span>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => toggleOOO(member.name)} className="flex-1 py-2 rounded-xl border-[3px] border-black bg-white text-sm text-black cursor-pointer transition-all font-bold hover:bg-[#FFE234] shadow-[3px_3px_0_#000]">
-                👻 ghost
-              </button>
-              <button
-                onClick={() => toggleMetcalf(member.name)}
-                className={`flex-1 py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all ${isMetcalf ? "bg-black text-white shadow-none" : "bg-white text-black hover:bg-black hover:text-white shadow-[3px_3px_0_#000]"}`}
-              >
-                🚗 metcalf
-              </button>
-            </div>
-            <div className="flex gap-2 mt-2">
-              <button
-                onClick={() => toggleNeedWork(member.name)}
-                className={`flex-1 py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all ${isNeedWork ? "bg-[#3D52F0] text-white shadow-none" : "bg-white text-black hover:bg-[#3D52F0] hover:text-white shadow-[3px_3px_0_#000]"}`}
-              >
-                📋 {isNeedWork ? "need work ✓" : "need work"}
-              </button>
-              <button
-                onClick={() => toggleDontTalk(member.name)}
-                className={`flex-1 py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all ${isDontTalk ? "bg-[#e74c3c] text-white shadow-none" : "bg-white text-black hover:bg-[#e74c3c] hover:text-white shadow-[3px_3px_0_#000]"}`}
-              >
-                🚫 {isDontTalk ? "no talk ✓" : "no talk"}
-              </button>
-            </div>
-            <button
-              onClick={handleMoneyRequest}
-              disabled={moneyRequestSent || moneyRequests.some((r) => r.name === currentUser)}
-              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${moneyRequestSent || moneyRequests.some((r) => r.name === currentUser) ? "bg-[#FFE234] text-black shadow-none opacity-70 cursor-default" : "bg-white text-black hover:bg-[#FFE234] shadow-[3px_3px_0_#000]"}`}
-            >
-              {moneyRequestSent || moneyRequests.some((r) => r.name === currentUser) ? "sent ✓" : "i need 💰"}
-            </button>
-            <button
-              onClick={() => toggleMeds(member.name)}
-              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${isMeds ? "bg-[#a8f5c8] text-black shadow-none" : "bg-white text-black hover:bg-[#a8f5c8] shadow-[3px_3px_0_#000]"}`}
-            >
-              💊 {isMeds ? "meds taken ✓" : "took my meds"}
-            </button>
-            <button
-              onClick={() => toggleBodyDouble(member.name)}
-              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${isBodyDouble ? "bg-[#dbb8ff] text-black shadow-none" : "bg-white text-black hover:bg-[#dbb8ff] shadow-[3px_3px_0_#000]"}`}
-            >
-              🧠 {isBodyDouble ? "body doubling ✓" : "body doubling"}
-            </button>
-          </>
-        )}
-        {isMetcalf && member.name !== currentUser && (
-          <div className="w-full rounded-xl bg-black px-4 py-2.5 flex items-center gap-2 mt-1">
-            <span className="text-lg">🚗</span>
-            <p className="text-sm font-bold text-white">catch me on metcalf</p>
-          </div>
-        )}
-        {/* Incoming touch grass */}
-        {touchGrass.filter((p) => p.to === member.name).length > 0 && (
-          <div className="flex flex-col gap-1.5 mt-2">
-            {touchGrass.filter((p) => p.to === member.name).map((tg) => (
-              <div key={tg.from} className="flex items-center gap-2 bg-[#a8f5c8] border-[2px] border-black rounded-xl px-3 py-2 shadow-[2px_2px_0_#000] animate-pop-in">
-                <span className="text-base">🌿</span>
-                <span className="text-xs font-bold flex-1">{tg.from} says touch grass</span>
-                <button
-                  onClick={() => dismissTouchGrass(tg.from)}
-                  className="w-5 h-5 rounded-full bg-black/10 hover:bg-black hover:text-white text-black text-[10px] font-bold flex items-center justify-center transition-colors cursor-pointer"
-                >✕</button>
-              </div>
-            ))}
-          </div>
-        )}
-        {/* Incoming pokes */}
-        {pokes.filter((p) => p.to === member.name).length > 0 && (
-          <div className="flex flex-col gap-1.5 mt-2">
-            {pokes.filter((p) => p.to === member.name).map((poke) => (
-              <div key={poke.from} className="flex items-center gap-2 bg-[#FFE234] border-[2px] border-black rounded-xl px-3 py-2 shadow-[2px_2px_0_#000] animate-pop-in">
-                <span className="text-base">👉</span>
-                <span className="text-xs font-bold flex-1">{poke.from} poked you!</span>
-                <button
-                  onClick={() => { sendPoke(poke.from); dismissPoke(poke.from); }}
-                  className="text-[10px] font-bold bg-white border-[2px] border-black rounded-lg px-2 py-1 cursor-pointer hover:bg-black hover:text-white transition-colors"
-                >poke back</button>
-                <button
-                  onClick={() => dismissPoke(poke.from)}
-                  className="w-5 h-5 rounded-full bg-black/10 hover:bg-black hover:text-white text-black text-[10px] font-bold flex items-center justify-center transition-colors cursor-pointer"
-                >✕</button>
-              </div>
-            ))}
-          </div>
-        )}
-        {/* Meeting button */}
-        {currentUser && !isGuest && (
-          <div className="mt-2">
-            <button
-              onClick={() => meetings[currentUser] ? setMeeting(null) : setShowMeetingPicker(true)}
-              className={`w-full py-2 rounded-xl border-[3px] border-black text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#000] cursor-pointer transition-all ${meetings[currentUser] ? "bg-[#FF9DC8] hover:bg-white" : "bg-white hover:bg-[#FF9DC8]"}`}
-            >{meetings[currentUser] ? `📅 ${formatCountdown(meetings[currentUser])}` : "📅 in a meeting"}</button>
-          </div>
-        )}
-        {currentUser === BOSS && (
-          <div className="mt-2 flex gap-2">
-            <button
-              onClick={() => { setTakeoverDraft(takeover ?? ""); setShowTakeoverCompose(true); }}
-              className="flex-1 py-2 rounded-xl border-[3px] border-black bg-black text-white text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#FFE234] hover:bg-[#FFE234] hover:text-black transition-all cursor-pointer"
-            >📣 screen takeover</button>
-            {takeover && (
-              <button
-                onClick={async () => { setTakeover(null); await fetch("/api/takeover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: "" }) }); }}
-                className="px-3 py-2 rounded-xl border-[3px] border-black bg-white text-xs font-extrabold shadow-[3px_3px_0_#000] hover:bg-red-100 transition-colors cursor-pointer"
-              >✕ end</button>
-            )}
-          </div>
-        )}
-        {!isGuest && (
-          <div className="flex items-center gap-1.5 mt-2">
-            <input
-              type="text"
-              placeholder="drop the tea… 🍵"
-              value={newMessage[member.name] ?? ""}
-              onChange={(e) => setNewMessage((prev) => ({ ...prev, [member.name]: e.target.value }))}
-              onPaste={(e) => e.preventDefault()}
-              onKeyDown={(e) => { if (e.key === "Enter") postMessage(member.name); }}
-              maxLength={200}
-              className="flex-1 px-3 py-1.5 rounded-xl border-[2px] border-black bg-white text-xs font-medium placeholder:text-black/30 focus:outline-none shadow-[2px_2px_0_#000] min-w-0"
-            />
-            <button
-              onClick={() => postMessage(member.name)}
-              disabled={!(newMessage[member.name] ?? "").trim()}
-              className="shrink-0 px-2.5 py-1.5 rounded-xl border-[2px] border-black bg-[#FFE234] text-xs font-extrabold shadow-[2px_2px_0_#000] hover:bg-[#FF9DC8] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
-            >✦</button>
-          </div>
-        )}
-        </div>{/* end stopPropagation wrapper */}
-      </div>
-    );
-  };
-
-  const renderTeamCard = (member: typeof MEMBERS[0], i: number) => {
-    const value = statuses[member.name] ?? 50;
-    const level = getLevel(value);
-    const isOOO = !!oooStatuses[member.name];
-    const isSOS = !!sosStatuses[member.name];
-    const isMetcalf = !!metcalfStatuses[member.name];
-    const isNeedWork = !!needWorkStatuses[member.name];
-    const isDontTalk = !!dontTalkStatuses[member.name];
-    const isMeds = !!medsStatuses[member.name];
-    const isBodyDouble = bodyDoubles.includes(member.name);
-    const isBanned = !!bans[member.name];
-    if (isBanned) {
-      return (
-        <div
-          key={member.name}
-          className="animate-pop-in rounded-2xl border-[4px] border-[#e74c3c] shadow-[5px_5px_0_#e74c3c] overflow-hidden relative"
-          style={{ animationDelay: `${i * 50}ms`, background: "#fff0f0", minHeight: "160px" }}
-        >
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center z-10">
-            <div className="text-5xl font-black tracking-tighter text-[#e74c3c] uppercase leading-none" style={{ fontFamily: "var(--font-display)", textShadow: "3px 3px 0 #000", WebkitTextStroke: "2px #000" }}>
-              BANNED
-            </div>
-            <p className="text-sm font-bold text-[#c0392b]">{member.name} has been removed</p>
-            {bans[member.name] && <p className="text-xs text-black/50 font-medium italic">&ldquo;{bans[member.name]}&rdquo;</p>}
-            {currentUser === member.name && (
-              <button
-                onClick={() => { setShowDisputeModal(true); setDisputeSent(false); setDisputeText(""); }}
-                className="mt-1 px-4 py-2 rounded-xl border-[3px] border-black bg-[#e74c3c] text-white text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#000] cursor-pointer hover:bg-black transition-colors"
-              >
-                ✋ dispute this ban
-              </button>
-            )}
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div
-        key={member.name}
-        className={`animate-pop-in rounded-2xl px-4 py-4 border-[4px] transition-all flex flex-col gap-2 relative group cursor-default ${
-          isDontTalk ? "border-[#e74c3c] shadow-[5px_5px_0_#e74c3c] hover:-translate-y-1 hover:shadow-[8px_8px_0_#e74c3c]"
-          : isOOO ? "border-black hover:-translate-y-1"
-          : isSOS ? "border-black shadow-[5px_5px_0_#e74c3c] hover:-translate-y-1 hover:shadow-[8px_8px_0_#e74c3c]"
-          : "border-black shadow-[5px_5px_0_#000] hover:-translate-y-1 hover:shadow-[8px_8px_0_#000]"
-        }`}
-        style={{
-          animationDelay: `${i * 50}ms`,
-          background: isDontTalk ? "#ffe5e5" : "#ffffff",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* Floating reactions */}
-        {floatingReactions.filter((r) => r.name === member.name).map((r) => (
-          <div key={r.id} className="absolute inset-0 pointer-events-none flex items-center justify-center z-20">
-            <span className="float-reaction text-5xl">{r.emoji}</span>
-          </div>
-        ))}
-        {/* Staleness gradient */}
-        {!isOOO && (() => { const t = getStaleness(updatedAt[member.name]); return t > 0 ? (
-          <div className="absolute inset-x-0 bottom-0 pointer-events-none" style={{ height: "70%", background: `linear-gradient(to top, rgba(140,90,30,${0.3 + t * 0.6}) 0%, transparent 100%)`, zIndex: 0 }} />
-        ) : null; })()}
-        {isOOO && (
-          <>
-            <div className="absolute inset-0 flex items-start justify-center pointer-events-none z-10" style={{ paddingTop: "18px" }}>
-              <Image
-                src="/spirit.png"
-                alt="ghost mode"
-                width={537}
-                height={74}
-                className="w-[115%] h-auto opacity-90"
-                style={{ transform: "rotate(-8deg)" }}
-              />
-            </div>
-            <div className="absolute bottom-3 right-3 z-20">
-              <span className="text-[13px] font-extrabold text-black" style={{ fontFamily: "var(--font-display)" }}>
-                {member.name}
-              </span>
-            </div>
-          </>
-        )}
-        <div className={`flex flex-col gap-2 ${isOOO ? "opacity-30 grayscale" : ""}`}>
-          <div className="flex items-center gap-3">
-            {isDontTalk ? (
-              <span className="text-[44px] w-[44px] h-[44px] shrink-0 flex items-center justify-center leading-none">😤</span>
-            ) : (
-              <Image
-                src={photoOverrides[member.name] ?? member.photo}
-                alt={member.name} width={44} height={44}
-                className="rounded-full object-cover border-[3px] border-black w-[44px] h-[44px] shrink-0 transition-transform group-hover:scale-110"
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="font-extrabold text-xl leading-tight" style={{ fontFamily: "var(--font-display)" }}>{member.name}</p>
-              {updatedAt[member.name] && (
-                <>
-                  <p className="text-[12px] text-black font-mono mt-0.5">{timeAgo(updatedAt[member.name])}</p>
-                  {!isOOO && getStaleness(updatedAt[member.name]) > 0 && (
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <span className="text-3xl leading-none">💩</span>
-                      <span className="fly-buzz text-xl">🪰</span>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-            {isDontTalk ? (
-              <span className="text-4xl shrink-0">🚫</span>
-            ) : isSOS ? (
-              <span className="text-xl animate-pulse shrink-0">🚨</span>
-            ) : isMetcalf ? (
-              <span className="text-2xl animate-bounce shrink-0">🚗</span>
-            ) : BUDDIES_ENABLED && buddies[member.name] ? (
-              <div className="shrink-0 flex items-center gap-2">
-                {renderBuddyBadge(buddies[member.name].id)}
-                <span className="text-4xl emoji-hover cursor-default">{EMOJIS[level]}</span>
-              </div>
-            ) : (
-              <span className="text-4xl emoji-hover cursor-default shrink-0">{EMOJIS[level]}</span>
-            )}
-          </div>
-
-          {isDontTalk && (
-            <div className="w-full rounded-xl bg-[#e74c3c] px-4 py-2.5 flex items-center gap-2">
-              <span className="text-lg">🚫</span>
-              <p className="text-sm font-bold text-white">don't talk to me</p>
-            </div>
-          )}
-          {!isDontTalk && !isSOS && (
-            <div className="flex flex-col gap-1.5">
-              <div className="h-3 rounded-full bg-black/10 overflow-hidden border-[2px] border-black">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${value}%`, background: TRACK_COLORS[level] }}
-                />
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-extrabold text-black uppercase tracking-widest" style={{ fontFamily: "var(--font-display)" }}>{LABELS[level]}</p>
-                {moods[member.name] && (
-                  <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#FFE234] border-[2px] border-black text-black lowercase tracking-wide shadow-[2px_2px_0_#000]">
-                    {moods[member.name]}
-                  </span>
-                )}
-              </div>
-              {statusNotes[member.name] && (
-                <p className="text-[12px] text-black font-medium font-mono leading-snug">
-                  {statusNotes[member.name]}
-                </p>
-              )}
-              {(() => {
-                const adhdVal = adhdLevels[member.name] ?? 0;
-                const adhdLvl = getAdhdLevel(adhdVal);
-                return (
-                  <div className="flex items-center gap-2 rounded-xl px-3 py-2 border-[2px] border-black shadow-[2px_2px_0_#000]" style={{ background: ADHD_COLORS[adhdLvl] }}>
-                    <span className="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-[#FFE234] border-[2px] border-black shrink-0">adhd</span>
-                    <span className="text-sm font-extrabold text-black flex-1">{ADHD_LABELS[adhdLvl]}</span>
-                    <span className="text-base">{ADHD_EMOJIS[adhdLvl]}</span>
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-          {!isDontTalk && meetings[member.name] && meetings[member.name] > Date.now() && (
-            <div className="w-full rounded-xl bg-[#FF9DC8] border-[2px] border-black px-4 py-2.5 flex items-center gap-2 shadow-[2px_2px_0_#000]">
-              <span className="text-lg">📅</span>
-              <p className="text-sm font-bold flex-1">in a meeting</p>
-              <span className="text-sm font-extrabold tabular-nums">{formatCountdown(meetings[member.name])}</span>
-            </div>
-          )}
-          {!isDontTalk && isMetcalf && (
-            <div className="w-full rounded-xl bg-black px-4 py-2.5 flex items-center gap-2">
-              <span className="text-lg">🚗</span>
-              <p className="text-sm font-bold text-white">catch me on metcalf</p>
-            </div>
-          )}
-          {!isDontTalk && isNeedWork && (
-            <div className="w-full rounded-xl bg-[#3D52F0] px-4 py-2.5 flex items-center gap-2">
-              <span className="text-lg">📋</span>
-              <p className="text-sm font-bold text-white">I need work</p>
-            </div>
-          )}
-          {isMeds && (
-            <div className="w-full rounded-xl bg-[#a8f5c8] border-[2px] border-black px-4 py-2 flex items-center gap-2 shadow-[2px_2px_0_#000]">
-              <span className="text-base">💊</span>
-              <p className="text-xs font-bold text-black">meds taken</p>
-            </div>
-          )}
-          {isBodyDouble && (
-            <div className="w-full rounded-xl bg-[#dbb8ff] border-[2px] border-black px-4 py-2 flex items-center gap-2 shadow-[2px_2px_0_#000]">
-              <span className="text-base">🧠</span>
-              <p className="text-xs font-bold text-black">body doubling</p>
-            </div>
-          )}
-          {!isDontTalk && currentUser && currentUser !== member.name && !isGuest && (
-            <div className="flex items-center justify-between mt-1 px-1">
-              {["😬", "💀", "🔥", "😭", "🫡", "💅"].map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => sendReaction(member.name, emoji)}
-                  className="text-xl hover:scale-150 transition-transform cursor-pointer active:scale-90"
-                >{emoji}</button>
-              ))}
-            </div>
-          )}
-          {!isDontTalk && currentUser && currentUser !== member.name && (
-            <div className="flex gap-2 mt-1">
-              <button
-                onClick={() => sendPoke(member.name)}
-                disabled={pokes.some((p) => p.from === currentUser && p.to === member.name)}
-                className={`flex-1 py-1.5 rounded-xl border-[2px] border-black text-xs font-bold transition-all cursor-pointer
-                  ${pokes.some((p) => p.from === currentUser && p.to === member.name)
-                    ? "bg-[#FFE234] opacity-60 cursor-default"
-                    : "bg-white hover:bg-[#FFE234] active:scale-95 shadow-[2px_2px_0_#000]"
-                  }`}
-              >
-                {pokes.some((p) => p.from === currentUser && p.to === member.name) ? "👉 poked!" : "👉 poke"}
-              </button>
-              <button
-                onClick={() => sendTouchGrass(member.name)}
-                disabled={touchGrass.some((p) => p.from === currentUser && p.to === member.name)}
-                className={`flex-1 py-1.5 rounded-xl border-[2px] border-black text-xs font-bold transition-all cursor-pointer
-                  ${touchGrass.some((p) => p.from === currentUser && p.to === member.name)
-                    ? "bg-[#a8f5c8] opacity-60 cursor-default"
-                    : "bg-white hover:bg-[#a8f5c8] active:scale-95 shadow-[2px_2px_0_#000]"
-                  }`}
-              >
-                {touchGrass.some((p) => p.from === currentUser && p.to === member.name) ? "🌿 sent!" : "🌿 touch grass"}
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const OFFLINE = false;
-  if (OFFLINE) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#1a1a1a", padding: "40px 20px", textAlign: "center" }}>
-        <div style={{ fontSize: "64px", marginBottom: "24px" }}>🔧</div>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(2rem, 6vw, 4rem)", fontWeight: 900, color: "#fff", marginBottom: "12px", letterSpacing: "-0.02em" }}>
-          we&apos;ll be right back
-        </h1>
-        <p style={{ fontSize: "18px", color: "rgba(255,255,255,0.5)", fontWeight: 500, maxWidth: "400px", lineHeight: 1.5 }}>
-          vibe check is down for maintenance. check back soon bestie.
-        </p>
-      </div>
-    );
-  }
 
   const tickerSpeed = 120;
   const tickerDuration = tickerTextWidth ? tickerTextWidth / tickerSpeed : 0;
@@ -1530,7 +825,7 @@ export default function Home() {
 
   return (
     <>
-      {/* Banner — broadcast (pink or red scrolling) or normal ticker (yellow) */}
+      {/* Broadcast ticker (pink or red scrolling) */}
       {broadcast && (
         <div style={{ width: "100%", overflow: "hidden", background: broadcastBg, borderBottom: `4px solid ${broadcastBorder}`, height: "50px", position: "relative", zIndex: 10 }}>
           <div style={{
@@ -1551,16 +846,12 @@ export default function Home() {
           </div>
         </div>
       )}
+      {/* Normal ticker (yellow) */}
       {!broadcast && (messages.length > 0 || banner !== null) && (
         <div style={{ width: "100%", overflow: "hidden", background: "#FFE234", borderBottom: "4px solid #000", height: "50px", position: "relative", zIndex: 10 }}>
           <div style={{
-            display: "flex",
-            alignItems: "center",
-            height: "100%",
-            ...(tickerDuration > 0 ? {
-              animation: `ticker-scroll ${tickerDuration}s linear infinite`,
-              ["--ticker-text-width" as string]: tickerTextWidth,
-            } : {}),
+            display: "flex", alignItems: "center", height: "100%",
+            ...(tickerDuration > 0 ? { animation: `ticker-scroll ${tickerDuration}s linear infinite`, ["--ticker-text-width" as string]: tickerTextWidth } : {}),
             willChange: "transform",
           }}>
             <div ref={tickerTextRef} style={{ display: "flex", alignItems: "center", height: "100%", flexShrink: 0, whiteSpace: "nowrap" }}>
@@ -1572,7 +863,7 @@ export default function Home() {
                 </div>
               )}
               {messages.map((msg, i) => (
-                <TickerItem key={i} msg={msg} photo={photoOverrides[msg.name] ?? (MEMBERS.find(m => m.name === msg.name)?.photo ?? "")} />
+                <TickerItem key={i} msg={msg} />
               ))}
             </div>
             {Array.from({ length: tickerCopies }).map((_, ci) => (
@@ -1585,7 +876,7 @@ export default function Home() {
                   </div>
                 )}
                 {messages.map((msg, i) => (
-                  <TickerItem key={i} msg={msg} photo={photoOverrides[msg.name] ?? (MEMBERS.find(m => m.name === msg.name)?.photo ?? "")} />
+                  <TickerItem key={i} msg={msg} />
                 ))}
               </div>
             ))}
@@ -1593,13 +884,9 @@ export default function Home() {
         </div>
       )}
 
-
-
-
-
       <div
         className="min-h-screen px-4 sm:px-8 py-6 sm:py-8 transition-colors duration-300 relative"
-        style={bratMode ? { background: "#8ace00", fontFamily: "Arial, sans-serif" } : currentHour >= 17 ? { background: "#000" } : undefined}
+        style={bratMode ? { background: "#8ace00", fontFamily: "Arial, sans-serif" } : undefined}
       >
         <div className="max-w-[1280px] mx-auto">
           {/* Header */}
@@ -1617,105 +904,84 @@ export default function Home() {
                   }}
                 >{today}</span>
                 {weatherEmoji && <span className="text-3xl sm:text-5xl">{weatherEmoji}</span>}
+                {/* Lunch & clock-out countdowns */}
+                {currentHour >= 7 && secsToLunch > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FFE234] text-[11px] font-extrabold text-black uppercase tracking-widest shadow-[3px_3px_0_#000] tabular-nums whitespace-nowrap">
+                    🍕 {lunchLabel} {formatCountdownCompact(secsToLunch)}
+                  </span>
+                )}
+                {currentHour === 12 && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-extrabold text-black uppercase tracking-widest shadow-[3px_3px_0_#000] animate-pulse whitespace-nowrap">
+                    🍕 it&apos;s lunch bestie go eat
+                  </span>
+                )}
+                {currentHour >= 8 && secsToClockOut > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FF9DC8] text-[11px] font-extrabold text-black uppercase tracking-widest shadow-[3px_3px_0_#000] tabular-nums whitespace-nowrap">
+                    🏃 {clockOutLabel} {formatCountdownCompact(secsToClockOut)}
+                  </span>
+                )}
+                {currentHour >= 17 && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-extrabold text-black uppercase tracking-widest shadow-[3px_3px_0_#000] animate-bounce whitespace-nowrap">
+                    🎉 go home bestie we are so done
+                  </span>
+                )}
               </div>
               <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#3CB55A] animate-pulse inline-block" />
-                v{process.env.NEXT_PUBLIC_APP_VERSION}
-              </div>
-              {!isGuest && <>
-              <button
-                onClick={() => setShowFeedback(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FF9DC8] text-[11px] font-bold text-black hover:bg-[#FFE234] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]"
-              >
-                💬 Feedback
-              </button>
-              <button
-                onClick={() => setShowFeatureRequest(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FFE234] text-[11px] font-bold text-black hover:bg-[#FF9DC8] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]"
-              >
-                💡 Feature Request
-              </button>
-              <button
-                onClick={() => setShowBugReport(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FF9DC8] text-[11px] font-bold text-black hover:bg-[#FFE234] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]"
-              >
-                🐛 Submit Bug
-              </button>
-              <button
-                onClick={() => setShowTattle(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#ff4d4d] text-[11px] font-bold text-white hover:bg-[#FFE234] hover:text-black transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]"
-              >
-                🫢 Tattle
-              </button>
-              </>}
-              {currentUser && !isGuest && !VP.includes(currentUser) && (
-                <button
-                  onClick={handleTimeOffRequest}
-                  disabled={timeOffSent || timeOffRequests.some((r) => r.name === currentUser)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#b5f0c8] text-[11px] font-bold text-black hover:bg-[#FFE234] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000] disabled:opacity-60 disabled:cursor-default"
-                >
-                  🏖️ {(timeOffSent || timeOffRequests.some((r) => r.name === currentUser)) ? "Request sent!" : "hey Derek, approve my time off"}
-                </button>
-              )}
-              <button
-                onClick={() => setBratMode((v) => !v)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black text-[11px] font-bold tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer transition-colors"
-                style={{ background: bratMode ? "#8ace00" : "#fff", color: "#000", fontFamily: bratMode ? "Arial, sans-serif" : undefined }}
-              >{bratMode ? "brat" : "brat mode"}</button>
-              <button
-                onClick={() => setBrainRot(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FF9DC8] transition-colors"
-              >🧠 brain rot</button>
-              <button
-                onClick={() => {
-                  const next = !confettiOff;
-                  setConfettiOff(next);
-                  localStorage.setItem("team-busy-confetti-off", String(next));
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors"
-              >🎉 {confettiOff ? "confetti on" : "confetti off"}</button>
-              <button
-                onClick={() => {
-                  const next = !viewAsTeam;
-                  setViewAsTeam(next);
-                  localStorage.setItem("team-busy-view-as-team", String(next));
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#39FF14] transition-colors"
-              >👁️ {viewAsTeam ? "edit my card" : "view as team"}</button>
-              {currentUser === BOSS && (
-                <a
-                  href="/admin"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-black text-[11px] font-bold text-white tracking-widest uppercase shadow-[3px_3px_0_#FFE234] cursor-pointer hover:bg-[#FFE234] hover:text-black transition-colors"
-                >⚡ admin</a>
-              )}
-              {topOnlineUser && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
-                  <span className="font-extrabold">{topOnlineUser}</span> is chronically online
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#3CB55A] animate-pulse inline-block" />
+                  v{process.env.NEXT_PUBLIC_APP_VERSION}
                 </div>
-              )}
+                {!isGuest && <>
+                  <button onClick={() => setShowFeedback(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FF9DC8] text-[11px] font-bold text-black hover:bg-[#FFE234] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]">💬 Feedback</button>
+                  <button onClick={() => setShowFeatureRequest(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FFE234] text-[11px] font-bold text-black hover:bg-[#FF9DC8] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]">💡 Feature Request</button>
+                  <button onClick={() => setShowBugReport(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FF9DC8] text-[11px] font-bold text-black hover:bg-[#FFE234] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]">🐛 Submit Bug</button>
+                  <button onClick={() => setShowTattle(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#ff4d4d] text-[11px] font-bold text-white hover:bg-[#FFE234] hover:text-black transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000]">🫢 Tattle</button>
+                </>}
+                {currentUser && !isGuest && !VP.includes(currentUser) && (
+                  <button
+                    onClick={handleTimeOffRequest}
+                    disabled={timeOffSent || timeOffRequests.some((r) => r.name === currentUser)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#b5f0c8] text-[11px] font-bold text-black hover:bg-[#FFE234] transition-colors cursor-pointer uppercase tracking-widest shadow-[3px_3px_0_#000] disabled:opacity-60 disabled:cursor-default"
+                  >🏖️ {(timeOffSent || timeOffRequests.some((r) => r.name === currentUser)) ? "Request sent!" : "hey Derek, approve my time off"}</button>
+                )}
+                <button onClick={() => setBratMode((v) => !v)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black text-[11px] font-bold tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer transition-colors" style={{ background: bratMode ? "#8ace00" : "#fff", color: "#000", fontFamily: bratMode ? "Arial, sans-serif" : undefined }}>{bratMode ? "brat" : "brat mode"}</button>
+                <button onClick={() => setBrainRot(true)} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FF9DC8] transition-colors">🧠 brain rot</button>
+                <button
+                  onClick={() => { const next = !confettiOff; setConfettiOff(next); localStorage.setItem("team-busy-confetti-off", String(next)); }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors"
+                >🎉 {confettiOff ? "confetti on" : "confetti off"}</button>
+                <button
+                  onClick={() => { const next = !viewAsTeam; setViewAsTeam(next); localStorage.setItem("team-busy-view-as-team", String(next)); }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#39FF14] transition-colors"
+                >👁️ {viewAsTeam ? "edit my card" : "view as team"}</button>
+                {currentUser === BOSS && (
+                  <a href="/admin" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-black text-[11px] font-bold text-white tracking-widest uppercase shadow-[3px_3px_0_#FFE234] cursor-pointer hover:bg-[#FFE234] hover:text-black transition-colors">⚡ admin</a>
+                )}
+                {topOnlineUser && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#39FF14] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000]">
+                    <span className="font-extrabold">{topOnlineUser}</span> is chronically online
+                  </div>
+                )}
               </div>
             </div>
             {/* Home sticker — right side */}
             {loaded && currentUser && !isGuest && (
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={handleGoHome}
-                disabled={goHomeRequested}
-                title={goHomeRequested ? "Request sent!" : "I want to go home"}
-                className={`transition-all cursor-pointer shrink-0 ${goHomeRequested ? "scale-95" : "hover:scale-110 hover:rotate-6"}`}
-              >
-                <Image src="/home.png" alt="I want to go home" width={120} height={120} className="rounded-full" />
-              </button>
-            </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleGoHome}
+                  disabled={goHomeRequested}
+                  title={goHomeRequested ? "Request sent!" : "I want to go home"}
+                  className={`transition-all cursor-pointer shrink-0 ${goHomeRequested ? "scale-95" : "hover:scale-110 hover:rotate-6"}`}
+                >
+                  <Image src="/home.png" alt="I want to go home" width={120} height={120} className="rounded-full" />
+                </button>
+              </div>
             )}
           </div>
 
           {/* Loading */}
           {!loaded ? (
-            <p className="text-center text-white/60 text-lg animate-pulse">
-              loading the vibes...
-            </p>
+            <p className="text-center text-white/60 text-lg animate-pulse">loading the vibes...</p>
           ) : (
             <>
               {/* 4:45 Countdown */}
@@ -1729,7 +995,7 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Morning — Gen Z welcome banner (before 9:30am) */}
+              {/* Morning banner */}
               {isMorning && (
                 <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FF9DC8] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative">
                   <div className="relative z-10">
@@ -1743,10 +1009,10 @@ export default function Home() {
                 </div>
               )}
 
-              {/* 5pm — We Survived banner (evening only, not early morning) */}
+              {/* Evening banner */}
               {currentHour >= 17 && (
                 <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FFE234] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative">
-<div className="relative z-10">
+                  <div className="relative z-10">
                     <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{todayMsg.main}</p>
                     <p className="text-sm font-bold text-black/60 mt-1">{todayMsg.sub}</p>
                   </div>
@@ -1757,7 +1023,7 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Confetti — full screen overlay (evening + all day Friday) */}
+              {/* Confetti */}
               {!confettiOff && (currentHour >= 17 || nowDate.getDay() === 5) && (
                 <div className="fixed inset-0 pointer-events-none z-[50]">
                   {["#FF9DC8","#3D52F0","#e74c3c","#b5f0c8","#FFE234","#FF9DC8","#3D52F0","#a8f5c8","#dbb8ff","#ffb8e0","#FF4444","#000","#FF9DC8","#3D52F0","#b5f0c8","#FFE234","#dbb8ff","#e74c3c","#a8f5c8","#FF9DC8"].map((color, i) => (
@@ -1774,7 +1040,7 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Hall of Shame — after 5pm, only currently online users */}
+              {/* Hall of Shame */}
               {currentHour >= 17 && Object.keys(lastSeen).filter(n => n !== BOSS && lastSeen[n] > Date.now() - 120000).length > 0 && (
                 <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-white shadow-[6px_6px_0_#000] overflow-hidden">
                   <div className="px-5 py-3 border-b-[3px] border-black bg-[#FF9DC8] flex items-center gap-3">
@@ -1802,674 +1068,113 @@ export default function Home() {
                 </div>
               )}
 
+              {/* Cards */}
               <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
-                {/* Left: My card (edit mode) */}
                 {myMember && !viewAsTeam && (
                   <div className="animate-pop-in w-full md:w-[320px] md:shrink-0 md:sticky md:top-8">
-                    {renderMyCard(myMember)}
+                    <MyCard
+                      member={myMember}
+                      statuses={statuses} oooStatuses={oooStatuses} oooDetails={oooDetails}
+                      sosStatuses={sosStatuses} metcalfStatuses={metcalfStatuses}
+                      needWorkStatuses={needWorkStatuses} dontTalkStatuses={dontTalkStatuses}
+                      medsStatuses={medsStatuses} bodyDoubles={bodyDoubles}
+                      photoOverrides={photoOverrides} updatedAt={updatedAt}
+                      topOnlineUser={topOnlineUser} cardFlipped={cardFlipped} setCardFlipped={setCardFlipped}
+                      localSlider={localSlider} setLocalSlider={setLocalSlider} isDragging={isDragging}
+                      localAdhd={localAdhd} setLocalAdhd={setLocalAdhd} isAdhdDragging={isAdhdDragging}
+                      editingNote={editingNote} setEditingNote={setEditingNote}
+                      adhdLevels={adhdLevels} moods={moods} meetings={meetings}
+                      pokes={pokes} touchGrass={touchGrass}
+                      moneyRequestSent={moneyRequestSent} moneyRequests={moneyRequests}
+                      currentUser={currentUser} isGuest={isGuest}
+                      takeover={takeover} setTakeover={setTakeover}
+                      takeoverDraft={takeoverDraft} setTakeoverDraft={setTakeoverDraft}
+                      setShowTakeoverCompose={setShowTakeoverCompose}
+                      newMessage={newMessage} setNewMessage={setNewMessage}
+                      uploadingPhoto={uploadingPhoto} handlePhotoUpload={handlePhotoUpload}
+                      buddies={buddies}
+                      toggleOOO={toggleOOO} toggleMeds={toggleMeds} toggleBodyDouble={toggleBodyDouble}
+                      toggleNeedWork={toggleNeedWork} toggleDontTalk={toggleDontTalk}
+                      toggleMetcalf={toggleMetcalf} toggleSOS={toggleSOS}
+                      handleSliderChange={handleSliderChange} saveNote={saveNote}
+                      handleAdhdChange={handleAdhdChange} handleMoneyRequest={handleMoneyRequest}
+                      sendPoke={sendPoke} sendTouchGrass={sendTouchGrass}
+                      dismissPoke={dismissPoke} dismissTouchGrass={dismissTouchGrass}
+                      postMessage={postMessage} formatCountdown={formatCountdown}
+                      setShowMeetingPicker={setShowMeetingPicker} setMeeting={setMeeting}
+                      setMyMood={setMyMood}
+                    />
                   </div>
                 )}
-                {/* Right: Team grid */}
                 <div className="flex-1 min-w-0">
                   <div className={`grid grid-cols-1 gap-4 ${viewAsTeam ? "md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "md:grid-cols-2 xl:grid-cols-3"}`}>
-                    {teamMembers.map((member, i) => renderTeamCard(member, i))}
+                    {teamMembers.map((member, i) => (
+                      <TeamCard
+                        key={member.name}
+                        member={member} i={i}
+                        statuses={statuses} oooStatuses={oooStatuses}
+                        sosStatuses={sosStatuses} metcalfStatuses={metcalfStatuses}
+                        needWorkStatuses={needWorkStatuses} dontTalkStatuses={dontTalkStatuses}
+                        medsStatuses={medsStatuses} bodyDoubles={bodyDoubles}
+                        photoOverrides={photoOverrides} updatedAt={updatedAt}
+                        currentUser={currentUser} isGuest={isGuest}
+                        moods={moods} adhdLevels={adhdLevels} meetings={meetings}
+                        pokes={pokes} touchGrass={touchGrass}
+                        bans={bans} floatingReactions={floatingReactions}
+                        buddies={buddies} statusNotes={statusNotes}
+                        sendReaction={sendReaction} sendPoke={sendPoke} sendTouchGrass={sendTouchGrass}
+                        setShowDisputeModal={setShowDisputeModal}
+                        setDisputeSent={setDisputeSent} setDisputeText={setDisputeText}
+                        formatCountdown={formatCountdown}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>
 
-              {/* Go Home Requests */}
-              {goHomeRequests.length > 0 && (() => {
-                const sorted = [...goHomeRequests].sort((a, b) => b.count - a.count || a.ts - b.ts);
-                const topScore = sorted[0].count;
-                return (
-                  <div className="animate-pop-in mt-6">
-                    <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
-                      <button
-                        onClick={() => setGoHomeExpanded((v) => !v)}
-                        className="w-full px-5 pt-4 pb-3 border-b-[3px] border-black flex items-center gap-3 cursor-pointer hover:bg-[#f5d800] transition-colors"
-                      >
-                        <h2 className="text-4xl font-extrabold text-black tracking-tight flex-1 text-left">Wants to go home</h2>
-                        <span className="text-sm font-extrabold bg-black text-white px-3 py-1.5 rounded-full">{goHomeRequests.length}</span>
-                        <span className="text-xl ml-1">{goHomeExpanded ? "▲" : "▼"}</span>
-                      </button>
-                      {goHomeExpanded && (
-                        <div className="flex flex-wrap gap-3 px-5 py-4">
-                          {sorted.map((r, i) => {
-                            const isTop = i === 0 && topScore > 1;
-                            const isAngel = r.count >= 777;
-                            const isDevil = r.count === 666;
-                            return (
-                              <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isAngel ? "bg-sky-200 border-sky-400" : isDevil ? "bg-red-600 border-red-900" : isTop ? "bg-black border-black" : "bg-white border-black"}`}>
-                                {isTop && !isDevil && !isAngel && <span className="text-base">🏆</span>}
-                                {isAngel
-                                  ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-bounce">😇</span>
-                                  : isDevil
-                                  ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-pulse">😈</span>
-                                  : <Image
-                                      src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
-                                      alt={r.name} width={36} height={36}
-                                      className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
-                                    />
-                                }
-                                <span className={`font-extrabold text-base ${isAngel ? "text-sky-800" : isDevil ? "text-white" : isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
-                                <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isAngel ? "bg-sky-400 text-white" : isDevil ? "bg-red-900 text-white" : isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
+              <GoHomeRequests goHomeRequests={goHomeRequests} photoOverrides={photoOverrides} />
 
-              {/* Boss Card */}
               {bossMember && currentUser !== BOSS && (
-                <div className="animate-pop-in mt-8 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-[#FFE234] overflow-hidden">
-                  <div className="flex items-center gap-5 px-6 py-5">
-                    <div className="relative shrink-0">
-                      <Image
-                        src={photoOverrides[bossMember.name] ?? bossMember.photo}
-                        alt={bossMember.name} width={72} height={72}
-                        className="rounded-full object-cover w-[72px] h-[72px] border-[3px] border-black"
-                      />
-                      <span className="absolute -bottom-1 -right-1 text-lg">👑</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>{bossMember.name}</span>
-                        <span className="text-xs font-extrabold bg-black text-[#FFE234] px-3 py-1 rounded-full uppercase tracking-widest">The Boss</span>
-                        {topOnlineUser === bossMember.name && (
-                          <span className="text-[10px] font-extrabold text-black/50 uppercase tracking-widest">🖥️ most online</span>
-                        )}
-                        {sosStatuses[bossMember.name] && <span className="text-xl animate-pulse">🚨</span>}
-                        {metcalfStatuses[bossMember.name] && <span className="text-xl animate-bounce">🚗</span>}
-                      </div>
-                      <div className="mt-2 flex items-center gap-3">
-                        <div className="flex-1 h-3 rounded-full bg-black/20 overflow-hidden border-[2px] border-black max-w-xs">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${statuses[bossMember.name] ?? 50}%`, background: TRACK_COLORS[getLevel(statuses[bossMember.name] ?? 50)] }} />
-                        </div>
-                        <span className="text-xs font-extrabold uppercase tracking-widest">{LABELS[getLevel(statuses[bossMember.name] ?? 50)]}</span>
-                      </div>
-                      {statusNotes[bossMember.name] && (
-                        <p className="text-xs font-medium text-black/70 mt-1 font-mono">{statusNotes[bossMember.name]}</p>
-                      )}
-                    </div>
-                    <span className="text-5xl shrink-0">{EMOJIS[getLevel(statuses[bossMember.name] ?? 50)]}</span>
-                  </div>
-                  {currentUser !== BOSS && !isGuest && (
-                    <div className="flex items-center gap-4 px-6 pb-5">
-                      <button
-                        onClick={() => reactToBoss("heart")}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border-[3px] border-black font-bold text-sm cursor-pointer transition-all shadow-[3px_3px_0_#000] active:shadow-none active:translate-y-[2px] ${bossReactions[currentUser ?? ""] === "heart" ? "bg-black text-white" : "bg-white hover:bg-black hover:text-white"}`}
-                      >
-                        ❤️ <span>{Object.values(bossReactions).filter(r => r === "heart").length}</span>
-                      </button>
-                      <button
-                        onClick={() => reactToBoss("thumbsdown")}
-                        className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border-[3px] border-black font-bold text-sm cursor-pointer transition-all shadow-[3px_3px_0_#000] active:shadow-none active:translate-y-[2px] ${bossReactions[currentUser ?? ""] === "thumbsdown" ? "bg-black text-white" : "bg-white hover:bg-black hover:text-white"}`}
-                      >
-                        👎 <span>{Object.values(bossReactions).filter(r => r === "thumbsdown").length}</span>
-                      </button>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-3 px-6 pb-5 flex-wrap">
-                    <span className="text-xs font-extrabold uppercase tracking-widest text-black/50">today&apos;s vibes:</span>
-                    <span className="flex items-center gap-1 text-sm font-bold">❤️ {Object.values(bossReactions).filter(r => r === "heart").length}</span>
-                    <span className="flex items-center gap-1 text-sm font-bold">👎 {Object.values(bossReactions).filter(r => r === "thumbsdown").length}</span>
-                  </div>
-                </div>
+                <BossCard
+                  bossMember={bossMember} currentUser={currentUser} isGuest={isGuest}
+                  topOnlineUser={topOnlineUser} statuses={statuses} statusNotes={statusNotes}
+                  sosStatuses={sosStatuses} metcalfStatuses={metcalfStatuses}
+                  bossReactions={bossReactions} photoOverrides={photoOverrides}
+                  reactToBoss={reactToBoss}
+                />
               )}
 
-              {/* Vibe Music */}
-              <div className="mt-8 border-[3px] border-black rounded-[1.4rem] shadow-[5px_5px_0_#000] overflow-hidden bg-black">
-                <div className="relative w-full" style={{ height: "min(85vh, 560px)" }}>
-                  <iframe
-                    ref={vibeIframeRef}
-                    src={`https://www.youtube.com/embed/${vibeVideoId}?autoplay=1&mute=1&loop=1&playlist=${vibeVideoId}&controls=0&modestbranding=1&rel=0&enablejsapi=1&start=4`}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    style={{
-                      position: "absolute",
-                      top: "50%",
-                      left: "50%",
-                      transform: "translate(-50%, -50%)",
-                      width: "max(100%, calc(min(85vh, 560px) * 16 / 9))",
-                      height: "max(100%, calc(100% * 9 / 16))",
-                      border: "none",
-                    }}
-                  />
-                  <button
-                    onClick={() => {
-                      const cmd = vibeMuted ? "unMute" : "mute";
-                      vibeIframeRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func: cmd, args: [] }), "*");
-                      setVibeMuted(!vibeMuted);
-                    }}
-                    style={{
-                      position: "absolute",
-                      bottom: "16px",
-                      right: "16px",
-                      zIndex: 10,
-                      background: "rgba(0,0,0,0.6)",
-                      border: "2px solid rgba(255,255,255,0.4)",
-                      borderRadius: "999px",
-                      padding: "8px 16px",
-                      color: "#fff",
-                      fontSize: "13px",
-                      fontWeight: 800,
-                      cursor: "pointer",
-                      backdropFilter: "blur(6px)",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    {vibeMuted ? "🔇 unmute" : "🔊 mute"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Feature Updates */}
-              {shippedFeatures.length > 0 && (() => {
-                const PAGE_SIZE = 5;
-                const totalPages = Math.ceil(shippedFeatures.length / PAGE_SIZE);
-                const page = Math.min(featureUpdatesPage, totalPages - 1);
-                const visible = shippedFeatures.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
-                return (
-                  <div className="mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-white overflow-hidden">
-                    <button
-                      onClick={() => setFeatureUpdatesOpen((v) => !v)}
-                      className="w-full px-5 py-2.5 border-b-[3px] border-black bg-[#39FF14] flex items-center gap-3 cursor-pointer hover:opacity-90 transition-opacity"
-                    >
-                      <span className="text-base">📋</span>
-                      <h2 className="text-sm font-extrabold tracking-tight flex-1 text-left" style={{ fontFamily: "var(--font-display)" }}>feature updates</h2>
-                      <span className="text-[10px] font-bold bg-black text-[#39FF14] px-2 py-0.5 rounded-full">{shippedFeatures.length}</span>
-                      <span className="text-lg font-bold text-black/60 ml-1">{featureUpdatesOpen ? "▴" : "▾"}</span>
-                    </button>
-                    {featureUpdatesOpen && (
-                      <>
-                        <div className="divide-y-[2px] divide-black/10">
-                          {visible.map((f) => (
-                            <div key={f.ts} className="px-4 py-2.5 flex items-center gap-3">
-                              <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-extrabold border-2 border-black ${f.status === "done" ? "bg-[#4a9eff] text-white" : f.status === "dumb" ? "bg-[#ff4d4d] text-white" : f.status === "soon" ? "bg-[#FFE234] text-black" : "bg-[#39FF14] text-black"}`}>
-                                {f.status === "done" ? "✓ done" : f.status === "dumb" ? "🙅 dumb" : f.status === "soon" ? "⏳ soon" : "🚀 shipped"}
-                              </span>
-                              <p className="flex-1 text-sm font-medium text-black min-w-0 truncate">{f.message}</p>
-                              {f.name && <span className="text-[10px] text-black/40 font-bold shrink-0">{f.name}</span>}
-                              <span className="text-[10px] text-black/30 shrink-0">{timeAgo(f.shippedAt)}</span>
-                            </div>
-                          ))}
-                        </div>
-                        {totalPages > 1 && (
-                          <div className="px-4 py-2 border-t-[2px] border-black/10 flex items-center justify-between">
-                            <button
-                              onClick={() => setFeatureUpdatesPage((p) => Math.max(0, p - 1))}
-                              disabled={page === 0}
-                              className="text-[11px] font-bold text-black/40 hover:text-black disabled:opacity-30 cursor-pointer transition-colors"
-                            >← prev</button>
-                            <span className="text-[10px] text-black/30 font-bold">{page + 1} / {totalPages}</span>
-                            <button
-                              onClick={() => setFeatureUpdatesPage((p) => Math.min(totalPages - 1, p + 1))}
-                              disabled={page === totalPages - 1}
-                              className="text-[11px] font-bold text-black/40 hover:text-black disabled:opacity-30 cursor-pointer transition-colors"
-                            >next →</button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                );
-              })()}
-
+              <VibeMusic vibeVideoId={vibeVideoId} />
+              <FeatureUpdates shippedFeatures={shippedFeatures} />
             </>
           )}
         </div>
 
-        {/* Meeting Picker Modal */}
-        {showMeetingPicker && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[380px] w-[92%] flex flex-col gap-4">
-              <h2 className="text-2xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>📅 how long?</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {[15, 30, 45, 60].map((min) => (
-                  <button
-                    key={min}
-                    onClick={() => setMeeting(min)}
-                    className="py-4 rounded-xl border-[3px] border-black bg-white hover:bg-[#FF9DC8] font-extrabold text-lg shadow-[3px_3px_0_#000] active:shadow-none active:translate-y-[2px] transition-all cursor-pointer"
-                  >{min} min</button>
-                ))}
-              </div>
-              <button onClick={() => setShowMeetingPicker(false)} className="text-sm text-black/40 hover:text-black transition-colors cursor-pointer">cancel</button>
-            </div>
-          </div>
-        )}
-
-        {/* Takeover Overlay — shown to everyone except Derek */}
-        {takeover && currentUser !== BOSS && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ background: "#FFE234" }}>
-            <div className="max-w-2xl w-full px-8 text-center">
-              <div className="text-6xl mb-6">📣</div>
-              <p className="text-5xl sm:text-7xl font-extrabold text-black leading-tight" style={{ fontFamily: "var(--font-display)" }}>{takeover}</p>
-              <p className="mt-8 text-sm font-bold text-black/40 uppercase tracking-widest">— Derek</p>
-            </div>
-          </div>
-        )}
-
-        {/* Takeover Compose Modal — Derek only */}
-        {showTakeoverCompose && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[480px] w-[92%] flex flex-col gap-4">
-              <h2 className="text-2xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>📣 Screen Takeover</h2>
-              <p className="text-sm text-black/50">This message will fill everyone&apos;s screen.</p>
-              <textarea
-                value={takeoverDraft}
-                onChange={(e) => setTakeoverDraft(e.target.value)}
-                onPaste={(e) => e.preventDefault()}
-                placeholder="Type your message…"
-                maxLength={200}
-                rows={3}
-                className="w-full px-4 py-3 rounded-xl border-[3px] border-black text-lg font-bold focus:outline-none resize-none"
-                autoFocus
-              />
-              <div className="flex gap-3">
-                <button
-                  onClick={async () => {
-                    if (!takeoverDraft.trim()) return;
-                    setTakeover(takeoverDraft.trim());
-                    setShowTakeoverCompose(false);
-                    await fetch("/api/takeover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: takeoverDraft.trim() }) });
-                  }}
-                  disabled={!takeoverDraft.trim()}
-                  className="flex-1 py-3 rounded-xl bg-black text-white font-extrabold text-sm border-[3px] border-black shadow-[4px_4px_0_#FFE234] hover:bg-[#FFE234] hover:text-black transition-all cursor-pointer disabled:opacity-40 disabled:cursor-default"
-                >send it 📣</button>
-                <button
-                  onClick={() => setShowTakeoverCompose(false)}
-                  className="px-4 py-3 rounded-xl border-[3px] border-black font-bold text-sm hover:bg-black hover:text-white transition-colors cursor-pointer"
-                >cancel</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Hatch Modal */}
-        {BUDDIES_ENABLED && showHatchModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[400px] w-[92%] flex flex-col items-center gap-4">
-              {hatchPhase === "egg" && (
-                <>
-                  <div className="text-7xl select-none">🥚</div>
-                  <h2 className="text-2xl font-extrabold text-center" style={{ fontFamily: "var(--font-display)" }}>your buddy is waiting</h2>
-                  <p className="text-sm text-[#8a857d] text-center">one-time hatch. you get what you get. no trades.</p>
-                  <button
-                    onClick={crackEgg}
-                    className="mt-2 w-full py-3 rounded-2xl bg-[#FFE234] border-[3px] border-black font-extrabold text-base shadow-[4px_4px_0_#000] hover:bg-[#FF9DC8] transition-all cursor-pointer active:translate-y-[2px] active:shadow-none"
-                  >
-                    crack it open 🥚
-                  </button>
-                  <button onClick={() => setShowHatchModal(false)} className="text-sm text-[#b5b0a8] hover:text-black transition-colors cursor-pointer">
-                    not yet
-                  </button>
-                </>
-              )}
-
-              {hatchPhase === "cracking" && (
-                <div className="flex flex-col items-center gap-4 py-6">
-                  <div className="text-7xl animate-egg-crack select-none">🥚</div>
-                  <p className="text-base font-bold text-[#8a857d] animate-pulse">hatching…</p>
-                </div>
-              )}
-
-              {hatchPhase === "reveal" && hatchedBuddy && (() => {
-                const styles = RARITY_STYLES[hatchedBuddy.rarity];
-                return (
-                  <>
-                    <div
-                      className="w-full rounded-2xl border-[3px] border-black p-5 flex flex-col items-center gap-2 animate-buddy-flash shadow-[4px_4px_0_#000]"
-                      style={{ background: styles.bg }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={getBuddyImagePath(hatchedBuddy)} alt={hatchedBuddy.name} className="w-28 h-28 object-contain" />
-                      <span className="text-2xl font-extrabold mt-1" style={{ color: styles.text, fontFamily: "var(--font-display)" }}>{hatchedBuddy.name}</span>
-                      <span className="text-[11px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border-[2px] border-black" style={{ color: styles.text }}>{styles.label}</span>
-                      <span className="text-sm font-medium italic text-center" style={{ color: styles.text }}>&ldquo;{hatchedBuddy.tagline}&rdquo;</span>
-                    </div>
-                    <button
-                      onClick={confirmHatch}
-                      className="w-full py-3 rounded-2xl bg-black text-white border-[3px] border-black font-extrabold text-base shadow-[4px_4px_0_#555] hover:opacity-90 transition-all cursor-pointer active:translate-y-[2px] active:shadow-none"
-                    >
-                      let&apos;s goooo 🔥
-                    </button>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        )}
-
-        {/* Ghost Modal */}
-        {showGhostModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
-              <div className="text-4xl mb-2 text-center">👻</div>
-              <h2 className="text-xl font-extrabold text-center mb-1" style={{ fontFamily: "var(--font-display)" }}>Going Ghost</h2>
-              <p className="text-sm text-[#8a857d] text-center mb-5">Let the team know what&apos;s up</p>
-              <div className="flex flex-col gap-3">
-                <div>
-                  <label className="text-xs font-bold text-[#6b6560] uppercase tracking-wide mb-1 block">What&apos;s the vibe?</label>
-                  <input
-                    type="text"
-                    placeholder="OOO, at a conference, touching grass…"
-                    value={ghostNote}
-                    onChange={(e) => setGhostNote(e.target.value)}
-                    className="w-full border-2 border-black rounded-xl px-3 py-2.5 text-sm font-medium bg-white focus:outline-none"
-                    maxLength={200}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-[#6b6560] uppercase tracking-wide mb-1 block">Back when?</label>
-                  <input
-                    type="text"
-                    placeholder="Monday, Jan 20, TBD…"
-                    value={ghostBackDate}
-                    onChange={(e) => setGhostBackDate(e.target.value)}
-                    className="w-full border-2 border-black rounded-xl px-3 py-2.5 text-sm font-medium bg-white focus:outline-none"
-                    maxLength={200}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowGhostModal(false)}
-                  className="flex-1 py-2.5 rounded-xl border-2 border-black text-sm font-bold text-[#8a857d] hover:text-black transition-all cursor-pointer"
-                >
-                  nevermind
-                </button>
-                <button
-                  onClick={confirmGhost}
-                  className="flex-1 py-2.5 rounded-xl border-2 border-black bg-black text-sm font-bold text-white hover:bg-[#2d2a26] transition-all cursor-pointer"
-                >
-                  go ghost 👻
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Feedback Modal */}
-        {showFeedback && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
-              {feedbackSent ? (
-                <div className="text-center py-4">
-                  <div className="text-5xl mb-3">🙏</div>
-                  <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Thanks!</p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-start justify-between mb-1">
-                    <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>App feedback</h2>
-                    <button
-                      onClick={() => { setShowFeedback(false); setFeedbackText(""); }}
-                      className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5"
-                    >✕</button>
-                  </div>
-                  <p className="text-sm text-[#b5b0a8] mb-5 font-medium">what&apos;s working, what&apos;s not, ideas — all welcome</p>
-                  <textarea
-                    autoFocus
-                    value={feedbackText}
-                    onChange={(e) => setFeedbackText(e.target.value)}
-                    onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitFeedback(); }}
-                    placeholder="type here..."
-                    maxLength={200}
-                    rows={4}
-                    className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
-                  />
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => { setShowFeedback(false); setFeedbackText(""); }}
-                      className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
-                    >nevermind</button>
-                    <button
-                      onClick={submitFeedback}
-                      disabled={!feedbackText.trim()}
-                      className="flex-1 py-3 rounded-2xl bg-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default"
-                    >send it ✉️</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Feature Request Modal */}
-        {showFeatureRequest && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
-              {featureRequestSent ? (
-                <div className="text-center py-4">
-                  <div className="text-5xl mb-3">💡</div>
-                  <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Noted!</p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-start justify-between mb-1">
-                    <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Feature Request</h2>
-                    <button
-                      onClick={() => { setShowFeatureRequest(false); setFeatureRequestText(""); }}
-                      className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5"
-                    >✕</button>
-                  </div>
-                  <p className="text-sm text-[#b5b0a8] mb-5 font-medium">got an idea? drop it here and we&apos;ll cook</p>
-                  <textarea
-                    autoFocus
-                    value={featureRequestText}
-                    onChange={(e) => setFeatureRequestText(e.target.value.slice(0, 200))}
-                    onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitFeatureRequest(); }}
-                    placeholder="what should we build..."
-                    rows={4}
-                    maxLength={200}
-                    className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-2"
-                  />
-                  <p className="text-xs text-[#b5b0a8] text-right mb-4 font-medium">{featureRequestText.length}/200</p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => { setShowFeatureRequest(false); setFeatureRequestText(""); }}
-                      className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
-                    >nevermind</button>
-                    <button
-                      onClick={submitFeatureRequest}
-                      disabled={!featureRequestText.trim()}
-                      className="flex-1 py-3 rounded-2xl bg-[#FFE234] border-[3px] border-black text-black font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
-                    >send it 💡</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Bug Report Modal */}
-        {showBugReport && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
-              {bugReportSent ? (
-                <div className="text-center py-4">
-                  <div className="text-5xl mb-3">🐛</div>
-                  <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Got it!</p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-start justify-between mb-1">
-                    <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Submit a Bug</h2>
-                    <button
-                      onClick={() => { setShowBugReport(false); setBugReportText(""); }}
-                      className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5"
-                    >✕</button>
-                  </div>
-                  <p className="text-sm text-[#b5b0a8] mb-5 font-medium">something broken? spill the tea</p>
-                  <textarea
-                    autoFocus
-                    value={bugReportText}
-                    onChange={(e) => setBugReportText(e.target.value)}
-                    onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitBugReport(); }}
-                    placeholder="what broke and when..."
-                    maxLength={200}
-                    rows={4}
-                    className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
-                  />
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => { setShowBugReport(false); setBugReportText(""); }}
-                      className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
-                    >nevermind</button>
-                    <button
-                      onClick={submitBugReport}
-                      disabled={!bugReportText.trim()}
-                      className="flex-1 py-3 rounded-2xl bg-[#FF9DC8] border-[3px] border-black text-black font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
-                    >send it 🐛</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Tattle Modal */}
-        {showTattle && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
-              {tattleSent ? (
-                <div className="text-center py-4">
-                  <div className="text-5xl mb-3">🫢</div>
-                  <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Noted.</p>
-                  <p className="text-sm text-[#b5b0a8] mt-1">Derek will see this.</p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-start justify-between mb-1">
-                    <h2 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Tattle Box</h2>
-                    <button
-                      onClick={() => { setShowTattle(false); setTattleText(""); }}
-                      className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5"
-                    >✕</button>
-                  </div>
-                  <p className="text-sm text-[#b5b0a8] mb-5 font-medium">100% anonymous. vent freely.</p>
-                  <textarea
-                    autoFocus
-                    value={tattleText}
-                    onChange={(e) => setTattleText(e.target.value)}
-                    onPaste={(e) => e.preventDefault()} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submitTattle(); }}
-                    placeholder="spill it..."
-                    rows={4}
-                    className="w-full border-[3px] border-black focus:border-black rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white transition-colors mb-4"
-                  />
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => { setShowTattle(false); setTattleText(""); }}
-                      className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
-                    >nevermind</button>
-                    <button
-                      onClick={submitTattle}
-                      disabled={!tattleText.trim()}
-                      className="flex-1 py-3 rounded-2xl bg-[#ff4d4d] border-[3px] border-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
-                    >send it 🫢</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Ban Dispute Modal */}
-        {showDisputeModal && currentUser && bans[currentUser] && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-            <div className="animate-bounce-in bg-white border-[4px] border-[#e74c3c] rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[400px] w-full">
-              {disputeSent ? (
-                <div className="text-center py-4">
-                  <div className="text-5xl mb-3">✋</div>
-                  <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Dispute filed.</p>
-                  <p className="text-sm text-[#b5b0a8] mt-1">Derek will review it.</p>
-                  <button
-                    onClick={() => setShowDisputeModal(false)}
-                    className="mt-5 px-6 py-2.5 rounded-2xl bg-black text-white font-bold text-sm cursor-pointer hover:opacity-80 transition-opacity"
-                  >close</button>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-start justify-between mb-1">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-[#e74c3c]" style={{ fontFamily: "var(--font-display)" }}>Dispute Ban</h2>
-                    <button onClick={() => setShowDisputeModal(false)} className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5">✕</button>
-                  </div>
-                  <p className="text-sm text-[#b5b0a8] mb-5 font-medium">Make your case. Derek will see this.</p>
-                  <textarea
-                    autoFocus
-                    value={disputeText}
-                    onChange={(e) => setDisputeText(e.target.value)}
-                    onPaste={(e) => e.preventDefault()}
-                    placeholder="why should you be unbanned?"
-                    maxLength={200}
-                    rows={4}
-                    className="w-full border-[3px] border-[#e74c3c] focus:border-[#e74c3c] rounded-2xl px-4 py-3 text-sm font-medium outline-none resize-none bg-white mb-4"
-                  />
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowDisputeModal(false)}
-                      className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
-                    >nevermind</button>
-                    <button
-                      onClick={async () => {
-                        if (!disputeText.trim() || !currentUser) return;
-                        await fetch("/api/ban", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ action: "dispute", name: currentUser, message: disputeText.trim() }),
-                        });
-                        setDisputeSent(true);
-                      }}
-                      disabled={!disputeText.trim()}
-                      className="flex-1 py-3 rounded-2xl bg-[#e74c3c] border-[3px] border-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]"
-                    >send it ✋</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Identity Picker */}
-        {showPicker && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="animate-bounce-in bg-white border-[4px] border-black rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[420px] w-[92%]">
-              <div className="text-center mb-7">
-                <div className="text-5xl mb-3">👋</div>
-                <h2 className="text-3xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-display)" }}>Who dis?</h2>
-                <p className="text-sm text-[#b5b0a8] mt-1 font-medium">pick yourself bestie</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {MEMBERS.map((member) => (
-                  <button
-                    key={member.name}
-                    onClick={() => pickUser(member.name)}
-                    className="hover-wiggle flex items-center gap-3 px-4 py-3.5 border-[3px] border-black rounded-2xl bg-white hover:bg-[#FFE234] hover:shadow-[3px_3px_0_#000] transition-all cursor-pointer text-[15px] font-bold active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
-                  >
-                    <Image
-                      src={photoOverrides[member.name] ?? member.photo}
-                      alt={member.name} width={42} height={42}
-                      className="rounded-full object-cover w-[42px] h-[42px] border-2 border-black"
-                    />
-                    {member.name}
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => pickUser("__guest__")}
-                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-3 border-[3px] border-dashed border-black rounded-2xl bg-white hover:bg-[#f7f7f5] transition-all cursor-pointer text-sm font-bold text-[#b5b0a8] hover:text-black"
-              >
-                👀 just looking (guest mode)
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Modals */}
+        <MeetingPickerModal showMeetingPicker={showMeetingPicker} setShowMeetingPicker={setShowMeetingPicker} setMeeting={setMeeting} />
+        <TakeoverModal takeover={takeover} setTakeover={setTakeover} showTakeoverCompose={showTakeoverCompose} setShowTakeoverCompose={setShowTakeoverCompose} takeoverDraft={takeoverDraft} setTakeoverDraft={setTakeoverDraft} currentUser={currentUser} />
+        <HatchModal showHatchModal={showHatchModal} setShowHatchModal={setShowHatchModal} hatchPhase={hatchPhase} hatchedBuddy={hatchedBuddy} crackEgg={crackEgg} confirmHatch={confirmHatch} />
+        <GhostModal showGhostModal={showGhostModal} ghostNote={ghostNote} setGhostNote={setGhostNote} ghostBackDate={ghostBackDate} setGhostBackDate={setGhostBackDate} confirmGhost={confirmGhost} setShowGhostModal={setShowGhostModal} />
+        <TextSubmitModal show={showFeedback} text={feedbackText} setText={setFeedbackText} sent={feedbackSent} onSubmit={submitFeedback} onClose={() => setShowFeedback(false)}
+          title="App feedback" subtitle="what's working, what's not, ideas — all welcome" placeholder="type here..."
+          sentEmoji="🙏" sentText="Thanks!" submitLabel="send it ✉️"
+          submitClassName="flex-1 py-3 rounded-2xl bg-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default" />
+        <TextSubmitModal show={showFeatureRequest} text={featureRequestText} setText={setFeatureRequestText} sent={featureRequestSent} onSubmit={submitFeatureRequest} onClose={() => setShowFeatureRequest(false)}
+          title="Feature Request" subtitle="got an idea? drop it here and we'll cook" placeholder="what should we build..."
+          sentEmoji="💡" sentText="Noted!" submitLabel="send it 💡"
+          submitClassName="flex-1 py-3 rounded-2xl bg-[#FFE234] border-[3px] border-black text-black font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]" />
+        <TextSubmitModal show={showBugReport} text={bugReportText} setText={setBugReportText} sent={bugReportSent} onSubmit={submitBugReport} onClose={() => setShowBugReport(false)}
+          title="Submit a Bug" subtitle="something broken? spill the tea" placeholder="what broke and when..."
+          sentEmoji="🐛" sentText="Got it!" submitLabel="send it 🐛"
+          submitClassName="flex-1 py-3 rounded-2xl bg-[#FF9DC8] border-[3px] border-black text-black font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]" />
+        <TextSubmitModal show={showTattle} text={tattleText} setText={setTattleText} sent={tattleSent} onSubmit={submitTattle} onClose={() => setShowTattle(false)}
+          title="Tattle Box" subtitle="100% anonymous. vent freely." placeholder="spill it..."
+          sentEmoji="🫢" sentText="Noted." sentSubtext="Derek will see this." submitLabel="send it 🫢"
+          submitClassName="flex-1 py-3 rounded-2xl bg-[#ff4d4d] border-[3px] border-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]" />
+        <DisputeModal showDisputeModal={showDisputeModal} setShowDisputeModal={setShowDisputeModal} disputeText={disputeText} setDisputeText={setDisputeText} disputeSent={disputeSent} setDisputeSent={setDisputeSent} currentUser={currentUser} bans={bans} />
+        <IdentityPicker showPicker={showPicker} photoOverrides={photoOverrides} pickUser={pickUser} />
       </div>
+
       {/* Footer */}
       <div style={{ width: "100%", background: "#FF9DC8", borderTop: "4px solid #000" }}>
         <div className="max-w-[1280px] mx-auto px-4 sm:px-8 py-8 sm:py-12 flex flex-col sm:flex-row items-center gap-2 sm:gap-0 justify-between text-center sm:text-left">
@@ -2479,21 +1184,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Brain Rot Overlay */}
-      {brainRot && (
-        <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center">
-          <iframe
-            src={`https://www.youtube.com/embed/${brainRotVideoId}?autoplay=1&loop=1&playlist=${brainRotVideoId}&controls=0&modestbranding=1`}
-            className="w-full h-full"
-            allow="autoplay; fullscreen"
-            allowFullScreen
-          />
-          <button
-            onClick={() => setBrainRot(false)}
-            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-black/70 border-[2px] border-white text-white text-xl font-bold flex items-center justify-center hover:bg-black cursor-pointer"
-          >✕</button>
-        </div>
-      )}
+      <BrainRotOverlay brainRot={brainRot} brainRotVideoId={brainRotVideoId} setBrainRot={setBrainRot} />
     </>
   );
 }

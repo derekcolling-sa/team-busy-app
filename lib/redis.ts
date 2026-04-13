@@ -805,3 +805,4 @@ export async function clearTakeover(): Promise<void> { await redis.del(TAKEOVER_
 export async function clearAllSOS(): Promise<void> { await redis.del(SOS_KEY); }
 export async function clearAllAdhd(): Promise<void> { await redis.del(ADHD_KEY); }
 export async function clearAllMessages(): Promise<void> { await redis.del(MESSAGES_KEY); }
+export async function clearAllStatus(): Promise<void> { await redis.del(REDIS_KEY); }

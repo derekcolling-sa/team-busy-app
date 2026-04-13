@@ -226,24 +226,10 @@ export default function AdminPage() {
     }
   };
 
-  const fetchData = useCallback(async () => {
+  // Live poll — only real-time data, runs every 60s
+  const fetchPoll = useCallback(async () => {
     try {
-      const [pollRes, historyRes, feedbackRes, photosRes, buddiesRes, tattleRes] = await Promise.all([
-        fetch("/api/poll"),
-        fetch("/api/history"),
-        fetch("/api/feedback"),
-        fetch("/api/photos"),
-        fetch("/api/buddies"),
-        fetch("/api/tattle"),
-      ]);
-      const [poll, historyData, feedbackData, photosData, buddiesData, tattleData] = await Promise.all([
-        pollRes.json(),
-        historyRes.json(),
-        feedbackRes.json(),
-        photosRes.json(),
-        buddiesRes.json(),
-        tattleRes.json(),
-      ]);
+      const poll = await fetch("/api/poll").then(r => r.json());
       setStatuses(poll.status ?? {});
       setUpdatedAt(poll.updated ?? {});
       setStatusNotes(poll.notes ?? {});
@@ -264,30 +250,70 @@ export default function AdminPage() {
       setMeetings(poll.meetings ?? {});
       setLastSeen(poll.lastSeen ?? {});
       setShippedFeatures(poll.shippedFeatures ?? []);
-      setHistory(historyData);
-      setFeedback(feedbackData.items ?? feedbackData);
-      setResolvedFromServer(feedbackData.resolvedTs ?? []);
-      setPhotoOverrides(photosData.photos ?? {});
-      setBuddies(buddiesData.buddies ?? {});
-      setTattles(tattleData.tattles ?? []);
       setBans(poll.bans ?? {});
-      // fetch disputes separately
-      fetch("/api/ban").then(r => r.json()).then(d => setBanDisputes(d.disputes ?? [])).catch(() => {});
       if (poll.videos?.vibeVideoId) setVibeVideoId(poll.videos.vibeVideoId);
       if (poll.videos?.brainRotVideoId) setBrainRotVideoId(poll.videos.brainRotVideoId);
     } catch {
       // retry next poll
-    } finally {
-      setLoaded(true);
+    }
+  }, []);
+
+  // Inbox poll — feedback, tattles, ban disputes — slower cadence (every 3 min)
+  const fetchInbox = useCallback(async () => {
+    try {
+      const [feedbackRes, tattleRes, banRes] = await Promise.all([
+        fetch("/api/feedback"),
+        fetch("/api/tattle"),
+        fetch("/api/ban"),
+      ]);
+      const [feedbackData, tattleData, banData] = await Promise.all([
+        feedbackRes.json(),
+        tattleRes.json(),
+        banRes.json(),
+      ]);
+      setFeedback(feedbackData.items ?? feedbackData);
+      setResolvedFromServer(feedbackData.resolvedTs ?? []);
+      setTattles(tattleData.tattles ?? []);
+      setBanDisputes(banData.disputes ?? []);
+    } catch {
+      // retry next poll
+    }
+  }, []);
+
+  // Static data — history, photos, buddies — fetch once on mount
+  const fetchStatic = useCallback(async () => {
+    try {
+      const [historyRes, photosRes, buddiesRes] = await Promise.all([
+        fetch("/api/history"),
+        fetch("/api/photos"),
+        fetch("/api/buddies"),
+      ]);
+      const [historyData, photosData, buddiesData] = await Promise.all([
+        historyRes.json(),
+        photosRes.json(),
+        buddiesRes.json(),
+      ]);
+      setHistory(historyData);
+      setPhotoOverrides(photosData.photos ?? {});
+      setBuddies(buddiesData.buddies ?? {});
+    } catch {
+      // non-critical, will show stale/empty
     }
   }, []);
 
   useEffect(() => {
     if (!authed) return;
-    fetchData();
-    const interval = setInterval(fetchData, 60000);
-    return () => clearInterval(interval);
-  }, [fetchData, authed]);
+    // Initial load: fetch everything in parallel, then mark loaded
+    Promise.all([fetchPoll(), fetchInbox(), fetchStatic()]).finally(() => setLoaded(true));
+    // Live poll every 60s
+    const pollInterval = setInterval(fetchPoll, 60000);
+    // Inbox every 3 minutes
+    const inboxInterval = setInterval(fetchInbox, 180000);
+    return () => {
+      clearInterval(pollInterval);
+      clearInterval(inboxInterval);
+    };
+  }, [fetchPoll, fetchInbox, fetchStatic, authed]);
 
   useEffect(() => {
     if (sortTimerRef.current) clearTimeout(sortTimerRef.current);
@@ -315,7 +341,7 @@ export default function AdminPage() {
 
   const dismissMoneyRequest = async (name: string) => {
     setMoneyRequests((prev) => prev.filter((r) => r.name !== name));
-    await fetch("/api/need-money", {
+    await fetch("/api/request/money", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
@@ -324,7 +350,7 @@ export default function AdminPage() {
 
   const approveTimeOff = async (name: string) => {
     setTimeOffRequests((prev) => prev.filter((r) => r.name !== name));
-    await fetch("/api/time-off", {
+    await fetch("/api/request/time-off", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
@@ -359,7 +385,7 @@ export default function AdminPage() {
   const toggleSOS = async (name: string) => {
     const newVal = !sosStatuses[name];
     setSosStatuses((prev) => ({ ...prev, [name]: newVal }));
-    await fetch("/api/status/sos", {
+    await fetch("/api/status/toggle/sos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, sos: newVal }),
