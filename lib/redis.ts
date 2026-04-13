@@ -776,7 +776,24 @@ export async function getMoneyRequests(): Promise<TimeOffEntry[]> {
     .sort((a, b) => a.ts - b.ts);
 }
 
+const MEDS_KEY = "team-busy-meds";
+
+export async function getAllMeds(): Promise<Record<string, boolean>> {
+  const data = await redis.hgetall(MEDS_KEY);
+  if (!data) return {};
+  const result: Record<string, boolean> = {};
+  for (const [key, value] of Object.entries(data)) {
+    result[key] = value === "true" || value === true;
+  }
+  return result;
+}
+
+export async function setMemberMeds(name: string, active: boolean): Promise<void> {
+  await redis.hset(MEDS_KEY, { [name]: String(active) });
+}
+
 // Daily reset helpers
+export async function clearAllMeds(): Promise<void> { await redis.del(MEDS_KEY); }
 export async function clearAllTouchGrass(): Promise<void> { await redis.del(TOUCH_GRASS_KEY); }
 export async function clearAllDontTalk(): Promise<void> { await redis.del(DONT_TALK_KEY); }
 export async function clearAllNeedWork(): Promise<void> { await redis.del(NEED_WORK_KEY); }

@@ -163,6 +163,7 @@ export default function Home() {
   const [metcalfStatuses, setMetcalfStatuses] = useState<Record<string, boolean>>({});
   const [needWorkStatuses, setNeedWorkStatuses] = useState<Record<string, boolean>>({});
   const [dontTalkStatuses, setDontTalkStatuses] = useState<Record<string, boolean>>({});
+  const [medsStatuses, setMedsStatuses] = useState<Record<string, boolean>>({});
   const [cardFlipped, setCardFlipped] = useState(false);
   const [bossReactions, setBossReactions] = useState<Record<string, "heart" | "thumbsdown">>({});
   const [showGhostModal, setShowGhostModal] = useState(false);
@@ -260,6 +261,7 @@ export default function Home() {
       setBossReactions(poll.bossReactions ?? {});
       setNeedWorkStatuses(poll.needWork ?? {});
       setDontTalkStatuses(poll.dontTalk ?? {});
+      setMedsStatuses(poll.meds ?? {});
       setSessionTimes(poll.sessionTime ?? {});
       if (!isAdhdDragging.current) setAdhdLevels(poll.adhd ?? {});
       setPokes(poll.pokes ?? []);
@@ -575,6 +577,16 @@ export default function Home() {
     const newVal = !dontTalkStatuses[name];
     setDontTalkStatuses((prev) => ({ ...prev, [name]: newVal }));
     await fetch("/api/status/dont-talk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, active: newVal }),
+    });
+  };
+
+  const toggleMeds = async (name: string) => {
+    const newVal = !medsStatuses[name];
+    setMedsStatuses((prev) => ({ ...prev, [name]: newVal }));
+    await fetch("/api/status/meds", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, active: newVal }),
@@ -982,6 +994,7 @@ export default function Home() {
     const isMetcalf = !!metcalfStatuses[member.name];
     const isNeedWork = !!needWorkStatuses[member.name];
     const isDontTalk = !!dontTalkStatuses[member.name];
+    const isMeds = !!medsStatuses[member.name];
 
     return (
       <div
@@ -1157,6 +1170,12 @@ export default function Home() {
             >
               {moneyRequestSent || moneyRequests.some((r) => r.name === currentUser) ? "sent ✓" : "i need 💰"}
             </button>
+            <button
+              onClick={() => toggleMeds(member.name)}
+              className={`w-full py-2 rounded-xl border-[3px] border-black text-sm font-bold cursor-pointer transition-all mt-2 ${isMeds ? "bg-[#a8f5c8] text-black shadow-none" : "bg-white text-black hover:bg-[#a8f5c8] shadow-[3px_3px_0_#000]"}`}
+            >
+              💊 {isMeds ? "meds taken ✓" : "took my meds"}
+            </button>
           </>
         )}
         {isMetcalf && member.name !== currentUser && (
@@ -1254,6 +1273,7 @@ export default function Home() {
     const isMetcalf = !!metcalfStatuses[member.name];
     const isNeedWork = !!needWorkStatuses[member.name];
     const isDontTalk = !!dontTalkStatuses[member.name];
+    const isMeds = !!medsStatuses[member.name];
     const isBanned = !!bans[member.name];
     if (isBanned) {
       return (
@@ -1423,6 +1443,12 @@ export default function Home() {
             <div className="w-full rounded-xl bg-[#3D52F0] px-4 py-2.5 flex items-center gap-2">
               <span className="text-lg">📋</span>
               <p className="text-sm font-bold text-white">I need work</p>
+            </div>
+          )}
+          {isMeds && (
+            <div className="w-full rounded-xl bg-[#a8f5c8] border-[2px] border-black px-4 py-2 flex items-center gap-2 shadow-[2px_2px_0_#000]">
+              <span className="text-base">💊</span>
+              <p className="text-xs font-bold text-black">meds taken</p>
             </div>
           )}
           {!isDontTalk && currentUser && currentUser !== member.name && !isGuest && (
