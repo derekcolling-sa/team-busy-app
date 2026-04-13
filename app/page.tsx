@@ -773,10 +773,21 @@ export default function Home() {
     { main: "FRIDAY FINALLY 🔥", sub: "we made it. just a few hours to freedom.", tag: "energy unmatched" },
     { main: "saturday?? at work?? 😭", sub: "hope you're getting paid double bestie.", tag: "not the vibe" },
   ];
+  const AFTERNOON_MESSAGES = [
+    { main: "sunday afternoon 😴", sub: "you really said no rest for the wicked huh.", tag: "concerning behavior" },
+    { main: "monday afternoon grind 💀", sub: "we are in the thick of it. stay hydrated.", tag: "no thoughts head empty" },
+    { main: "tuesday afternoon check 🫠", sub: "past the hump, not quite there. we push.", tag: "it's giving effort" },
+    { main: "wednesday afternoon 🐪", sub: "halfway done. the finish line is visible.", tag: "locked in fr" },
+    { main: "thursday afternoon 👀", sub: "one more day after this. do not fumble.", tag: "eyes on the prize" },
+    { main: "friday afternoon 🔥", sub: "almost free. we are so close to the bag.", tag: "final stretch bestie" },
+    { main: "saturday afternoon 💀", sub: "ok but why. log off immediately.", tag: "chronically online" },
+  ];
+  const afternoonMsg = AFTERNOON_MESSAGES[nowDate.getDay()];
   const morningMsg = MORNING_MESSAGES[nowDate.getDay()];
   const currentMin = nowDate.getMinutes();
   const currentSec = nowDate.getSeconds();
-  const isMorning = (currentHour < 9) || (currentHour === 9 && currentMin < 30);
+  const isMorning = currentHour < 12;
+  const isAfternoon = currentHour >= 12 && currentHour < 17;
   const isCountdown = currentHour === 16 && currentMin >= 45;
   const secsUntil5 = isCountdown ? (17 * 3600) - (currentHour * 3600 + currentMin * 60 + currentSec) : 0;
   const countdownMins = Math.floor(secsUntil5 / 60);
@@ -995,33 +1006,25 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Morning pod */}
-              {isMorning && (
-                <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FF9DC8] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative">
-                  <div className="relative z-10">
-                    <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{morningMsg.main}</p>
-                    <p className="text-sm font-bold text-black/60 mt-1">{morningMsg.sub}</p>
+              {/* Time-based pod — morning / afternoon / evening */}
+              {(() => {
+                const msg = isMorning ? morningMsg : isAfternoon ? afternoonMsg : currentHour >= 17 ? todayMsg : null;
+                const bg = currentHour >= 17 ? "#FFE234" : "#FF9DC8";
+                const icon = isMorning ? "☕️" : isAfternoon ? "💻" : "🫡";
+                if (!msg) return null;
+                return (
+                  <div className="mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative" style={{ background: bg }}>
+                    <div className="relative z-10">
+                      <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{msg.main}</p>
+                      <p className="text-sm font-bold text-black/60 mt-1">{msg.sub}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 relative z-10 shrink-0">
+                      <span className="text-3xl">{icon}</span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{msg.tag}</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-end gap-1 relative z-10 shrink-0">
-                    <span className="text-3xl">☕️</span>
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{morningMsg.tag}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Evening pod */}
-              {currentHour >= 17 && (
-                <div className="mb-6 rounded-[1.4rem] border-[4px] border-black bg-[#FFE234] shadow-[6px_6px_0_#000] px-6 py-5 flex items-center justify-between gap-4 overflow-hidden relative">
-                  <div className="relative z-10">
-                    <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{todayMsg.main}</p>
-                    <p className="text-sm font-bold text-black/60 mt-1">{todayMsg.sub}</p>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 relative z-10 shrink-0">
-                    <span className="text-3xl">🫡</span>
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{todayMsg.tag}</span>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Confetti */}
               {!confettiOff && (currentHour >= 17 || nowDate.getDay() === 5) && (
