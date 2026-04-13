@@ -26,6 +26,8 @@ export default function ModPage() {
 
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [urgentInput, setUrgentInput] = useState("");
+  const [takeover, setTakeover] = useState<string | null>(null);
+  const [takeoverInput, setTakeoverInput] = useState("");
   const [tattles, setTattles] = useState<{ message: string; ts: number }[]>([]);
   const [vibeVideoId, setVibeVideoId] = useState("vTfD20dbxho");
   const [brainRotVideoId, setBrainRotVideoId] = useState("xxfeav5MlmI");
@@ -45,6 +47,7 @@ export default function ModPage() {
         fetch("/api/tattle").then(r => r.json()),
       ]);
       setBroadcast(poll.urgent?.message ? { message: poll.urgent.message, type: poll.urgent.type ?? "broadcast" } : null);
+      setTakeover(poll.takeover ?? null);
       if (poll.videos?.vibeVideoId) setVibeVideoId(poll.videos.vibeVideoId);
       if (poll.videos?.brainRotVideoId) setBrainRotVideoId(poll.videos.brainRotVideoId);
       setTattles(tattleRes.tattles ?? []);
@@ -79,6 +82,26 @@ export default function ModPage() {
       body: JSON.stringify({ message: "" }),
     });
     setBroadcast(null);
+  };
+
+  const sendTakeover = async () => {
+    if (!takeoverInput.trim()) return;
+    await fetch("/api/takeover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: takeoverInput.trim() }),
+    });
+    setTakeover(takeoverInput.trim());
+    setTakeoverInput("");
+  };
+
+  const clearTakeover = async () => {
+    await fetch("/api/takeover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "" }),
+    });
+    setTakeover(null);
   };
 
   const saveVideo = async (type: "vibe" | "brainrot") => {
@@ -132,6 +155,41 @@ export default function ModPage() {
 
       {loaded && (
         <div className="flex flex-col gap-6">
+
+          {/* Screen Takeover */}
+          <div className="rounded-[1.2rem] border-[4px] border-black shadow-[6px_6px_0_#FFE234] overflow-hidden bg-white">
+            <div className="px-5 pt-4 pb-3 border-b-[3px] border-black/10 flex items-center justify-between bg-black">
+              <div className="flex items-center gap-2">
+                <span className="text-base">📣</span>
+                <h2 className="text-sm font-extrabold text-white tracking-tight uppercase">Screen Takeover</h2>
+              </div>
+              {takeover && <span className="text-[11px] font-bold text-black bg-[#FFE234] px-2 py-0.5 rounded-full animate-pulse">LIVE</span>}
+            </div>
+            <div className="px-5 py-4 flex flex-col gap-3">
+              {takeover && (
+                <div className="flex items-center gap-3 rounded-xl border-2 border-black/20 bg-[#FFE234]/40 px-4 py-3">
+                  <p className="flex-1 text-sm font-bold text-black">{takeover}</p>
+                  <button onClick={clearTakeover} className="text-xs font-bold text-black bg-white border-2 border-black px-3 py-1.5 rounded-lg cursor-pointer hover:opacity-80 transition-opacity whitespace-nowrap shadow-[2px_2px_0_#000]">End ✕</button>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="message to fill everyone's screen…"
+                  value={takeoverInput}
+                  onChange={(e) => setTakeoverInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") sendTakeover(); }}
+                  maxLength={200}
+                  className="flex-1 text-sm font-medium border-[3px] border-black rounded-xl px-3 py-2.5 bg-white focus:outline-none"
+                />
+                <button
+                  onClick={sendTakeover}
+                  disabled={!takeoverInput.trim()}
+                  className="px-4 py-2.5 rounded-xl bg-[#FFE234] border-[3px] border-black text-black text-sm font-bold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default whitespace-nowrap shadow-[3px_3px_0_#000]"
+                >📣 send it</button>
+              </div>
+            </div>
+          </div>
 
           {/* Broadcast */}
           <div className={`rounded-[1.2rem] border-[4px] shadow-[6px_6px_0_#000] overflow-hidden ${broadcast?.type === "urgent" ? "border-[#e74c3c] bg-[#fce4ec]" : broadcast?.type === "broadcast" ? "border-black bg-[#FF9DC8]/20" : "border-black bg-white"}`}>
