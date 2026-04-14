@@ -17,6 +17,7 @@ import GhostModal from "@/app/components/modals/GhostModal";
 import HatchModal from "@/app/components/modals/HatchModal";
 import MeetingPickerModal from "@/app/components/modals/MeetingPickerModal";
 import TakeoverModal from "@/app/components/modals/TakeoverModal";
+import Fireworks from "@/app/components/Fireworks";
 import DisputeModal from "@/app/components/modals/DisputeModal";
 import IdentityPicker from "@/app/components/modals/IdentityPicker";
 import BrainRotOverlay from "@/app/components/modals/BrainRotOverlay";
@@ -1170,6 +1171,9 @@ export default function Home() {
                   ))}
                 </div>
               )}
+
+              {/* Fireworks at 5pm */}
+              {currentHour >= 17 && <Fireworks />}
 
               {/* Hall of Shame */}
               {currentHour >= 17 && Object.keys(lastSeen).filter(n => n !== BOSS && lastSeen[n] > Date.now() - 120000).length > 0 && (
