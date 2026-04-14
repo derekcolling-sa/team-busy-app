@@ -1038,6 +1038,7 @@ export default function Home() {
                 const teamAvg = activeVals.length ? activeVals.reduce((a, b) => a + b, 0) / activeVals.length : 50;
                 const cookedCount = activeVals.filter(v => v > 77).length;
                 const cookingCount = activeVals.filter(v => v > 50 && v <= 77).length;
+                const chillCount = activeVals.filter(v => v <= 50).length;
                 const total = activeVals.length;
 
                 const bg = teamAvg <= 35 ? "#FF9DC8"
@@ -1045,13 +1046,36 @@ export default function Home() {
                   : teamAvg <= 75 ? "#FF6B35"
                   : "#e74c3c";
 
+                // Text flips yellow on red so it stays readable
+                const onDark = teamAvg > 75;
+                const textMain = onDark ? "#FFE234" : "#000";
+                const textSub = onDark ? "rgba(255,226,52,0.75)" : "rgba(0,0,0,0.55)";
+                const textTag = onDark ? "rgba(255,226,52,0.55)" : "rgba(0,0,0,0.35)";
+
+                // Cooking-aware main headline — varies by cooking level + day so it feels fresh
+                const d = nowDate.getDay();
+                const COOK_MAINS = [
+                  // 0 chill ≤35
+                  ["we vibin' 😎✨", "monday? we eat 😤✨", "tuesday slay incoming 💅✨", "wednesday locked tf in 🧠✨", "thursday we are so unbothered 😌", "friday and we're THRIVING 🌸🔥", "saturday?? still vibing tho 😎"],
+                  // 1 warming ≤55
+                  ["starting to feel it 🍳👀", "monday heating up no cap 🌶️", "tuesday is cooking us slowly 🍳", "wednesday getting spicy 🌶️😤", "thursday heat rising fr 🔥👀", "friday is simmering 🍳🔥", "saturday grind, respect 😅🔥"],
+                  // 2 cooking ≤75
+                  ["we are COOKING 🔥🔥💀", "monday has us in the sauce 🌊🔥", "tuesday cooked different 💀🔥", "wednesday is NOT it 🔥🫠", "thursday said perish 💀🔥", "friday is FRYING us 🍳💀🔥", "saturday?? AND cooking?? 🆘🔥"],
+                  // 3 cooked >75
+                  ["fully cooked 💀💀💀", "monday destroyed us 🆘💀", "tuesday said no survivors 💀🔥💀", "wednesday ATE us alive 🪦💀", "thursday said rip bestie 💀🫠", "friday left no crumbs (of us) 💀🔥", "saturday cooked?? call 911 🆘💀"],
+                ];
+                const cookLevel = teamAvg <= 35 ? 0 : teamAvg <= 55 ? 1 : teamAvg <= 75 ? 2 : 3;
+                const cookMain = COOK_MAINS[cookLevel][d];
+
+                // Team heat strip — emoji heat meter + contextual message
+                const heatEmojis = teamAvg <= 35 ? "😎😎😎" : teamAvg <= 55 ? "🍳🔥😅" : teamAvg <= 75 ? "🔥🔥💀" : "💀💀💀🆘";
                 const teamHeat = teamAvg <= 35
-                  ? { text: "team is vibing 😎", tag: "chill mode" }
+                  ? { text: `${heatEmojis}  ${chillCount} of ${total} fully chillin'`, tag: "chill mode" }
                   : teamAvg <= 55
-                  ? { text: `${cookingCount + cookedCount} of ${total} feeling the heat 🍳`, tag: "warming up" }
+                  ? { text: `${heatEmojis}  ${cookingCount + cookedCount} of ${total} feeling the heat`, tag: "warming up" }
                   : teamAvg <= 75
-                  ? { text: "team is cooking 🔥", tag: "it's getting hot" }
-                  : { text: `${cookedCount} of ${total} fully cooked 💀`, tag: "rip bestie" };
+                  ? { text: `${heatEmojis}  ${cookingCount} cooking · ${cookedCount} cooked`, tag: "it's getting hot" }
+                  : { text: `${heatEmojis}  ${cookedCount} of ${total} fully cooked`, tag: "rip bestie" };
 
                 const myVote = currentUser && !isGuest ? appVibes[currentUser] : null;
                 const ups = Object.values(appVibes).filter(v => v === "up").length;
@@ -1080,18 +1104,18 @@ export default function Home() {
                     {/* Message row */}
                     <div className="px-6 py-5 flex items-center justify-between gap-4">
                       <div>
-                        <p className="text-4xl font-black text-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em" }}>{msg.main}</p>
-                        <p className="text-sm font-bold text-black/60 mt-1">{msg.sub}</p>
+                        <p className="text-4xl font-black leading-none" style={{ fontFamily: "var(--font-display)", letterSpacing: "-0.03em", color: textMain }}>{cookMain}</p>
+                        <p className="text-sm font-bold mt-1" style={{ color: textSub }}>{msg.sub}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className="text-3xl">{icon}</span>
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{msg.tag}</span>
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: textTag }}>{msg.tag}</span>
                       </div>
                     </div>
                     {/* Team cooking status strip */}
                     <div className="border-t-[3px] border-black/20 px-5 py-2.5 flex items-center justify-between gap-3" style={{ background: "rgba(0,0,0,0.12)" }}>
-                      <span className="text-sm font-extrabold text-black">{teamHeat.text}</span>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/50 shrink-0">{teamHeat.tag}</span>
+                      <span className="text-sm font-extrabold" style={{ color: textMain }}>{teamHeat.text}</span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest shrink-0" style={{ color: textTag }}>{teamHeat.tag}</span>
                     </div>
                     {/* Vote strip */}
                     {!isGuest && (
