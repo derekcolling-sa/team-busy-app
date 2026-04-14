@@ -1030,9 +1030,28 @@ export default function Home() {
               {/* Time-based pod — morning / afternoon / evening */}
               {(() => {
                 const msg = isMorning ? morningMsg : isAfternoon ? afternoonMsg : currentHour >= 17 ? todayMsg : null;
-                const bg = currentHour >= 17 ? "#FFE234" : "#FF9DC8";
                 const icon = isMorning ? "☕️" : isAfternoon ? "💻" : "🫡";
                 if (!msg) return null;
+
+                // Team cooking status — derived from already-polled statuses, no extra Redis
+                const activeVals = MEMBERS.filter(m => !oooStatuses[m.name]).map(m => statuses[m.name] ?? 50);
+                const teamAvg = activeVals.length ? activeVals.reduce((a, b) => a + b, 0) / activeVals.length : 50;
+                const cookedCount = activeVals.filter(v => v > 77).length;
+                const cookingCount = activeVals.filter(v => v > 50 && v <= 77).length;
+                const total = activeVals.length;
+
+                const bg = teamAvg <= 35 ? "#FF9DC8"
+                  : teamAvg <= 55 ? "#FFB347"
+                  : teamAvg <= 75 ? "#FF6B35"
+                  : "#e74c3c";
+
+                const teamHeat = teamAvg <= 35
+                  ? { text: "team is vibing 😎", tag: "chill mode" }
+                  : teamAvg <= 55
+                  ? { text: `${cookingCount + cookedCount} of ${total} feeling the heat 🍳`, tag: "warming up" }
+                  : teamAvg <= 75
+                  ? { text: "team is cooking 🔥", tag: "it's getting hot" }
+                  : { text: `${cookedCount} of ${total} fully cooked 💀`, tag: "rip bestie" };
 
                 const myVote = currentUser && !isGuest ? appVibes[currentUser] : null;
                 const ups = Object.values(appVibes).filter(v => v === "up").length;
@@ -1068,6 +1087,11 @@ export default function Home() {
                         <span className="text-3xl">{icon}</span>
                         <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/40">{msg.tag}</span>
                       </div>
+                    </div>
+                    {/* Team cooking status strip */}
+                    <div className="border-t-[3px] border-black/20 px-5 py-2.5 flex items-center justify-between gap-3" style={{ background: "rgba(0,0,0,0.12)" }}>
+                      <span className="text-sm font-extrabold text-black">{teamHeat.text}</span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-black/50 shrink-0">{teamHeat.tag}</span>
                     </div>
                     {/* Vote strip */}
                     {!isGuest && (
