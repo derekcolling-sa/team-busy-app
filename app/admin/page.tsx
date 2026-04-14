@@ -608,6 +608,17 @@ export default function AdminPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={async () => {
+              if (!confirm("Reset everyone's status for a fresh day?")) return;
+              await fetch("/api/admin/reset-day", { method: "POST" });
+              await fetch("/api/reload", { method: "POST" });
+            }}
+            className="flex items-center gap-1.5 text-black bg-white border-[3px] border-black px-3 py-1.5 rounded-xl shadow-[3px_3px_0_#000] uppercase tracking-widest text-[11px] font-bold cursor-pointer hover:opacity-80 transition-opacity"
+            title="Reset all statuses for a fresh day"
+          >
+            🌅 Reset day
+          </button>
+          <button
+            onClick={async () => {
               await fetch("/api/reload", { method: "POST" });
             }}
             className="flex items-center gap-1.5 text-black bg-[#FFE234] border-[3px] border-black px-3 py-1.5 rounded-xl shadow-[3px_3px_0_#000] uppercase tracking-widest text-[11px] font-bold cursor-pointer hover:opacity-80 transition-opacity"
