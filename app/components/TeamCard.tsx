@@ -49,8 +49,6 @@ interface Props {
   sendPoke: (name: string) => void;
   sendTouchGrass: (name: string) => void;
   setShowDisputeModal: (v: boolean) => void;
-  setDisputeSent: (v: boolean) => void;
-  setDisputeText: (v: string) => void;
   formatCountdown: (endTime: number) => string;
 }
 
@@ -59,7 +57,7 @@ export default function TeamCard({
   dontTalkStatuses, medsStatuses, bodyDoubles, photoOverrides, updatedAt, currentUser,
   isGuest, moods, adhdLevels, meetings, pokes, touchGrass, bans, floatingReactions,
   hotColdStatuses, buddies, statusNotes, sendReaction, sendPoke, sendTouchGrass, setShowDisputeModal,
-  setDisputeSent, setDisputeText, formatCountdown,
+  formatCountdown,
 }: Props) {
   const value = statuses[member.name] ?? 50;
   const level = getLevel(value);
@@ -87,7 +85,7 @@ export default function TeamCard({
           {bans[member.name] && <p className="text-xs text-black/50 font-medium italic">&ldquo;{bans[member.name]}&rdquo;</p>}
           {currentUser === member.name && (
             <button
-              onClick={() => { setShowDisputeModal(true); setDisputeSent(false); setDisputeText(""); }}
+              onClick={() => setShowDisputeModal(true)}
               className="mt-1 px-4 py-2 rounded-xl border-[3px] border-black bg-[#e74c3c] text-white text-xs font-extrabold uppercase tracking-widest shadow-[3px_3px_0_#000] cursor-pointer hover:bg-black transition-colors"
             >
               ✋ dispute this ban

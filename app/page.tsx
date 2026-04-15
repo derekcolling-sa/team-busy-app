@@ -37,22 +37,12 @@ export default function Home() {
   const currentUserRef = useRef<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackText, setFeedbackText] = useState("");
-  const [feedbackSent, setFeedbackSent] = useState(false);
   const [showFeatureRequest, setShowFeatureRequest] = useState(false);
-  const [featureRequestText, setFeatureRequestText] = useState("");
-  const [featureRequestSent, setFeatureRequestSent] = useState(false);
   const [showBugReport, setShowBugReport] = useState(false);
-  const [bugReportText, setBugReportText] = useState("");
-  const [bugReportSent, setBugReportSent] = useState(false);
   const [showTattle, setShowTattle] = useState(false);
-  const [tattleText, setTattleText] = useState("");
-  const [tattleSent, setTattleSent] = useState(false);
   const [moods, setMoods] = useState<Record<string, string>>({});
   const [bans, setBans] = useState<Record<string, string>>({});
   const [showDisputeModal, setShowDisputeModal] = useState(false);
-  const [disputeText, setDisputeText] = useState("");
-  const [disputeSent, setDisputeSent] = useState(false);
   const [vibeVideoId, setVibeVideoId] = useState("vTfD20dbxho");
   const [brainRotVideoId, setBrainRotVideoId] = useState("xxfeav5MlmI");
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
@@ -733,52 +723,40 @@ export default function Home() {
     });
   };
 
-  const submitTattle = async () => {
-    if (!tattleText.trim()) return;
+  const submitTattle = async (text: string) => {
     await fetch("/api/tattle", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: tattleText.trim() }),
+      body: JSON.stringify({ message: text }),
     });
-    setTattleText("");
-    setTattleSent(true);
-    setTimeout(() => { setTattleSent(false); setShowTattle(false); }, 2000);
+    setTimeout(() => setShowTattle(false), 2000);
   };
 
-  const submitBugReport = async () => {
-    if (!bugReportText.trim()) return;
+  const submitBugReport = async (text: string) => {
     await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: currentUser, message: `[Bug Report] ${bugReportText.trim()}` }),
+      body: JSON.stringify({ name: currentUser, message: `[Bug Report] ${text}` }),
     });
-    setBugReportText("");
-    setBugReportSent(true);
-    setTimeout(() => { setBugReportSent(false); setShowBugReport(false); }, 2000);
+    setTimeout(() => setShowBugReport(false), 2000);
   };
 
-  const submitFeatureRequest = async () => {
-    if (!featureRequestText.trim()) return;
+  const submitFeatureRequest = async (text: string) => {
     await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: currentUser, message: `[Feature Request] ${featureRequestText.trim()}` }),
+      body: JSON.stringify({ name: currentUser, message: `[Feature Request] ${text}` }),
     });
-    setFeatureRequestText("");
-    setFeatureRequestSent(true);
-    setTimeout(() => { setFeatureRequestSent(false); setShowFeatureRequest(false); }, 2000);
+    setTimeout(() => setShowFeatureRequest(false), 2000);
   };
 
-  const submitFeedback = async () => {
-    if (!feedbackText.trim()) return;
+  const submitFeedback = async (text: string) => {
     await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: currentUser, message: feedbackText.trim() }),
+      body: JSON.stringify({ name: currentUser, message: text }),
     });
-    setFeedbackText("");
-    setFeedbackSent(true);
-    setTimeout(() => { setFeedbackSent(false); setShowFeedback(false); }, 2000);
+    setTimeout(() => setShowFeedback(false), 2000);
   };
 
   // ── Computed values ──────────────────────────────────────────────────────────
@@ -1289,7 +1267,6 @@ export default function Home() {
                         buddies={buddies} statusNotes={statusNotes}
                         sendReaction={sendReaction} sendPoke={sendPoke} sendTouchGrass={sendTouchGrass}
                         setShowDisputeModal={setShowDisputeModal}
-                        setDisputeSent={setDisputeSent} setDisputeText={setDisputeText}
                         formatCountdown={formatCountdown}
                       />
                     ))}
@@ -1320,23 +1297,23 @@ export default function Home() {
         <TakeoverModal takeover={takeover} setTakeover={setTakeover} showTakeoverCompose={showTakeoverCompose} setShowTakeoverCompose={setShowTakeoverCompose} takeoverDraft={takeoverDraft} setTakeoverDraft={setTakeoverDraft} currentUser={currentUser} />
         <HatchModal showHatchModal={showHatchModal} setShowHatchModal={setShowHatchModal} hatchPhase={hatchPhase} hatchedBuddy={hatchedBuddy} crackEgg={crackEgg} confirmHatch={confirmHatch} />
         <GhostModal showGhostModal={showGhostModal} ghostNote={ghostNote} setGhostNote={setGhostNote} ghostBackDate={ghostBackDate} setGhostBackDate={setGhostBackDate} confirmGhost={confirmGhost} setShowGhostModal={setShowGhostModal} />
-        <TextSubmitModal show={showFeedback} text={feedbackText} setText={setFeedbackText} sent={feedbackSent} onSubmit={submitFeedback} onClose={() => setShowFeedback(false)}
+        <TextSubmitModal show={showFeedback} onSubmit={submitFeedback} onClose={() => setShowFeedback(false)}
           title="App feedback" subtitle="what's working, what's not, ideas — all welcome" placeholder="type here..."
           sentEmoji="🙏" sentText="Thanks!" submitLabel="send it ✉️"
           submitClassName="flex-1 py-3 rounded-2xl bg-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default" />
-        <TextSubmitModal show={showFeatureRequest} text={featureRequestText} setText={setFeatureRequestText} sent={featureRequestSent} onSubmit={submitFeatureRequest} onClose={() => setShowFeatureRequest(false)}
+        <TextSubmitModal show={showFeatureRequest} onSubmit={submitFeatureRequest} onClose={() => setShowFeatureRequest(false)}
           title="Feature Request" subtitle="got an idea? drop it here and we'll cook" placeholder="what should we build..."
           sentEmoji="💡" sentText="Noted!" submitLabel="send it 💡"
           submitClassName="flex-1 py-3 rounded-2xl bg-[#FFE234] border-[3px] border-black text-black font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]" />
-        <TextSubmitModal show={showBugReport} text={bugReportText} setText={setBugReportText} sent={bugReportSent} onSubmit={submitBugReport} onClose={() => setShowBugReport(false)}
+        <TextSubmitModal show={showBugReport} onSubmit={submitBugReport} onClose={() => setShowBugReport(false)}
           title="Submit a Bug" subtitle="something broken? spill the tea" placeholder="what broke and when..."
           sentEmoji="🐛" sentText="Got it!" submitLabel="send it 🐛"
           submitClassName="flex-1 py-3 rounded-2xl bg-[#FF9DC8] border-[3px] border-black text-black font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]" />
-        <TextSubmitModal show={showTattle} text={tattleText} setText={setTattleText} sent={tattleSent} onSubmit={submitTattle} onClose={() => setShowTattle(false)}
+        <TextSubmitModal show={showTattle} onSubmit={submitTattle} onClose={() => setShowTattle(false)}
           title="Tattle Box" subtitle="100% anonymous. vent freely." placeholder="spill it..."
           sentEmoji="🫢" sentText="Noted." sentSubtext="Derek will see this." submitLabel="send it 🫢"
           submitClassName="flex-1 py-3 rounded-2xl bg-[#ff4d4d] border-[3px] border-black text-white font-bold text-sm cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-default shadow-[3px_3px_0_#000]" />
-        <DisputeModal showDisputeModal={showDisputeModal} setShowDisputeModal={setShowDisputeModal} disputeText={disputeText} setDisputeText={setDisputeText} disputeSent={disputeSent} setDisputeSent={setDisputeSent} currentUser={currentUser} bans={bans} />
+        <DisputeModal showDisputeModal={showDisputeModal} setShowDisputeModal={setShowDisputeModal} currentUser={currentUser} bans={bans} />
         <IdentityPicker showPicker={showPicker} photoOverrides={photoOverrides} pickUser={pickUser} />
       </div>
 

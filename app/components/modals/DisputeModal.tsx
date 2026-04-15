@@ -1,18 +1,26 @@
 "use client";
 
+import { useState } from "react";
+
 interface Props {
   showDisputeModal: boolean;
   setShowDisputeModal: (v: boolean) => void;
-  disputeText: string;
-  setDisputeText: (v: string) => void;
-  disputeSent: boolean;
-  setDisputeSent: (v: boolean) => void;
   currentUser: string | null;
   bans: Record<string, string>;
 }
 
-export default function DisputeModal({ showDisputeModal, setShowDisputeModal, disputeText, setDisputeText, disputeSent, setDisputeSent, currentUser, bans }: Props) {
+export default function DisputeModal({ showDisputeModal, setShowDisputeModal, currentUser, bans }: Props) {
+  const [disputeText, setDisputeText] = useState("");
+  const [disputeSent, setDisputeSent] = useState(false);
+
   if (!showDisputeModal || !currentUser || !bans[currentUser]) return null;
+
+  const handleClose = () => {
+    setDisputeText("");
+    setDisputeSent(false);
+    setShowDisputeModal(false);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
       <div className="animate-bounce-in bg-white border-[4px] border-[#e74c3c] rounded-[1.6rem] shadow-[7px_7px_0_#000] p-8 max-w-[400px] w-full">
@@ -22,7 +30,7 @@ export default function DisputeModal({ showDisputeModal, setShowDisputeModal, di
             <p className="text-xl font-extrabold" style={{ fontFamily: "var(--font-display)" }}>Dispute filed.</p>
             <p className="text-sm text-[#b5b0a8] mt-1">Derek will review it.</p>
             <button
-              onClick={() => setShowDisputeModal(false)}
+              onClick={handleClose}
               className="mt-5 px-6 py-2.5 rounded-2xl bg-black text-white font-bold text-sm cursor-pointer hover:opacity-80 transition-opacity"
             >close</button>
           </div>
@@ -30,14 +38,13 @@ export default function DisputeModal({ showDisputeModal, setShowDisputeModal, di
           <>
             <div className="flex items-start justify-between mb-1">
               <h2 className="text-2xl font-extrabold tracking-tight text-[#e74c3c]" style={{ fontFamily: "var(--font-display)" }}>Dispute Ban</h2>
-              <button onClick={() => setShowDisputeModal(false)} className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5">✕</button>
+              <button onClick={handleClose} className="text-[#b5b0a8] hover:text-black transition-colors cursor-pointer text-xl leading-none mt-0.5">✕</button>
             </div>
             <p className="text-sm text-[#b5b0a8] mb-5 font-medium">Make your case. Derek will see this.</p>
             <textarea
               autoFocus
               value={disputeText}
               onChange={(e) => setDisputeText(e.target.value)}
-              onPaste={(e) => e.preventDefault()}
               placeholder="why should you be unbanned?"
               maxLength={200}
               rows={4}
@@ -45,7 +52,7 @@ export default function DisputeModal({ showDisputeModal, setShowDisputeModal, di
             />
             <div className="flex gap-3">
               <button
-                onClick={() => setShowDisputeModal(false)}
+                onClick={handleClose}
                 className="flex-1 py-3 rounded-2xl border-[3px] border-black text-[#b5b0a8] font-bold text-sm cursor-pointer hover:text-black transition-all"
               >nevermind</button>
               <button
