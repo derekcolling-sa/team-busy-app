@@ -14,14 +14,12 @@ interface Particle {
 
 interface UnderwaterBackgroundProps {
   className?: string
-  children?: React.ReactNode
   intensity?: number
   speed?: number
 }
 
 export default function UnderwaterBackground({
   className,
-  children,
   intensity = 1,
   speed = 1,
 }: UnderwaterBackgroundProps) {
@@ -102,7 +100,7 @@ export default function UnderwaterBackground({
   return (
     <div
       ref={containerRef}
-      className={cn("fixed inset-0 overflow-hidden", className)}
+      className={cn("fixed inset-0 overflow-hidden -z-10", className)}
       style={{
         background: "linear-gradient(180deg, #006994 0%, #004466 40%, #002233 100%)",
       }}
@@ -192,7 +190,6 @@ export default function UnderwaterBackground({
         }}
       />
 
-      {children && <div className="relative z-10 h-full w-full">{children}</div>}
     </div>
   )
 }

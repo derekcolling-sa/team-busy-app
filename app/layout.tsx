@@ -31,9 +31,8 @@ export default function RootLayout({
       className={`${bricolage.variable} ${dmSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <UnderwaterBackground>
-          {children}
-        </UnderwaterBackground>
+        <UnderwaterBackground />
+        {children}
       </body>
     </html>
   );
