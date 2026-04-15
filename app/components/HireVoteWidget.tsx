@@ -80,7 +80,7 @@ export default function HireVoteWidget({ currentUser, hireVote, onVoteUpdate, cl
 
         {/* Writer button */}
         <button
-          onClick={() => !hasVoted && handleVote(true, myVote?.designer ?? false)}
+          onClick={() => !hasVoted && handleVote(true, false)}
           disabled={!currentUser || submitting || hasVoted}
           className={`w-full rounded-xl border-[3px] border-black px-4 py-3 flex items-center gap-3 text-left transition-all shadow-[3px_3px_0_#000] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed cursor-pointer ${
             myVote?.writer ? "bg-[#39FF14]" : hasVoted ? "bg-[#f5f0e8] opacity-40" : "bg-[#f5f0e8] hover:bg-[#ebe5db]"
@@ -100,7 +100,7 @@ export default function HireVoteWidget({ currentUser, hireVote, onVoteUpdate, cl
 
         {/* Designer button */}
         <button
-          onClick={() => !hasVoted && handleVote(myVote?.writer ?? false, true)}
+          onClick={() => !hasVoted && handleVote(false, true)}
           disabled={!currentUser || submitting || hasVoted}
           className={`w-full rounded-xl border-[3px] border-black px-4 py-3 flex items-center gap-3 text-left transition-all shadow-[3px_3px_0_#000] active:translate-y-[2px] active:shadow-none disabled:cursor-not-allowed cursor-pointer ${
             myVote?.designer ? "bg-[#4a9eff]" : hasVoted ? "bg-[#f5f0e8] opacity-40" : "bg-[#f5f0e8] hover:bg-[#ebe5db]"
