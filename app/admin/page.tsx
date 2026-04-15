@@ -205,6 +205,7 @@ export default function AdminPage() {
   const [vibeVideoInput, setVibeVideoInput] = useState("");
   const [brainRotVideoInput, setBrainRotVideoInput] = useState("");
   const [videoSaved, setVideoSaved] = useState<"vibe" | "brainrot" | null>(null);
+  const [hireVoteHistory, setHireVoteHistory] = useState<{ date: string; votes: Record<string, { writer: boolean; designer: boolean }> }[]>([]);
 
   useEffect(() => {
     const user = localStorage.getItem("team-busy-user");
@@ -286,19 +287,22 @@ export default function AdminPage() {
   // Static data — history, photos, buddies — fetch once on mount
   const fetchStatic = useCallback(async () => {
     try {
-      const [historyRes, photosRes, buddiesRes] = await Promise.all([
+      const [historyRes, photosRes, buddiesRes, hireVoteRes] = await Promise.all([
         fetch("/api/history"),
         fetch("/api/photos"),
         fetch("/api/buddies"),
+        fetch("/api/hire-vote?history=true"),
       ]);
-      const [historyData, photosData, buddiesData] = await Promise.all([
+      const [historyData, photosData, buddiesData, hireVoteData] = await Promise.all([
         historyRes.json(),
         photosRes.json(),
         buddiesRes.json(),
+        hireVoteRes.json(),
       ]);
       setHistory(historyData);
       setPhotoOverrides(photosData.photos ?? {});
       setBuddies(buddiesData.buddies ?? {});
+      setHireVoteHistory(hireVoteData.history ?? []);
     } catch {
       // non-critical, will show stale/empty
     }
@@ -1460,6 +1464,50 @@ export default function AdminPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Hire Vote History */}
+              {hireVoteHistory.length > 0 && (
+                <div className="rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] bg-white overflow-hidden">
+                  <div className="px-5 py-3 border-b-[3px] border-black/10 bg-[#FF6B6B] flex items-center gap-3">
+                    <h2 className="text-lg font-extrabold text-black tracking-tight flex-1">🆘 Hire Vote History</h2>
+                    <span className="text-xs font-bold text-black/60">last 14 days</span>
+                  </div>
+                  <div className="divide-y-[2px] divide-black/10">
+                    {[...hireVoteHistory].reverse().map(({ date, votes }) => {
+                      const members = Object.keys(votes);
+                      if (members.length === 0) return null;
+                      const writerYes = Object.values(votes).filter(v => v.writer).length;
+                      const designerYes = Object.values(votes).filter(v => v.designer).length;
+                      const [, month, day] = date.split("-");
+                      return (
+                        <div key={date} className="px-5 py-4">
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="text-xs font-extrabold text-black/40 tracking-widest uppercase">{parseInt(month)}/{parseInt(day)}</span>
+                            <span className="text-xs font-bold bg-[#39FF14] text-black px-2 py-0.5 rounded-full border border-black">
+                              ✍️ {writerYes}/{members.length} want a writer
+                            </span>
+                            <span className="text-xs font-bold bg-[#4a9eff] text-white px-2 py-0.5 rounded-full border border-black">
+                              🎨 {designerYes}/{members.length} want a designer
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {members.sort().map(name => {
+                              const v = votes[name];
+                              return (
+                                <div key={name} className="flex items-center gap-1 text-[11px] font-bold border-[2px] border-black rounded-lg px-2 py-1 bg-[#f5f0e8]">
+                                  <span>{name}</span>
+                                  <span className={v.writer ? "text-green-600" : "text-black/30"} title="writer">✍️</span>
+                                  <span className={v.designer ? "text-blue-500" : "text-black/30"} title="designer">🎨</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }).filter(Boolean)}
+                  </div>
+                </div>
+              )}
 
             </div>
           </div>

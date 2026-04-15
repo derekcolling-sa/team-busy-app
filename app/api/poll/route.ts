@@ -1,4 +1,4 @@
-import { redis } from "@/lib/redis";
+import { redis, getHireVotes } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
 
@@ -257,6 +257,16 @@ export async function GET() {
       data.videos = DEFAULT_VIDEOS;
     }
   }
+
+  // Hire vote — fetched outside pipeline (date-keyed)
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const hireVoteMap = await getHireVotes(todayStr);
+  let writerYes = 0, designerYes = 0;
+  for (const v of Object.values(hireVoteMap)) {
+    if (v.writer) writerYes++;
+    if (v.designer) designerYes++;
+  }
+  data.hireVote = { votes: hireVoteMap, writerYes, designerYes, total: Object.keys(hireVoteMap).length, date: todayStr };
 
   // Cache the result
   cached = { data, ts: Date.now() };

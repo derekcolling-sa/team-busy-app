@@ -12,6 +12,7 @@ import BossCard from "@/app/components/BossCard";
 import VibeMusic from "@/app/components/VibeMusic";
 import FeatureUpdates from "@/app/components/FeatureUpdates";
 import GoHomeRequests from "@/app/components/GoHomeRequests";
+import HireVoteWidget from "@/app/components/HireVoteWidget";
 import TextSubmitModal from "@/app/components/modals/TextSubmitModal";
 import GhostModal from "@/app/components/modals/GhostModal";
 import HatchModal from "@/app/components/modals/HatchModal";
@@ -97,6 +98,7 @@ export default function Home() {
   const [goHomeRequested, setGoHomeRequested] = useState(false);
   const goHomeLock = useRef(false);
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number; count: number }[]>([]);
+  const [hireVoteData, setHireVoteData] = useState<{ votes: Record<string, { writer: boolean; designer: boolean }>; writerYes: number; designerYes: number; total: number; date: string } | null>(null);
   const [timeOffRequests, setTimeOffRequests] = useState<{ name: string; ts: number }[]>([]);
   const [timeOffSent, setTimeOffSent] = useState(false);
   const [moneyRequests, setMoneyRequests] = useState<{ name: string; ts: number }[]>([]);
@@ -183,6 +185,7 @@ export default function Home() {
       setMeetings(poll.meetings ?? {});
       setLastSeen(poll.lastSeen ?? {});
       if (poll.banner?.message) setBanner({ message: poll.banner.message, type: poll.banner.type ?? "daily" });
+      if (poll.hireVote) setHireVoteData(poll.hireVote);
     } catch {
       // retry next poll
     } finally {
@@ -1043,45 +1046,13 @@ export default function Home() {
               {/* Pods row — report card (left) + daily pod (right) */}
               <div className="flex flex-col md:flex-row gap-6 mb-6 items-start">
 
-              {/* Yesterday's report card — RIGHT (order-last) */}
-              {(() => {
-                const entries = Object.entries(yesterdaySnapshot).filter(([, v]) => v > 0);
-                if (entries.length < 2) return null;
-                const vals = entries.map(([, v]) => v);
-                const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-                const cookedCount = vals.filter(v => v > 77).length;
-                const cookingCount = vals.filter(v => v > 50 && v <= 77).length;
-                const chillCount = vals.filter(v => v <= 50).length;
-
-                const vibe = avg <= 35
-                  ? { head: "yesterday was a whole vibe era 😎", sub: "team ate and left zero crumbs. unbothered. iconic.", accent: "#39FF14" }
-                  : avg <= 55
-                  ? { head: "yesterday gave mid energy 🍳", sub: "team was warming up but held it together fr. respectable.", accent: "#FFB347" }
-                  : avg <= 75
-                  ? { head: "yesterday cooked us a lil ngl 🔥", sub: "chaos energy but we survived. that's character development.", accent: "#FF6B35" }
-                  : { head: "yesterday said no survivors 💀", sub: "team was fully cooked. we felt every second of it. rip.", accent: "#e74c3c" };
-
-                return (
-                  <div className="flex-1 min-w-0 order-last rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] overflow-hidden bg-black">
-                    <div className="px-5 pt-4 pb-3 border-b-[3px] flex items-center gap-3" style={{ borderColor: vibe.accent }}>
-                      <span className="text-lg">📊</span>
-                      <h2 className="text-xs font-extrabold text-white/50 uppercase tracking-widest flex-1">yesterday&apos;s report card</h2>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full border-[2px]" style={{ color: vibe.accent, borderColor: vibe.accent }}>{entries.length} on deck</span>
-                    </div>
-                    <div className="px-5 py-4 flex flex-col gap-3">
-                      <div>
-                        <p className="text-2xl font-black text-white leading-tight" style={{ fontFamily: "var(--font-display)" }}>{vibe.head}</p>
-                        <p className="text-sm font-bold text-white/50 mt-1">{vibe.sub}</p>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#e74c3c] text-white text-xs font-extrabold shadow-[2px_2px_0_#000]">💀 {cookedCount} cooked</span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#FF6B35] text-white text-xs font-extrabold shadow-[2px_2px_0_#000]">🔥 {cookingCount} cooking</span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#FF9DC8] text-black text-xs font-extrabold shadow-[2px_2px_0_#000]">😎 {chillCount} vibing</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* Hire vote pod — replaces yesterday's report card */}
+              <HireVoteWidget
+                currentUser={currentUser}
+                hireVote={hireVoteData}
+                onVoteUpdate={(updated) => setHireVoteData(updated)}
+                className="order-last"
+              />
 
               {/* Time-based pod — RIGHT */}
               {(() => {

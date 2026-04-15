@@ -3,7 +3,7 @@ import {
   clearAllTouchGrass, clearAllDontTalk, clearAllNeedWork, clearAllMetcalf,
   clearAllSessionTime, clearAllLastSeen, clearAllMoneyRequests,
   clearTakeover, clearAllSOS, clearAllMessages,
-  clearAllStatusNotes, clearAllMoods, clearAllBodyDouble, clearAllMeds,
+  clearAllMoods, clearAllBodyDouble, clearAllMeds,
   clearDailyVibe, setMemberStatus, setMemberAdhd, setBroadcast,
 } from "@/lib/redis";
 import { MEMBERS } from "@/app/lib/constants";
@@ -41,7 +41,6 @@ export async function GET(request: Request) {
     clearTakeover(),
     clearAllSOS(),
     clearAllMessages(),
-    clearAllStatusNotes(),
     clearAllMoods(),
     clearAllBodyDouble(),
     clearAllMeds(),

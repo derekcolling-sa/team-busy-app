@@ -844,6 +844,47 @@ export async function setMemberMeds(name: string, active: boolean): Promise<void
   await redis.hset(MEDS_KEY, { [name]: String(active) });
 }
 
+// Hire vote — daily key: team-busy-hire-vote:YYYY-MM-DD
+// Hash field = member name, value = JSON { writer: boolean, designer: boolean }
+
+export type HireVote = { writer: boolean; designer: boolean };
+export type HireVoteMap = Record<string, HireVote>; // member → vote
+
+function hireVoteKey(dateStr: string): string {
+  return `team-busy-hire-vote:${dateStr}`;
+}
+
+export async function getHireVotes(dateStr: string): Promise<HireVoteMap> {
+  const data = await redis.hgetall(hireVoteKey(dateStr));
+  if (!data) return {};
+  const result: HireVoteMap = {};
+  for (const [name, raw] of Object.entries(data)) {
+    try {
+      result[name] = typeof raw === "string" ? JSON.parse(raw) : (raw as HireVote);
+    } catch { /* skip malformed */ }
+  }
+  return result;
+}
+
+export async function setHireVote(name: string, vote: HireVote, dateStr: string): Promise<void> {
+  const key = hireVoteKey(dateStr);
+  await redis.hset(key, { [name]: JSON.stringify(vote) });
+  await redis.expire(key, 60 * 60 * 24 * 14); // keep 14 days
+}
+
+export async function getHireVoteHistory(days = 14): Promise<{ date: string; votes: HireVoteMap }[]> {
+  const today = new Date();
+  const entries: { date: string; votes: HireVoteMap }[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    const votes = await getHireVotes(dateStr);
+    entries.push({ date: dateStr, votes });
+  }
+  return entries;
+}
+
 // Daily reset helpers
 export async function clearAllMeds(): Promise<void> { await redis.del(MEDS_KEY); }
 export async function clearAllTouchGrass(): Promise<void> { await redis.del(TOUCH_GRASS_KEY); }
