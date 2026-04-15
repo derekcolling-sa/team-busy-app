@@ -1043,7 +1043,7 @@ export default function Home() {
               {/* Pods row — report card (left) + daily pod (right) */}
               <div className="flex flex-col md:flex-row gap-6 mb-6 items-start">
 
-              {/* Yesterday's report card — LEFT */}
+              {/* Yesterday's report card — RIGHT (order-last) */}
               {(() => {
                 const entries = Object.entries(yesterdaySnapshot).filter(([, v]) => v > 0);
                 if (entries.length < 2) return null;
@@ -1065,7 +1065,7 @@ export default function Home() {
                   : { head: "yesterday said no survivors 💀", sub: "team was fully cooked. we felt every second of it. rip.", accent: "#e74c3c" };
 
                 return (
-                  <div className="flex-1 min-w-0 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] overflow-hidden bg-black">
+                  <div className="flex-1 min-w-0 order-last rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] overflow-hidden bg-black">
                     <div className="px-5 pt-4 pb-3 border-b-[3px] flex items-center gap-3" style={{ borderColor: vibe.accent }}>
                       <span className="text-lg">📊</span>
                       <h2 className="text-xs font-extrabold text-white/50 uppercase tracking-widest flex-1">yesterday&apos;s report card</h2>
@@ -1169,7 +1169,7 @@ export default function Home() {
                 };
 
                 return (
-                  <div className="flex-1 min-w-0 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] overflow-hidden" style={{ background: bg }}>
+                  <div className="flex-1 min-w-0 order-first rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] overflow-hidden" style={{ background: bg }}>
                     {/* Message row */}
                     <div className="px-6 py-5 flex items-center justify-between gap-4">
                       <div>
