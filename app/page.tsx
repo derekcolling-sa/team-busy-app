@@ -1040,7 +1040,63 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Time-based pod — morning / afternoon / evening */}
+              {/* Pods row — report card (left) + daily pod (right) */}
+              <div className="flex flex-col md:flex-row gap-6 mb-6 items-start">
+
+              {/* Yesterday's report card — LEFT */}
+              {(() => {
+                const entries = Object.entries(yesterdaySnapshot).filter(([, v]) => v > 0);
+                if (entries.length < 2) return null;
+                const vals = entries.map(([, v]) => v);
+                const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                const sorted = [...entries].sort((a, b) => b[1] - a[1]);
+                const mostCooked = sorted[0];
+                const mostChill = sorted[sorted.length - 1];
+                const cookedCount = vals.filter(v => v > 77).length;
+                const cookingCount = vals.filter(v => v > 50 && v <= 77).length;
+                const chillCount = vals.filter(v => v <= 50).length;
+
+                const vibe = avg <= 35
+                  ? { head: "yesterday was a whole vibe era 😎", sub: "team ate and left zero crumbs. unbothered. iconic.", accent: "#39FF14" }
+                  : avg <= 55
+                  ? { head: "yesterday gave mid energy 🍳", sub: "team was warming up but held it together fr. respectable.", accent: "#FFB347" }
+                  : avg <= 75
+                  ? { head: "yesterday cooked us a lil ngl 🔥", sub: "chaos energy but we survived. that's character development.", accent: "#FF6B35" }
+                  : { head: "yesterday said no survivors 💀", sub: "team was fully cooked. we felt every second of it. rip.", accent: "#e74c3c" };
+
+                return (
+                  <div className="flex-1 min-w-0 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] overflow-hidden bg-black">
+                    <div className="px-5 pt-4 pb-3 border-b-[3px] flex items-center gap-3" style={{ borderColor: vibe.accent }}>
+                      <span className="text-lg">📊</span>
+                      <h2 className="text-xs font-extrabold text-white/50 uppercase tracking-widest flex-1">yesterday&apos;s report card</h2>
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full border-[2px]" style={{ color: vibe.accent, borderColor: vibe.accent }}>{entries.length} on deck</span>
+                    </div>
+                    <div className="px-5 py-4 flex flex-col gap-3">
+                      <div>
+                        <p className="text-2xl font-black text-white leading-tight" style={{ fontFamily: "var(--font-display)" }}>{vibe.head}</p>
+                        <p className="text-sm font-bold text-white/50 mt-1">{vibe.sub}</p>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#e74c3c] text-white text-xs font-extrabold shadow-[2px_2px_0_#000]">💀 {cookedCount} cooked</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#FF6B35] text-white text-xs font-extrabold shadow-[2px_2px_0_#000]">🔥 {cookingCount} cooking</span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#FF9DC8] text-black text-xs font-extrabold shadow-[2px_2px_0_#000]">😎 {chillCount} vibing</span>
+                      </div>
+                      <div className="flex gap-3 pt-1">
+                        <div className="flex-1 rounded-xl border-[2px] border-white/10 bg-white/5 px-3 py-2.5">
+                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/30 mb-0.5">most unbothered</p>
+                          <p className="text-base font-black text-white">{mostChill[0]} <span className="text-white/40 text-sm font-bold">· {mostChill[1]}</span> 😎</p>
+                        </div>
+                        <div className="flex-1 rounded-xl border-[2px] border-white/10 bg-white/5 px-3 py-2.5">
+                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/30 mb-0.5">most cooked</p>
+                          <p className="text-base font-black text-white">{mostCooked[0]} <span className="text-white/40 text-sm font-bold">· {mostCooked[1]}</span> 💀</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Time-based pod — RIGHT */}
               {(() => {
                 const msg = isMorning ? morningMsg : isAfternoon ? afternoonMsg : currentHour >= 17 ? todayMsg : null;
                 const icon = isMorning ? "☕️" : isAfternoon ? "💻" : "🫡";
@@ -1113,7 +1169,7 @@ export default function Home() {
                 };
 
                 return (
-                  <div className="mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] overflow-hidden" style={{ background: bg }}>
+                  <div className="flex-1 min-w-0 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] overflow-hidden" style={{ background: bg }}>
                     {/* Message row */}
                     <div className="px-6 py-5 flex items-center justify-between gap-4">
                       <div>
@@ -1167,6 +1223,8 @@ export default function Home() {
                 );
               })()}
 
+              </div>{/* end pods row */}
+
               {/* Confetti */}
               {!confettiOff && (
                 <div className="fixed inset-0 pointer-events-none z-[50]">
@@ -1186,59 +1244,6 @@ export default function Home() {
 
               {/* Fireworks at 5pm */}
               {currentHour >= 17 && <Fireworks />}
-
-              {/* Yesterday's recap pod */}
-              {(() => {
-                const entries = Object.entries(yesterdaySnapshot).filter(([, v]) => v > 0);
-                if (entries.length < 2) return null;
-                const vals = entries.map(([, v]) => v);
-                const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-                const sorted = [...entries].sort((a, b) => b[1] - a[1]);
-                const mostCooked = sorted[0];
-                const mostChill = sorted[sorted.length - 1];
-                const cookedCount = vals.filter(v => v > 77).length;
-                const cookingCount = vals.filter(v => v > 50 && v <= 77).length;
-                const chillCount = vals.filter(v => v <= 50).length;
-
-                const vibe = avg <= 35
-                  ? { head: "yesterday was a whole vibe era 😎", sub: "team ate and left zero crumbs. unbothered. iconic.", accent: "#39FF14" }
-                  : avg <= 55
-                  ? { head: "yesterday gave mid energy 🍳", sub: "team was warming up but held it together fr. respectable.", accent: "#FFB347" }
-                  : avg <= 75
-                  ? { head: "yesterday cooked us a lil ngl 🔥", sub: "chaos energy but we survived. that's character development.", accent: "#FF6B35" }
-                  : { head: "yesterday said no survivors 💀", sub: "team was fully cooked. we felt every second of it. rip.", accent: "#e74c3c" };
-
-                return (
-                  <div className="mb-6 rounded-[1.4rem] border-[4px] border-black shadow-[6px_6px_0_#000] overflow-hidden bg-black">
-                    <div className="px-5 pt-4 pb-3 border-b-[3px] flex items-center gap-3" style={{ borderColor: vibe.accent }}>
-                      <span className="text-lg">📊</span>
-                      <h2 className="text-xs font-extrabold text-white/50 uppercase tracking-widest flex-1">yesterday&apos;s report card</h2>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full border-[2px]" style={{ color: vibe.accent, borderColor: vibe.accent }}>{entries.length} on deck</span>
-                    </div>
-                    <div className="px-5 py-4 flex flex-col gap-3">
-                      <div>
-                        <p className="text-2xl font-black text-white leading-tight" style={{ fontFamily: "var(--font-display)" }}>{vibe.head}</p>
-                        <p className="text-sm font-bold text-white/50 mt-1">{vibe.sub}</p>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#e74c3c] text-white text-xs font-extrabold shadow-[2px_2px_0_#000]">💀 {cookedCount} cooked</span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#FF6B35] text-white text-xs font-extrabold shadow-[2px_2px_0_#000]">🔥 {cookingCount} cooking</span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#FF9DC8] text-black text-xs font-extrabold shadow-[2px_2px_0_#000]">😎 {chillCount} vibing</span>
-                      </div>
-                      <div className="flex gap-3 pt-1">
-                        <div className="flex-1 rounded-xl border-[2px] border-white/10 bg-white/5 px-3 py-2.5">
-                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/30 mb-0.5">most unbothered</p>
-                          <p className="text-base font-black text-white">{mostChill[0]} <span className="text-white/40 text-sm font-bold">· {mostChill[1]}</span> 😎</p>
-                        </div>
-                        <div className="flex-1 rounded-xl border-[2px] border-white/10 bg-white/5 px-3 py-2.5">
-                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/30 mb-0.5">most cooked</p>
-                          <p className="text-base font-black text-white">{mostCooked[0]} <span className="text-white/40 text-sm font-bold">· {mostCooked[1]}</span> 💀</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
 
               {/* Hall of Shame */}
               {currentHour >= 17 && Object.keys(lastSeen).filter(n => n !== BOSS && lastSeen[n] > Date.now() - 120000).length > 0 && (
