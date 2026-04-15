@@ -98,7 +98,28 @@ export default function TeamCard({
     );
   }
 
+  const isErin = member.name === "Erin";
+  const sparklePositions = [
+    { top: "-10px", left: "10%",  delay: "0s" },
+    { top: "-10px", left: "50%",  delay: "0.4s" },
+    { top: "-10px", right: "10%", delay: "0.8s" },
+    { top: "30%",   right: "-12px", delay: "0.2s" },
+    { top: "70%",   right: "-12px", delay: "1.1s" },
+    { bottom: "-10px", left: "20%",  delay: "0.6s" },
+    { bottom: "-10px", right: "20%", delay: "1.4s" },
+    { top: "30%",   left: "-12px",  delay: "1.0s" },
+    { top: "65%",   left: "-12px",  delay: "0.3s" },
+  ];
+
   return (
+    <div className="relative">
+      {isErin && sparklePositions.map((pos, idx) => (
+        <span
+          key={idx}
+          className="sparkle"
+          style={{ ...pos, animationDelay: pos.delay }}
+        >✨</span>
+      ))}
     <div
       className={`animate-pop-in rounded-2xl px-4 py-4 border-[4px] transition-all flex flex-col gap-2 relative group cursor-default ${
         isDontTalk ? "border-[#e74c3c] shadow-[5px_5px_0_#e74c3c] hover:-translate-y-1 hover:shadow-[8px_8px_0_#e74c3c]"
@@ -291,6 +312,7 @@ export default function TeamCard({
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
