@@ -1051,7 +1051,6 @@ export default function Home() {
                 const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
                 const sorted = [...entries].sort((a, b) => b[1] - a[1]);
                 const mostCooked = sorted[0];
-                const mostChill = sorted[sorted.length - 1];
                 const cookedCount = vals.filter(v => v > 77).length;
                 const cookingCount = vals.filter(v => v > 50 && v <= 77).length;
                 const chillCount = vals.filter(v => v <= 50).length;
@@ -1081,14 +1080,10 @@ export default function Home() {
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#FF6B35] text-white text-xs font-extrabold shadow-[2px_2px_0_#000]">🔥 {cookingCount} cooking</span>
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[2.5px] border-black bg-[#FF9DC8] text-black text-xs font-extrabold shadow-[2px_2px_0_#000]">😎 {chillCount} vibing</span>
                       </div>
-                      <div className="flex gap-3 pt-1">
-                        <div className="flex-1 rounded-xl border-[2px] border-white/10 bg-white/5 px-3 py-2.5">
-                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/30 mb-0.5">most unbothered</p>
-                          <p className="text-base font-black text-white">{mostChill[0]} <span className="text-white/40 text-sm font-bold">· {mostChill[1]}</span> 😎</p>
-                        </div>
-                        <div className="flex-1 rounded-xl border-[2px] border-white/10 bg-white/5 px-3 py-2.5">
-                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/30 mb-0.5">most cooked</p>
-                          <p className="text-base font-black text-white">{mostCooked[0]} <span className="text-white/40 text-sm font-bold">· {mostCooked[1]}</span> 💀</p>
+                      <div className="pt-1">
+                        <div className="rounded-xl border-[2px] border-white/10 bg-white/5 px-3 py-2.5">
+                          <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/30 mb-0.5">most chronically online 📱</p>
+                          <p className="text-base font-black text-white">{mostCooked[0]} <span className="text-white/40 text-sm font-bold">· cooked at {mostCooked[1]}</span> 💀</p>
                         </div>
                       </div>
                     </div>
