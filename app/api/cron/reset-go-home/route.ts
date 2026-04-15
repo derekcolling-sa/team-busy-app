@@ -4,9 +4,10 @@ import {
   clearAllSessionTime, clearAllLastSeen, clearAllMoneyRequests,
   clearTakeover, clearAllSOS, clearAllMessages,
   clearAllStatusNotes, clearAllMoods, clearAllBodyDouble, clearAllMeds,
-  clearDailyVibe, setMemberStatus, setMemberAdhd,
+  clearDailyVibe, setMemberStatus, setMemberAdhd, setBroadcast,
 } from "@/lib/redis";
 import { MEMBERS } from "@/app/lib/constants";
+import { buildWelcomeMessage } from "@/lib/welcome";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +17,16 @@ export async function GET(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Fresh day: reset every member to Chillin' + ADHD to "locked tf in" (0)
-  await Promise.all(MEMBERS.flatMap((m) => [
-    setMemberStatus(m.name, 50),
-    setMemberAdhd(m.name, 0),
-  ]));
+  const [welcome] = await Promise.all([
+    buildWelcomeMessage(),
+    Promise.all(MEMBERS.flatMap((m) => [
+      setMemberStatus(m.name, 50),
+      setMemberAdhd(m.name, 0),
+    ])),
+  ]);
 
   await Promise.all([
+    setBroadcast(welcome, "broadcast"),
     clearAllGoHome(),
     clearAllPokes(),
     clearBanner(),
@@ -44,5 +48,5 @@ export async function GET(request: Request) {
     clearDailyVibe(),
   ]);
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, welcome });
 }
