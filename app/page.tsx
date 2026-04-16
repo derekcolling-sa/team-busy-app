@@ -22,6 +22,7 @@ import Fireworks from "@/app/components/Fireworks";
 import DisputeModal from "@/app/components/modals/DisputeModal";
 import IdentityPicker from "@/app/components/modals/IdentityPicker";
 import BrainRotOverlay from "@/app/components/modals/BrainRotOverlay";
+import ProfessionalView from "@/app/components/ProfessionalView";
 
 function TickerItem({ msg }: { msg: { name: string; message: string } }) {
   return (
@@ -122,6 +123,24 @@ export default function Home() {
   const [hatchPhase, setHatchPhase] = useState<"egg" | "cracking" | "reveal">("egg");
   const [newMessage, setNewMessage] = useState<Record<string, string>>({});
   const [weatherEmoji, setWeatherEmoji] = useState<string | null>(null);
+  const [uiMode, setUiMode] = useState<"classic" | "pro">("classic");
+  const [uiModeLoaded, setUiModeLoaded] = useState(false);
+
+  useEffect(() => {
+    const savedMode = localStorage.getItem("team-busy-ui-mode");
+    if (savedMode === "pro" || savedMode === "classic") setUiMode(savedMode);
+    setUiModeLoaded(true);
+  }, []);
+
+  const switchToClassic = useCallback(() => {
+    localStorage.setItem("team-busy-ui-mode", "classic");
+    setUiMode("classic");
+  }, []);
+
+  const switchToPro = useCallback(() => {
+    localStorage.setItem("team-busy-ui-mode", "pro");
+    setUiMode("pro");
+  }, []);
 
   useEffect(() => {
     setConfettiOff(localStorage.getItem("team-busy-confetti-off") === "true");
@@ -846,6 +865,10 @@ export default function Home() {
   const broadcastTextStroke = broadcastIsUrgent ? "0.5px #fff" : "none";
   const broadcastText = broadcast ? broadcast.message.toUpperCase() : "";
 
+  if (uiModeLoaded && uiMode === "pro") {
+    return <ProfessionalView onSwitchMode={switchToClassic} />;
+  }
+
   return (
     <>
       {/* Broadcast ticker (pink or red scrolling) */}
@@ -977,6 +1000,10 @@ export default function Home() {
                   onClick={() => { const next = !viewAsTeam; setViewAsTeam(next); localStorage.setItem("team-busy-view-as-team", String(next)); }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#39FF14] transition-colors"
                 >👁️ {viewAsTeam ? "edit my card" : "view as team"}</button>
+                <button
+                  onClick={switchToPro}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors"
+                >👔 pro mode</button>
                 {currentUser === BOSS && (
                   <a href="/admin" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-black text-[11px] font-bold text-white tracking-widest uppercase shadow-[3px_3px_0_#FFE234] cursor-pointer hover:bg-[#FFE234] hover:text-black transition-colors">⚡ admin</a>
                 )}
