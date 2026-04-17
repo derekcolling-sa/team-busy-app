@@ -1072,6 +1072,7 @@ export default function Home() {
                 const cookingCount = activeVals.filter(v => v > 50 && v <= 77).length;
                 const chillCount = activeVals.filter(v => v <= 50).length;
                 const total = activeVals.length;
+                const hotFraction = total > 0 ? (cookedCount + cookingCount) / total : 0;
 
                 const bg = hotFraction < 0.25 ? "#FF9DC8"
                   : hotFraction < 0.5 ? "#FFB347"
@@ -1096,7 +1097,6 @@ export default function Home() {
                   // 3 cooked >75
                   ["fully cooked 💀💀💀", "monday destroyed us 🆘💀", "tuesday said no survivors 💀🔥💀", "wednesday ATE us alive 🪦💀", "thursday said rip bestie 💀🫠", "friday left no crumbs (of us) 💀🔥", "saturday cooked?? call 911 🆘💀"],
                 ];
-                const hotFraction = total > 0 ? (cookedCount + cookingCount) / total : 0;
                 const cookLevel = hotFraction < 0.25 ? 0 : hotFraction < 0.5 ? 1 : hotFraction < 0.75 ? 2 : 3;
                 const cookMain = COOK_MAINS[cookLevel][d];
 
