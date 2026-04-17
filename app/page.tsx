@@ -1073,13 +1073,13 @@ export default function Home() {
                 const chillCount = activeVals.filter(v => v <= 50).length;
                 const total = activeVals.length;
 
-                const bg = teamAvg <= 35 ? "#FF9DC8"
-                  : teamAvg <= 55 ? "#FFB347"
-                  : teamAvg <= 75 ? "#FF6B35"
+                const bg = hotFraction < 0.25 ? "#FF9DC8"
+                  : hotFraction < 0.5 ? "#FFB347"
+                  : hotFraction < 0.75 ? "#FF6B35"
                   : "#e74c3c";
 
                 // Text flips yellow on red so it stays readable
-                const onDark = teamAvg > 75;
+                const onDark = hotFraction >= 0.75;
                 const textMain = onDark ? "#FFE234" : "#000";
                 const textSub = onDark ? "rgba(255,226,52,0.75)" : "rgba(0,0,0,0.55)";
                 const textTag = onDark ? "rgba(255,226,52,0.55)" : "rgba(0,0,0,0.35)";
