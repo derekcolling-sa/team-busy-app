@@ -1096,7 +1096,8 @@ export default function Home() {
                   // 3 cooked >75
                   ["fully cooked 💀💀💀", "monday destroyed us 🆘💀", "tuesday said no survivors 💀🔥💀", "wednesday ATE us alive 🪦💀", "thursday said rip bestie 💀🫠", "friday left no crumbs (of us) 💀🔥", "saturday cooked?? call 911 🆘💀"],
                 ];
-                const cookLevel = teamAvg <= 35 ? 0 : teamAvg <= 55 ? 1 : teamAvg <= 75 ? 2 : 3;
+                const hotFraction = total > 0 ? (cookedCount + cookingCount) / total : 0;
+                const cookLevel = hotFraction < 0.25 ? 0 : hotFraction < 0.5 ? 1 : hotFraction < 0.75 ? 2 : 3;
                 const cookMain = COOK_MAINS[cookLevel][d];
 
                 // Team heat strip — emoji heat meter + contextual message
