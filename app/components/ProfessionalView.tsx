@@ -102,6 +102,8 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
   const [messages, setMessages] = useState<Array<{ name: string; message: string; ts: number }>>([]);
   const [urgent, setUrgent] = useState<{ message: string; type: string } | null>(null);
   const [translatedUrgent, setTranslatedUrgent] = useState<string | null>(null);
+  const [translatedNotes, setTranslatedNotes] = useState<Record<string, string>>({});
+  const translatedNotesKeyRef = useRef<string>("");
   const [localSlider, setLocalSlider] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState<string>("");
   const [noteSaved, setNoteSaved] = useState(false);
@@ -168,6 +170,23 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
       .then((d) => { if (d.translated) setTranslatedUrgent(d.translated); })
       .catch(() => {});
   }, [urgent, translatedUrgent]);
+
+  useEffect(() => {
+    const notesWithContent = Object.fromEntries(
+      Object.entries(statusNotes).filter(([, v]) => v?.trim())
+    );
+    const key = JSON.stringify(notesWithContent);
+    if (!Object.keys(notesWithContent).length || key === translatedNotesKeyRef.current) return;
+    translatedNotesKeyRef.current = key;
+    fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes: notesWithContent }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d.notes) setTranslatedNotes(d.notes); })
+      .catch(() => {});
+  }, [statusNotes]);
 
   const pickUser = (name: string) => {
     localStorage.setItem("team-busy-user", name);
@@ -601,7 +620,7 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
               const val = statuses[m.name] ?? 0;
               const level = getProLevel(val);
               const ooo = oooStatuses[m.name];
-              const note = statusNotes[m.name];
+              const note = translatedNotes[m.name] ?? statusNotes[m.name];
               const photo = photoOverrides[m.name] ?? m.photo;
               return (
                 <div
