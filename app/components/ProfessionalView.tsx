@@ -172,20 +172,24 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
   }, [urgent, translatedUrgent]);
 
   useEffect(() => {
-    const notesWithContent = Object.fromEntries(
-      Object.entries(statusNotes).filter(([, v]) => v?.trim())
-    );
+    const notesWithContent = Object.entries(statusNotes).filter(([, v]) => v?.trim());
     const key = JSON.stringify(notesWithContent);
-    if (!Object.keys(notesWithContent).length || key === translatedNotesKeyRef.current) return;
+    if (!notesWithContent.length || key === translatedNotesKeyRef.current) return;
     translatedNotesKeyRef.current = key;
-    fetch("/api/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ notes: notesWithContent }),
-    })
-      .then((r) => r.json())
-      .then((d) => { if (d.notes) setTranslatedNotes(d.notes); })
-      .catch(() => {});
+    Promise.all(
+      notesWithContent.map(([name, msg]) =>
+        fetch("/api/translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: msg }),
+        })
+          .then((r) => r.json())
+          .then((d) => [name, d.translated ?? msg] as [string, string])
+          .catch(() => [name, msg] as [string, string])
+      )
+    ).then((results) => {
+      setTranslatedNotes(Object.fromEntries(results));
+    });
   }, [statusNotes]);
 
   const pickUser = (name: string) => {
