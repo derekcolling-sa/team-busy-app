@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 const client = new Anthropic();
 
-const PROMPT = `You are rewriting informal workplace messages for display on a professional dashboard. Your job is to preserve the actual meaning and intent of the message while making it sound polished and professional. Strip slang, exclamation marks, excessive punctuation, and informal language — but keep the core request or information intact. Return only the rewritten sentence — no quotes, no explanation, nothing else.`;
+const PROMPT = `You are rewriting informal workplace status messages for display on a professional team dashboard. These are first-person status updates written by individual team members about themselves (e.g. "I'm sick today", "slammed with work"). Rewrite each in third person referring to the person by their implied situation, preserving the actual meaning. Strip slang, exclamation marks, and informal language. Return only the rewritten sentence — no quotes, no explanation, nothing else. Never say "the sender".`;
 
 export async function POST(req: Request) {
   const body = await safeJson(req);
@@ -37,18 +37,17 @@ export async function POST(req: Request) {
     }
   }
 
-  // Single mode: { message: string }
+  // Single mode: { message: string, name?: string }
   if (!body?.message) return Response.json({ error: "Missing message" }, { status: 400 });
+
+  const content = body.name
+    ? `${PROMPT}\n\nPerson's name: ${body.name}\nStatus message: ${body.message}\n\nRewrite this status message in third person using "${body.name}" as the subject. Start the sentence with "${body.name}".`
+    : `${PROMPT}\n\nOriginal: ${body.message}`;
 
   const message = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 256,
-    messages: [
-      {
-        role: "user",
-        content: `${PROMPT}\n\nOriginal: ${body.message}`,
-      },
-    ],
+    messages: [{ role: "user", content }],
   });
 
   const translated = message.content[0].type === "text" ? message.content[0].text.trim() : body.message;
