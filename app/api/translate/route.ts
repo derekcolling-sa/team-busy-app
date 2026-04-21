@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 const client = new Anthropic();
 
-const PROMPT = `You are rewriting informal workplace messages for display on a professional dashboard. Rewrite each as a single polished, professional sentence. Strip all informal language, slang, exclamation marks, and excessive punctuation. Return only the rewritten sentence — no quotes, no explanation, nothing else.`;
+const PROMPT = `You are rewriting informal workplace messages for display on a professional dashboard. Your job is to preserve the actual meaning and intent of the message while making it sound polished and professional. Strip slang, exclamation marks, excessive punctuation, and informal language — but keep the core request or information intact. Return only the rewritten sentence — no quotes, no explanation, nothing else.`;
 
 export async function POST(req: Request) {
   const body = await safeJson(req);
