@@ -99,6 +99,9 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
   const [statusNotes, setStatusNotes] = useState<Record<string, string>>({});
   const [oooStatuses, setOooStatuses] = useState<Record<string, boolean>>({});
   const [photoOverrides, setPhotoOverrides] = useState<Record<string, string>>({});
+  const [messages, setMessages] = useState<Array<{ name: string; message: string; ts: number }>>([]);
+  const [urgent, setUrgent] = useState<{ message: string; type: string } | null>(null);
+  const [translatedUrgent, setTranslatedUrgent] = useState<string | null>(null);
   const [localSlider, setLocalSlider] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState<string>("");
   const [noteSaved, setNoteSaved] = useState(false);
@@ -127,6 +130,14 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
       setStatusNotes(statusRes.notes ?? {});
       setPhotoOverrides(photosRes.photos ?? {});
       setOooStatuses(poll.ooo ?? {});
+      setMessages(poll.messages ?? []);
+      const newUrgent = poll.urgent ?? null;
+      setUrgent((prev) => {
+        if (newUrgent?.message !== prev?.message) {
+          setTranslatedUrgent(null);
+        }
+        return newUrgent;
+      });
     } catch {
       // silent
     }
@@ -145,6 +156,18 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
       setNoteDraft(statusNotes[currentUser]);
     }
   }, [currentUser, statusNotes, noteDraft]);
+
+  useEffect(() => {
+    if (!urgent?.message || translatedUrgent !== null) return;
+    fetch("/api/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: urgent.message }),
+    })
+      .then((r) => r.json())
+      .then((d) => { if (d.translated) setTranslatedUrgent(d.translated); })
+      .catch(() => {});
+  }, [urgent, translatedUrgent]);
 
   const pickUser = (name: string) => {
     localStorage.setItem("team-busy-user", name);
@@ -320,6 +343,72 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
 
       {/* Main content */}
       <main style={{ maxWidth: 820, margin: "0 auto", padding: "32px 24px" }}>
+        {/* Broadcast messages */}
+        {(urgent || messages.length > 0) && (
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: TEXT, marginBottom: 10 }}>
+              Messages
+            </div>
+            <div
+              style={{
+                background: "#fff",
+                border: `1px solid ${BORDER}`,
+                borderRadius: 6,
+                overflow: "hidden",
+              }}
+            >
+              {urgent && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 16,
+                    padding: "16px 20px",
+                    borderBottom: messages.length > 0 ? "1px solid #F0F0F0" : "none",
+                    alignItems: "center",
+                    background: urgent.type === "urgent" ? "#FFF4F4" : "#FFF8E7",
+                  }}
+                >
+                  <span style={{ fontSize: 18, fontWeight: 600, flex: 1, color: TEXT, lineHeight: 1.3 }}>
+                    {translatedUrgent ?? urgent.message}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: urgent.type === "urgent" ? "#C4314B" : "#8A6000",
+                      textTransform: "uppercase",
+                      letterSpacing: 0.4,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {urgent.type}
+                  </span>
+                </div>
+              )}
+              {messages.map((msg, i) => (
+                <div
+                  key={msg.ts}
+                  style={{
+                    display: "flex",
+                    gap: 12,
+                    padding: "12px 18px",
+                    borderBottom: i < messages.length - 1 ? "1px solid #F0F0F0" : "none",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <span style={{ fontWeight: 600, color: TEXT, whiteSpace: "nowrap", fontSize: 13 }}>
+                    {msg.name}
+                  </span>
+                  <span style={{ color: SUBTLE, fontSize: 13, flex: 1 }}>{msg.message}</span>
+                  <span style={{ color: "#B4B4B4", fontSize: 11, whiteSpace: "nowrap" }}>
+                    {formatTimeAgo(msg.ts)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div style={{ marginBottom: 22 }}>
           <div style={{ fontSize: 24, fontWeight: 600, color: TEXT }}>Set your status</div>
           <div style={{ fontSize: 13, color: SUBTLE, marginTop: 4 }}>
