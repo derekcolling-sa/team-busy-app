@@ -604,7 +604,7 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1.4fr 1fr 1.2fr 0.8fr",
+                gridTemplateColumns: "1fr 0.8fr 2fr 0.7fr",
                 padding: "10px 18px",
                 background: "#FAFAFA",
                 borderBottom: `1px solid ${BORDER}`,
@@ -631,9 +631,9 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
                   key={m.name}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "1.4fr 1fr 1.2fr 0.8fr",
+                    gridTemplateColumns: "1fr 0.8fr 2fr 0.7fr",
                     padding: "12px 18px",
-                    alignItems: "center",
+                    alignItems: "flex-start",
                     borderBottom: i < sortedTeam.length - 1 ? "1px solid #F0F0F0" : "none",
                     fontSize: 13,
                   }}
@@ -668,11 +668,8 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
                   <div
                     style={{
                       color: SUBTLE,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
+                      lineHeight: 1.4,
                     }}
-                    title={note || ""}
                   >
                     {note || <span style={{ color: "#B4B4B4" }}>—</span>}
                   </div>
