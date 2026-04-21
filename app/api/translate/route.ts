@@ -5,7 +5,9 @@ export const dynamic = "force-dynamic";
 
 const client = new Anthropic();
 
-const PROMPT = `You are rewriting informal workplace status messages for display on a professional team dashboard. These are first-person status updates written by individual team members about themselves (e.g. "I'm sick today", "slammed with work"). Rewrite each in third person referring to the person by their implied situation, preserving the actual meaning. Strip slang, exclamation marks, and informal language. Return only the rewritten sentence — no quotes, no explanation, nothing else. Never say "the sender".`;
+const STATUS_PROMPT = `You are rewriting informal personal status messages for a professional team dashboard. These are written by individual team members about themselves (e.g. "sick today", "slammed with work"). Rewrite in third person using the person's name as the subject, preserving the actual meaning. Strip slang, exclamation marks, and informal language. Return only the rewritten sentence — no quotes, no explanation, nothing else.`;
+
+const BROADCAST_PROMPT = `You are rewriting an informal broadcast message sent by a manager to their whole team, for display on a professional dashboard. This is a directive or announcement to the group. Rewrite it as a clear, professional announcement directed at the team. Preserve the actual request or information — do not summarize or editorialize. Strip slang, exclamation marks, and informal language. Return only the rewritten sentence — no quotes, no explanation, nothing else.`;
 
 export async function POST(req: Request) {
   const body = await safeJson(req);
@@ -37,15 +39,17 @@ export async function POST(req: Request) {
     }
   }
 
-  // Single mode: { message: string, name?: string }
+  // Single mode: { message: string, name?: string, type?: "broadcast" | "status" }
   if (!body?.message) return Response.json({ error: "Missing message" }, { status: 400 });
 
-  const content = body.name
-    ? `${PROMPT}\n\nPerson's name: ${body.name}\nStatus message: ${body.message}\n\nRewrite this status message in third person using "${body.name}" as the subject. Start the sentence with "${body.name}".`
-    : `${PROMPT}\n\nOriginal: ${body.message}`;
+  const isBroadcast = body.type === "broadcast" || body.type === "urgent";
+  const prompt = isBroadcast ? BROADCAST_PROMPT : STATUS_PROMPT;
+  const content = isBroadcast
+    ? `${prompt}\n\nOriginal: ${body.message}`
+    : `${prompt}\n\nPerson's name: ${body.name ?? "this person"}\nStatus message: ${body.message}\n\nRewrite using "${body.name ?? "this person"}" as the subject.`;
 
   const message = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
+    model: "claude-sonnet-4-6",
     max_tokens: 256,
     messages: [{ role: "user", content }],
   });

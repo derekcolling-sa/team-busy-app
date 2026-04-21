@@ -164,7 +164,7 @@ export default function ProfessionalView({ onSwitchMode }: Props) {
     fetch("/api/translate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: urgent.message }),
+      body: JSON.stringify({ message: urgent.message, type: urgent.type }),
     })
       .then((r) => r.json())
       .then((d) => { if (d.translated) setTranslatedUrgent(d.translated); })
