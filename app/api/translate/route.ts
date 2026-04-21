@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "user",
-          content: `${PROMPT}\n\nRewrite each message below. Return a JSON object mapping each name to its rewritten message. Only include names from the list.\n\n${list}`,
+          content: `${STATUS_PROMPT}\n\nRewrite each message below. Return a JSON object mapping each name to its rewritten message. Only include names from the list.\n\n${list}`,
         },
       ],
     });
