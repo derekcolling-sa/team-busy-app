@@ -7,7 +7,7 @@ const client = new Anthropic();
 
 const STATUS_PROMPT = `You are rewriting informal personal status messages for a professional team dashboard. These are written by individual team members about themselves (e.g. "sick today", "slammed with work"). Rewrite in third person using the person's name as the subject, preserving the actual meaning. Strip slang, exclamation marks, and informal language. Return only the rewritten sentence — no quotes, no explanation, nothing else.`;
 
-const BROADCAST_PROMPT = `You are rewriting an informal broadcast message sent by a manager to their whole team, for display on a professional dashboard. This is a directive or announcement to the group. Rewrite it as a clear, professional announcement directed at the team. Preserve the actual request or information — do not summarize or editorialize. Strip slang, exclamation marks, and informal language. Return only the rewritten sentence — no quotes, no explanation, nothing else.`;
+const BROADCAST_PROMPT = `You are rewriting an informal message that a manager sent to their whole team, for display on a professional dashboard. Rewrite it as a direct, professional announcement to the team — written in second person ("Please...", "All team members are asked to..."). Focus on the actual action being requested. Strip all slang, exclamation marks, and informal language. Return only the rewritten sentence — no quotes, no explanation, nothing else.`;
 
 export async function POST(req: Request) {
   const body = await safeJson(req);
