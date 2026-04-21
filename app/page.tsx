@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { rollBuddy, type Buddy } from "@/lib/buddies";
-import { MEMBERS, BOSS, CO_ADMIN, BUDDIES_ENABLED, VP, SUGGESTIONS, WRITERS, getStaleness, timeAgo } from "@/app/lib/constants";
+import { MEMBERS, BOSS, CO_ADMINS, BUDDIES_ENABLED, VP, SUGGESTIONS, WRITERS, getStaleness, timeAgo } from "@/app/lib/constants";
 
 // Components
 import MyCard from "@/app/components/MyCard";
@@ -23,6 +23,7 @@ import DisputeModal from "@/app/components/modals/DisputeModal";
 import IdentityPicker from "@/app/components/modals/IdentityPicker";
 import BrainRotOverlay from "@/app/components/modals/BrainRotOverlay";
 import ProfessionalView from "@/app/components/ProfessionalView";
+import FloatingSquid from "@/app/components/FloatingSquid";
 
 function TickerItem({ msg }: { msg: { name: string; message: string } }) {
   return (
@@ -87,6 +88,7 @@ export default function Home() {
   const adhdDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const sortTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [goHomeRequested, setGoHomeRequested] = useState(false);
+  const [goHomeReadyRequested, setGoHomeReadyRequested] = useState(false);
   const goHomeLock = useRef(false);
   const [goHomeRequests, setGoHomeRequests] = useState<{ name: string; ts: number; count: number }[]>([]);
   const [hireVoteData, setHireVoteData] = useState<{ votes: Record<string, { writer: boolean; designer: boolean }>; writerYes: number; designerYes: number; total: number; date: string } | null>(null);
@@ -123,6 +125,7 @@ export default function Home() {
   const [hatchPhase, setHatchPhase] = useState<"egg" | "cracking" | "reveal">("egg");
   const [newMessage, setNewMessage] = useState<Record<string, string>>({});
   const [weatherEmoji, setWeatherEmoji] = useState<string | null>(null);
+  const [squidVisible, setSquidVisible] = useState(true);
   const [uiMode, setUiMode] = useState<"classic" | "pro">("classic");
   const [uiModeLoaded, setUiModeLoaded] = useState(false);
 
@@ -642,7 +645,25 @@ export default function Home() {
     await fetch("/api/go-home", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: currentUser }),
+      body: JSON.stringify({ name: currentUser, type: "wants" }),
+    });
+  };
+
+  const handleReadyToGoHome = async () => {
+    if (!currentUser || goHomeLock.current) return;
+    goHomeLock.current = true;
+    setGoHomeReadyRequested(true);
+    setGoHomeRequests((prev) => {
+      const existing = prev.find((r) => r.name === currentUser);
+      if (existing) {
+        return prev.map((r) => r.name === currentUser ? { ...r, count: r.count + 1, ts: Date.now(), type: "ready" as const } : r);
+      }
+      return [...prev, { name: currentUser, ts: Date.now(), count: 1, type: "ready" as const }];
+    });
+    await fetch("/api/go-home", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: currentUser, type: "ready" }),
     });
   };
 
@@ -1004,10 +1025,14 @@ export default function Home() {
                   onClick={switchToPro}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors"
                 >👔 pro mode</button>
+                <button
+                  onClick={() => setSquidVisible(v => !v)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors"
+                >🦑 {squidVisible ? "hide squid" : "show squid"}</button>
                 {currentUser === BOSS && (
                   <a href="/admin" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-black text-[11px] font-bold text-white tracking-widest uppercase shadow-[3px_3px_0_#FFE234] cursor-pointer hover:bg-[#FFE234] hover:text-black transition-colors">⚡ admin</a>
                 )}
-                {currentUser === CO_ADMIN && (
+                {CO_ADMINS.includes(currentUser ?? "") && (
                   <a href="/mod" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FF9DC8] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors">🫢 mod</a>
                 )}
                 {topOnlineUser && (
@@ -1017,9 +1042,17 @@ export default function Home() {
                 )}
               </div>
             </div>
-            {/* Home sticker — right side */}
+            {/* Home stickers — right side */}
             {loaded && currentUser && !isGuest && (
               <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleReadyToGoHome}
+                  disabled={goHomeReadyRequested}
+                  title={goHomeReadyRequested ? "Marked ready!" : "I'm ready to go home"}
+                  className={`transition-all cursor-pointer shrink-0 ${goHomeReadyRequested ? "scale-95" : "hover:scale-110 hover:rotate-6"}`}
+                >
+                  <Image src="/goHome.png" alt="I'm ready to go home" width={70} height={70} className="object-contain" />
+                </button>
                 <button
                   onClick={handleGoHome}
                   disabled={goHomeRequested}
@@ -1074,13 +1107,15 @@ export default function Home() {
                 const total = activeVals.length;
                 const hotFraction = total > 0 ? (cookedCount + cookingCount) / total : 0;
 
+                const allCooked = cookedCount === total && total > 0;
+
                 const bg = hotFraction < 0.25 ? "#FF9DC8"
                   : hotFraction < 0.5 ? "#FFB347"
                   : hotFraction < 0.75 ? "#FF6B35"
-                  : "#e74c3c";
+                  : allCooked ? "#e74c3c" : "#FF6B35";
 
                 // Text flips yellow on red so it stays readable
-                const onDark = hotFraction >= 0.75;
+                const onDark = allCooked;
                 const textMain = onDark ? "#FFE234" : "#000";
                 const textSub = onDark ? "rgba(255,226,52,0.75)" : "rgba(0,0,0,0.55)";
                 const textTag = onDark ? "rgba(255,226,52,0.55)" : "rgba(0,0,0,0.35)";
@@ -1094,21 +1129,21 @@ export default function Home() {
                   ["starting to feel it 🍳👀", "monday heating up no cap 🌶️", "tuesday is cooking us slowly 🍳", "wednesday getting spicy 🌶️😤", "thursday heat rising fr 🔥👀", "friday is simmering 🍳🔥", "saturday grind, respect 😅🔥"],
                   // 2 cooking ≤75
                   ["we are COOKING 🔥🔥💀", "monday has us in the sauce 🌊🔥", "tuesday cooked different 💀🔥", "wednesday is NOT it 🔥🫠", "thursday said perish 💀🔥", "friday is FRYING us 🍳💀🔥", "saturday?? AND cooking?? 🆘🔥"],
-                  // 3 cooked >75
+                  // 3 everyone cooked
                   ["fully cooked 💀💀💀", "monday destroyed us 🆘💀", "tuesday said no survivors 💀🔥💀", "wednesday ATE us alive 🪦💀", "thursday said rip bestie 💀🫠", "friday left no crumbs (of us) 💀🔥", "saturday cooked?? call 911 🆘💀"],
                 ];
-                const cookLevel = hotFraction < 0.25 ? 0 : hotFraction < 0.5 ? 1 : hotFraction < 0.75 ? 2 : 3;
+                const cookLevel = allCooked ? 3 : hotFraction < 0.25 ? 0 : hotFraction < 0.5 ? 1 : 2;
                 const cookMain = COOK_MAINS[cookLevel][d];
 
                 // Team heat strip — emoji heat meter + contextual message
-                const heatEmojis = teamAvg <= 35 ? "😎😎😎" : teamAvg <= 55 ? "🍳🔥😅" : teamAvg <= 75 ? "🔥🔥💀" : "💀💀💀🆘";
+                const heatEmojis = allCooked ? "💀💀💀🆘" : teamAvg <= 35 ? "😎😎😎" : teamAvg <= 55 ? "🍳🔥😅" : "🔥🔥💀";
                 const teamHeat = teamAvg <= 35
                   ? { text: `${heatEmojis}  ${chillCount} of ${total} fully chillin'`, tag: "chill mode" }
                   : teamAvg <= 55
                   ? { text: `${heatEmojis}  ${cookingCount + cookedCount} of ${total} feeling the heat`, tag: "warming up" }
-                  : teamAvg <= 75
-                  ? { text: `${heatEmojis}  ${cookingCount} cooking · ${cookedCount} cooked`, tag: "it's getting hot" }
-                  : { text: `${heatEmojis}  ${cookedCount} of ${total} fully cooked`, tag: "rip bestie" };
+                  : allCooked
+                  ? { text: `${heatEmojis}  ${cookedCount} of ${total} fully cooked`, tag: "rip bestie" }
+                  : { text: `${heatEmojis}  ${cookingCount} cooking · ${cookedCount} cooked`, tag: "it's getting hot" };
 
                 const myVote = currentUser && !isGuest ? appVibes[currentUser] : null;
                 const ups = Object.values(appVibes).filter(v => v === "up").length;
@@ -1192,7 +1227,7 @@ export default function Home() {
               {/* Confetti */}
               {!confettiOff && (
                 <div className="fixed inset-0 pointer-events-none z-[50]">
-                  {["#FF9DC8","#3D52F0","#e74c3c","#b5f0c8","#FFE234","#FF9DC8","#3D52F0","#a8f5c8","#dbb8ff","#ffb8e0","#FF4444","#000","#FF9DC8","#3D52F0","#b5f0c8","#FFE234","#dbb8ff","#e74c3c","#a8f5c8","#FF9DC8"].map((color, i) => (
+                  {["#FF9DC8","#3D52F0","#e74c3c","#b5f0c8","#FFE234","#FF9DC8","#3D52F0","#a8f5c8","#dbb8ff","#ffb8e0","#FF4444","#000","#FF9DC8","#3D52F0","#b5f0c8","#FFE234","#dbb8ff","#e74c3c","#a8f5c8","#FF9DC8","#FF9DC8","#3D52F0","#e74c3c","#b5f0c8","#FFE234","#FF9DC8","#3D52F0","#a8f5c8","#dbb8ff","#ffb8e0","#FF4444","#000","#FF9DC8","#3D52F0","#b5f0c8","#FFE234","#dbb8ff","#e74c3c","#a8f5c8","#FF9DC8"].map((color, i) => (
                     <div key={i} className="absolute rounded-sm" style={{
                       top: "-20px",
                       left: `${(i * 5.1) % 100}%`,
@@ -1355,6 +1390,7 @@ export default function Home() {
       </div>
 
       <BrainRotOverlay brainRot={brainRot} brainRotVideoId={brainRotVideoId} setBrainRot={setBrainRot} />
+      {squidVisible && <FloatingSquid />}
     </>
   );
 }

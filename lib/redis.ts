@@ -370,9 +370,9 @@ export async function getHistory(days = 14): Promise<HistoryData> {
 
 const GO_HOME_KEY = "team-busy-go-home";
 
-export type GoHomeEntry = { name: string; ts: number; count: number };
+export type GoHomeEntry = { name: string; ts: number; count: number; type?: "wants" | "ready" };
 
-export async function requestGoHome(name: string): Promise<void> {
+export async function requestGoHome(name: string, type: "wants" | "ready" = "wants"): Promise<void> {
   const raw = await redis.hget(GO_HOME_KEY, name);
   let count = 1;
   if (raw) {
@@ -381,7 +381,7 @@ export async function requestGoHome(name: string): Promise<void> {
       count = (existing.count ?? 1) + 1;
     } catch { count = 2; }
   }
-  await redis.hset(GO_HOME_KEY, { [name]: JSON.stringify({ ts: Date.now(), count }) });
+  await redis.hset(GO_HOME_KEY, { [name]: JSON.stringify({ ts: Date.now(), count, type }) });
 }
 
 export async function clearGoHome(name: string): Promise<void> {

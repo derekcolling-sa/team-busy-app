@@ -8,14 +8,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const body = await safeJson(request); if (!body) return Response.json({ error: "Invalid JSON" }, { status: 400 }); const { name, clear } = body as any;
+  const body = await safeJson(request); if (!body) return Response.json({ error: "Invalid JSON" }, { status: 400 }); const { name, clear, type } = body as any;
   if (typeof name !== "string") return Response.json({ error: "Invalid input" }, { status: 400 });
   if (clear === "all") {
     await clearAllGoHome();
   } else if (clear) {
     await clearGoHome(name);
   } else {
-    await requestGoHome(name);
+    await requestGoHome(name, type === "ready" ? "ready" : "wants");
   }
   return Response.json({ ok: true });
 }

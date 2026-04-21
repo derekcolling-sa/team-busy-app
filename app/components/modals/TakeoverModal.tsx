@@ -1,6 +1,6 @@
 "use client";
 
-import { BOSS, CO_ADMIN } from "@/app/lib/constants";
+import { BOSS, CO_ADMINS } from "@/app/lib/constants";
 
 interface Props {
   takeover: string | null;
@@ -16,7 +16,7 @@ export default function TakeoverModal({ takeover, setTakeover, showTakeoverCompo
   return (
     <>
       {/* Takeover Overlay — shown to everyone except Derek and Erin */}
-      {takeover && currentUser !== BOSS && currentUser !== CO_ADMIN && (
+      {takeover && currentUser !== BOSS && !CO_ADMINS.includes(currentUser ?? "") && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center" style={{ background: "#FFE234" }}>
           <div className="max-w-2xl w-full px-8 text-center">
             <div className="text-6xl mb-6">📣</div>

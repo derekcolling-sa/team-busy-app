@@ -209,8 +209,8 @@ export default function AdminPage() {
 
   useEffect(() => {
     const user = localStorage.getItem("team-busy-user");
-    // Redirect Erin to her own mod page
-    if (user === "Erin") { window.location.href = "/mod"; return; }
+    // Redirect mods to their own mod page
+    if (user && ["Callie", "Erin"].includes(user)) { window.location.href = "/mod"; return; }
     if (sessionStorage.getItem("admin-authed") === "true") setAuthed(true);
     // Auto-auth if logged in as Derek on the main app
     if (user === "Derek") {

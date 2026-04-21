@@ -115,9 +115,9 @@ export async function GET() {
     if (raw) {
       data.goHome = Object.entries(raw).map(([name, val]) => {
         try {
-          const parsed = typeof val === "string" ? JSON.parse(val) : val as { ts: number; count: number };
-          return { name, ts: Number(parsed.ts ?? val), count: Number(parsed.count ?? 1) };
-        } catch { return { name, ts: Number(val), count: 1 }; }
+          const parsed = typeof val === "string" ? JSON.parse(val) : val as { ts: number; count: number; type?: string };
+          return { name, ts: Number(parsed.ts ?? val), count: Number(parsed.count ?? 1), type: parsed.type ?? "wants" };
+        } catch { return { name, ts: Number(val), count: 1, type: "wants" }; }
       }).sort((a: { ts: number }, b: { ts: number }) => a.ts - b.ts);
     } else {
       data.goHome = [];

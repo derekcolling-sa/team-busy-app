@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 
-const CO_ADMIN = "Erin";
+const CO_ADMINS = ["Callie", "Erin"];
 
 function timeAgo(ts: number): string {
   const seconds = Math.floor((Date.now() - ts) / 1000);
@@ -23,6 +23,7 @@ const extractYouTubeId = (input: string): string => {
 export default function ModPage() {
   const [authed, setAuthed] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [modUser, setModUser] = useState<string | null>(null);
 
   const [broadcast, setBroadcast] = useState<{ message: string; type: "urgent" | "broadcast" } | null>(null);
   const [urgentInput, setUrgentInput] = useState("");
@@ -37,7 +38,7 @@ export default function ModPage() {
 
   useEffect(() => {
     const user = localStorage.getItem("team-busy-user");
-    if (user === CO_ADMIN) setAuthed(true);
+    if (user && CO_ADMINS.includes(user)) { setAuthed(true); setModUser(user); }
   }, []);
 
   const fetchData = useCallback(async () => {
@@ -125,7 +126,7 @@ export default function ModPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="rounded-[1.4rem] border-[4px] border-black bg-white shadow-[6px_6px_0_#000] px-8 py-8 text-center max-w-xs w-full">
           <p className="text-2xl font-extrabold mb-2">🫢</p>
-          <p className="text-sm font-bold text-[#b5b0a8]">You need to be logged in as Erin to access this page.</p>
+          <p className="text-sm font-bold text-[#b5b0a8]">You need to be logged in as Callie or Erin to access this page.</p>
           <a href="/" className="mt-4 inline-block text-xs font-bold text-black underline">← go back</a>
         </div>
       </div>
@@ -140,7 +141,7 @@ export default function ModPage() {
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-none text-white" style={{ fontFamily: "var(--font-display)" }}>
             Mod 🫢
           </h1>
-          <p className="text-sm text-white/70 font-semibold mt-1">hey Erin 👋</p>
+          <p className="text-sm text-white/70 font-semibold mt-1">hey {modUser} 👋</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 text-black bg-white border-[3px] border-black px-3 py-1.5 rounded-xl shadow-[3px_3px_0_#000] uppercase tracking-widest text-[11px] font-bold">

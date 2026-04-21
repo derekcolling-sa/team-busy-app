@@ -8,6 +8,7 @@ interface GoHomeRequest {
   name: string;
   count: number;
   ts: number;
+  type?: "wants" | "ready";
 }
 
 interface Props {
@@ -20,8 +21,35 @@ export default function GoHomeRequests({ goHomeRequests, photoOverrides }: Props
 
   if (!goHomeRequests.length) return null;
 
-  const sorted = [...goHomeRequests].sort((a, b) => b.count - a.count || a.ts - b.ts);
-  const topScore = sorted[0].count;
+  const wantsGroup = goHomeRequests.filter(r => r.type !== "ready");
+  const readyGroup = goHomeRequests.filter(r => r.type === "ready");
+
+  const renderEntries = (entries: GoHomeRequest[]) => {
+    const sorted = [...entries].sort((a, b) => b.count - a.count || a.ts - b.ts);
+    const topScore = sorted[0]?.count ?? 0;
+    return sorted.map((r, i) => {
+      const isTop = i === 0 && topScore > 1;
+      const isAngel = r.count >= 777;
+      const isDevil = r.count === 666;
+      return (
+        <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isAngel ? "bg-sky-200 border-sky-400" : isDevil ? "bg-red-600 border-red-900" : isTop ? "bg-black border-black" : "bg-white border-black"}`}>
+          {isTop && !isDevil && !isAngel && <span className="text-base">🏆</span>}
+          {isAngel
+            ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-bounce">😇</span>
+            : isDevil
+            ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-pulse">😈</span>
+            : <Image
+                src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
+                alt={r.name} width={36} height={36}
+                className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
+              />
+          }
+          <span className={`font-extrabold text-base ${isAngel ? "text-sky-800" : isDevil ? "text-white" : isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
+          <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isAngel ? "bg-sky-400 text-white" : isDevil ? "bg-red-900 text-white" : isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
+        </div>
+      );
+    });
+  };
 
   return (
     <div className="animate-pop-in mt-6">
@@ -35,29 +63,19 @@ export default function GoHomeRequests({ goHomeRequests, photoOverrides }: Props
           <span className="text-xl ml-1">{goHomeExpanded ? "▲" : "▼"}</span>
         </button>
         {goHomeExpanded && (
-          <div className="flex flex-wrap gap-3 px-5 py-4">
-            {sorted.map((r, i) => {
-              const isTop = i === 0 && topScore > 1;
-              const isAngel = r.count >= 777;
-              const isDevil = r.count === 666;
-              return (
-                <div key={r.name} className={`flex items-center gap-2.5 rounded-2xl px-4 py-2.5 border-[3px] shadow-[3px_3px_0_#000] ${isAngel ? "bg-sky-200 border-sky-400" : isDevil ? "bg-red-600 border-red-900" : isTop ? "bg-black border-black" : "bg-white border-black"}`}>
-                  {isTop && !isDevil && !isAngel && <span className="text-base">🏆</span>}
-                  {isAngel
-                    ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-bounce">😇</span>
-                    : isDevil
-                    ? <span className="text-3xl w-9 h-9 flex items-center justify-center flex-shrink-0 animate-pulse">😈</span>
-                    : <Image
-                        src={photoOverrides[r.name] ?? (MEMBERS.find(m => m.name === r.name)?.photo ?? "")}
-                        alt={r.name} width={36} height={36}
-                        className="rounded-full object-cover w-9 h-9 border-2 border-black flex-shrink-0"
-                      />
-                  }
-                  <span className={`font-extrabold text-base ${isAngel ? "text-sky-800" : isDevil ? "text-white" : isTop ? "text-[#FFE234]" : "text-black"}`}>{r.name}</span>
-                  <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-full ${isAngel ? "bg-sky-400 text-white" : isDevil ? "bg-red-900 text-white" : isTop ? "bg-[#FFE234] text-black" : "bg-black text-[#FFE234]"}`}>x{r.count}</span>
-                </div>
-              );
-            })}
+          <div className="px-5 py-4 flex flex-col gap-4">
+            {readyGroup.length > 0 && (
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-widest text-black/50 mb-2">Is ready to go home</p>
+                <div className="flex flex-wrap gap-3">{renderEntries(readyGroup)}</div>
+              </div>
+            )}
+            {wantsGroup.length > 0 && (
+              <div>
+                {readyGroup.length > 0 && <p className="text-xs font-extrabold uppercase tracking-widest text-black/50 mb-2">Wants to go home</p>}
+                <div className="flex flex-wrap gap-3">{renderEntries(wantsGroup)}</div>
+              </div>
+            )}
           </div>
         )}
       </div>

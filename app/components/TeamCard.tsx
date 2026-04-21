@@ -96,7 +96,7 @@ export default function TeamCard({
     );
   }
 
-  const isErin = member.name === "Erin";
+  const isErin = member.name === "Callie" || member.name === "Erin";
   const sparklePositions = [
     { top: "-10px", left: "10%",  delay: "0s" },
     { top: "-10px", left: "50%",  delay: "0.4s" },
