@@ -1,19 +1,19 @@
 const DAY_PARTS = [
-  "sunday?? go back to sleep 😴 —",
-  "monday 💀 we're here tho —",
-  "tuesday check ☕ —",
-  "hump day 🐪 halfway there —",
-  "thursday push 👀 one more day —",
-  "FRIDAY 🔥 LET'S GOOO —",
-  "saturday?? oof 😬 —",
+  "sunday. seriously. 🛋️ —",
+  "monday. we survived the weekend. ☕ —",
+  "tuesday. still here. ☕ —",
+  "wednesday. halfway through. 🤙 —",
+  "thursday. almost there. 👀 —",
+  "friday. finally. 🍺 —",
+  "saturday. why are you here. 😶 —",
 ];
 
 const FALLBACKS = [
-  "let's get it fr 💪",
-  "locked in today no cap 🧠",
-  "big day energy ✨ let's cook",
-  "we are so that team 💅",
-  "main character energy today bestie",
+  "let's do this.",
+  "focused. allegedly.",
+  "big day. let's see how it goes.",
+  "we're the team.",
+  "everyone's showing up.",
 ];
 
 export async function buildWelcomeMessage(): Promise<string> {
@@ -33,27 +33,27 @@ export async function buildWelcomeMessage(): Promise<string> {
       const tempF = parseInt(data.current_condition?.[0]?.temp_F ?? "70");
 
       if (desc.includes("blizzard") || (desc.includes("snow") && tempF < 20)) {
-        weatherPart = "frozen outside ❄️🥶 stay warm fr we are NOT built for this";
+        weatherPart = "frozen out there ❄️ – nobody's built for this";
       } else if (desc.includes("snow")) {
-        weatherPart = "snow day energy ❄️ bundle up and lock in bestie";
+        weatherPart = "snowing ❄️ – bundle up and lock in";
       } else if (desc.includes("thunder") || desc.includes("storm")) {
-        weatherPart = "thunderstorm ⛈️ the drama is outside today not in here";
+        weatherPart = "thunderstorm ⛈️ – the drama's outside, not in here";
       } else if (desc.includes("rain") || desc.includes("drizzle")) {
-        weatherPart = "it's raining 🌧️ cozy desk szn activated fr";
+        weatherPart = "raining 🌧️ – good desk weather, honestly";
       } else if (desc.includes("fog") || desc.includes("mist") || desc.includes("haze")) {
-        weatherPart = "foggy 🌫️ mysterious vibes out there stay unbothered";
+        weatherPart = "foggy out there 🌫️ – stay the course";
       } else if (desc.includes("overcast") || desc.includes("cloudy")) {
-        weatherPart = "grey skies ☁️ but make it fashion we still slay";
+        weatherPart = "grey skies ☁️ – strong coffee weather";
       } else if (desc.includes("partly")) {
-        weatherPart = "partly cloudy ⛅ giving moody aesthetic and we are here for it";
+        weatherPart = "partly cloudy ⛅ – decent enough";
       } else if (desc.includes("sunny") || desc.includes("clear")) {
         weatherPart = tempF > 88
-          ? "sun is BLAZING ☀️🥵 it's hot girl summer out there hydrate"
-          : "sun is out ☀️ window open szn let's cook";
+          ? "blazing hot ☀️🥵 – stay hydrated, you're not 22"
+          : "sun's out ☀️ – not bad";
       } else if (tempF >= 88) {
-        weatherPart = "it's 🥵 hot out there — AC is a right not a privilege bestie";
+        weatherPart = "brutally hot 🥵 – AC is non-negotiable";
       } else if (tempF < 32) {
-        weatherPart = "it's freezing ❄️🥶 cozy szn is upon us stay warm";
+        weatherPart = "freezing out there ❄️ – layers";
       }
     }
   } catch {

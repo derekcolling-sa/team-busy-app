@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import { EMOJIS, LABELS, ADHD_LABELS, ADHD_COLORS, MOODS, BOSS, CO_ADMINS, BUDDIES_ENABLED, getLevel, getAdhdLevel, getTrackStyle, timeAgo } from "@/app/lib/constants";
+import { ADHD_COLORS, BOSS, CO_ADMINS, BUDDIES_ENABLED, getLevel, getAdhdLevel, getTrackStyle, timeAgo, getVoice } from "@/app/lib/constants";
 import BuddyBadge from "@/app/components/BuddyBadge";
 
 interface Member {
@@ -95,6 +95,7 @@ export default function MyCard({
   sendTouchGrass, dismissPoke, dismissTouchGrass, postMessage, formatCountdown,
   setShowMeetingPicker, setMeeting, setMyMood,
 }: Props) {
+  const { LABELS, EMOJIS, ADHD_LABELS, MOODS } = getVoice(currentUser);
   const value = statuses[member.name] ?? 50;
   const level = getLevel(value);
   const isOOO = !!oooStatuses[member.name];

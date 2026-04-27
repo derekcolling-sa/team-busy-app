@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { EMOJIS, LABELS, ADHD_LABELS, ADHD_COLORS, TRACK_COLORS, BUDDIES_ENABLED, getLevel, getAdhdLevel, timeAgo } from "@/app/lib/constants";
+import { ADHD_COLORS, TRACK_COLORS, BUDDIES_ENABLED, getLevel, getAdhdLevel, timeAgo, getVoice } from "@/app/lib/constants";
 import BuddyBadge from "@/app/components/BuddyBadge";
 
 interface Member {
@@ -59,6 +59,7 @@ export default function TeamCard({
   hotColdStatuses, buddies, statusNotes, sendReaction, sendPoke, sendTouchGrass, setShowDisputeModal,
   formatCountdown,
 }: Props) {
+  const { LABELS, EMOJIS, ADHD_LABELS } = getVoice(currentUser);
   const value = statuses[member.name] ?? 50;
   const level = getLevel(value);
   const isOOO = !!oooStatuses[member.name];

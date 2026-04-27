@@ -15,6 +15,8 @@ export const BOSS = "Derek";
 export const CO_ADMINS = ["Callie", "Erin"];
 export const BUDDIES_ENABLED = true;
 
+export const GENX_USERS = ["Brendan", "Kerry", "Derek"];
+
 export const SUGGESTIONS: Record<string, string[]> = {
   writer: [
     "the brief said 'fun and irreverent.' the client meant 'safe and beige.' mid.",
@@ -48,6 +50,39 @@ export const SUGGESTIONS: Record<string, string[]> = {
   ],
 };
 
+const SUGGESTIONS_GENX: Record<string, string[]> = {
+  writer: [
+    "the brief said 'fun and irreverent.' client meant 'safe and beige.' of course.",
+    "on my third rewrite. the first one was right. just so you know.",
+    "if someone says 'make it pop' one more time, I'm submitting lorem ipsum.",
+    "concept sold. now comes the actual work.",
+    "in a words hole. send coffee or leave me alone.",
+    "headlines: still making them up. sending in 20.",
+    "the copy is solid. now to convince everyone else of that.",
+    "writing my way out of a brief with no direction. improv is a skill, apparently.",
+  ],
+  artDirector: [
+    "the font is fine. it's always been fine.",
+    "making it 'more premium' for the 4th time today. the goalposts are gone.",
+    "moving boxes around until it looks like art. it's a process.",
+    "logo bigger. sure. client's having a day.",
+    "yes, I'll make it pop. no, I won't explain what that means.",
+    "in InDesign. do not disturb.",
+    "on my 6th version. they'll pick the first one. they always do.",
+    "it's always the kerning.",
+  ],
+  vp: [
+    "on a call that should have been an email.",
+    "reviewing 12 concepts. one of them is actually good.",
+    "saying 'great question' a lot today. it buys time.",
+    "the brief changed. again. we adapt.",
+    "building decks. it's fine. everything is fine.",
+    "managing up. it's a whole thing.",
+    "holding the vision. and everyone's calendar. you're welcome.",
+    "my feedback on your feedback: let's talk. it has layers.",
+  ],
+};
+
 export const LABELS = ["Chillin'", "Sautéed", "Cooking", "Cooked"];
 export const EMOJIS = ["😎", "🍳", "🔥", "💀"];
 export const TRACK_COLORS = ["#5cb85c", "#4a9eff", "#f5a623", "#e8742d"];
@@ -72,19 +107,46 @@ export const MOODS = [
   "touch grass needed 🌿",
 ];
 
+const LABELS_GENX = ["Mellow", "Getting There", "Buried", "Send Help"];
+const EMOJIS_GENX = ["😎", "☕", "🔥", "💀"];
+const ADHD_LABELS_GENX = ["actually focused", "zoning out", "completely checked out", "full chaos mode"];
+const MOODS_GENX = [
+  "running on fumes 🫠",
+  "owning it today 💪",
+  "do not test me 😤",
+  "actually productive 📋",
+  "somehow fine 🤷",
+  "not great, Bob 😬",
+  "crushing it 💻",
+  "overly optimistic 😅",
+  "having a moment 😶",
+  "delivered and moved on 👍",
+  "a little rough today 🤕",
+  "something's off here 🤔",
+  "got my act together 🎯",
+  "need a walk, badly 🚶",
+];
+
+export function getVoice(user: string | null) {
+  if (user && GENX_USERS.includes(user)) {
+    return { LABELS: LABELS_GENX, EMOJIS: EMOJIS_GENX, ADHD_LABELS: ADHD_LABELS_GENX, MOODS: MOODS_GENX, SUGGESTIONS: SUGGESTIONS_GENX };
+  }
+  return { LABELS, EMOJIS, ADHD_LABELS, MOODS, SUGGESTIONS };
+}
+
 export function timeAgo(ts: number): string {
   const seconds = Math.floor((Date.now() - ts) / 1000);
-  if (seconds < 60) return "literally just now 👀";
+  if (seconds < 60) return "just now";
   const minutes = Math.floor(seconds / 60);
-  if (minutes === 1) return "like a min ago";
-  if (minutes < 5) return `${minutes} mins ago no cap`;
+  if (minutes === 1) return "a minute ago";
+  if (minutes < 5) return `${minutes} mins ago`;
   if (minutes < 60) return `${minutes} mins ago`;
   const hours = Math.floor(minutes / 60);
-  if (hours === 1) return "an hour ago bestie";
-  if (hours < 24) return `${hours}h ago (oof)`;
+  if (hours === 1) return "an hour ago";
+  if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
-  if (days === 1) return "yesterday… we not gonna talk about it";
-  return `${days} days ago 💀`;
+  if (days === 1) return "yesterday (moving on)";
+  return `${days} days ago`;
 }
 
 // Returns 0–1 staleness: 0 = fresh, 1 = fully stale (16h → 48h)

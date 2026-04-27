@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { rollBuddy, type Buddy } from "@/lib/buddies";
-import { MEMBERS, BOSS, CO_ADMINS, BUDDIES_ENABLED, VP, SUGGESTIONS, WRITERS, getStaleness, timeAgo } from "@/app/lib/constants";
+import { MEMBERS, BOSS, CO_ADMINS, BUDDIES_ENABLED, VP, SUGGESTIONS, WRITERS, GENX_USERS, getStaleness, timeAgo } from "@/app/lib/constants";
 
 // Components
 import MyCard from "@/app/components/MyCard";
@@ -806,7 +806,16 @@ export default function Home() {
   const nowDate = new Date(now);
   const currentHour = nowDate.getHours();
 
-  const DAY_MESSAGES = [
+  const isGenX = GENX_USERS.includes(currentUser ?? "");
+  const DAY_MESSAGES = isGenX ? [
+    { main: "it's sunday. 🛋️", sub: "log off. seriously.", tag: "go outside" },
+    { main: "monday survived 😮‍💨", sub: "not our best work but we showed up.", tag: "send coffee" },
+    { main: "tuesday. still here. ☕", sub: "the underrated day. grind continues.", tag: "eyes down" },
+    { main: "wednesday. halfway. 🤙", sub: "the finish line is technically visible.", tag: "stay the course" },
+    { main: "thursday. almost. 👀", sub: "one more day. do not fumble.", tag: "so close" },
+    { main: "FRIDAY. FINALLY. 🍺", sub: "clock's out. we are done here.", tag: "get out" },
+    { main: "it's saturday. 💀", sub: "log off immediately. this is a choice.", tag: "why" },
+  ] : [
     { main: "wait why are you here 💀", sub: "it's sunday bestie. log off.", tag: "go touch grass" },
     { main: "monday survived 😮‍💨", sub: "that was not it but we did it anyway.", tag: "send thoughts & prayers" },
     { main: "tuesday ate 💅", sub: "lowkey the underrated day. we cooked.", tag: "no crumbs left" },
@@ -816,7 +825,15 @@ export default function Home() {
     { main: "it's saturday?? 💀", sub: "log off immediately. this is concerning.", tag: "chronically online" },
   ];
   const todayMsg = DAY_MESSAGES[nowDate.getDay()];
-  const MORNING_MESSAGES = [
+  const MORNING_MESSAGES = isGenX ? [
+    { main: "sunday morning. ☀️", sub: "go back to sleep. this is not a request.", tag: "rest mode" },
+    { main: "monday morning. 😮‍💨", sub: "coffee first. everything else second.", tag: "caffeinate" },
+    { main: "tuesday morning. ☕️", sub: "locked in. allegedly.", tag: "focused" },
+    { main: "wednesday morning. 🐪", sub: "halfway there. the light is visible.", tag: "keep going" },
+    { main: "thursday morning. 👀", sub: "tomorrow is friday. hold the line.", tag: "so close" },
+    { main: "friday morning. 🔥", sub: "we made it. just a few hours to freedom.", tag: "almost there" },
+    { main: "saturday morning. 😶", sub: "hope it's worth it.", tag: "questionable life choices" },
+  ] : [
     { main: "good morning bestie ☀️", sub: "it's sunday, go back to sleep.", tag: "rest mode" },
     { main: "rise and grind? 😮‍💨", sub: "monday got us in a chokehold. stay strong.", tag: "caffeinate immediately" },
     { main: "tuesday check ☕️", sub: "we're locked in today fr. let's cook.", tag: "locked tf in" },
@@ -1025,6 +1042,7 @@ export default function Home() {
                   onClick={switchToPro}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors"
                 >👔 pro mode</button>
+                <a href="/metcalf" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-[#FFE234] text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FF9DC8] transition-colors">🚗 metcalf</a>
                 <button
                   onClick={() => setSquidVisible(v => !v)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border-[3px] border-black bg-white text-[11px] font-bold text-black tracking-widest uppercase shadow-[3px_3px_0_#000] cursor-pointer hover:bg-[#FFE234] transition-colors"
@@ -1271,6 +1289,18 @@ export default function Home() {
                   </div>
                 </div>
               )}
+
+              {/* Metcalf Game Callout */}
+              <a href="/metcalf" className="block animate-pop-in mb-6 rounded-[1.4rem] border-[4px] border-black bg-black shadow-[6px_6px_0_#FFE234] overflow-hidden hover:scale-[1.01] transition-transform cursor-pointer">
+                <div className="flex items-center gap-5 px-5 py-4">
+                  <span className="text-4xl shrink-0">🚗</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xl font-black text-[#FFE234] leading-none" style={{ fontFamily: "var(--font-display)" }}>Meet Me On Metcalf</p>
+                    <p className="text-xs font-bold text-white/50 mt-1 uppercase tracking-widest">new game — help erin escape life</p>
+                  </div>
+                  <span className="shrink-0 px-4 py-2 rounded-xl border-[3px] border-[#FFE234] text-[#FFE234] text-xs font-extrabold uppercase tracking-widest hover:bg-[#FFE234] hover:text-black transition-colors">play now →</span>
+                </div>
+              </a>
 
               {/* Cards */}
               <div className="flex flex-col md:flex-row gap-6 md:gap-7 md:items-start">
